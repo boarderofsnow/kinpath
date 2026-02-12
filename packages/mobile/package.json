@@ -1,0 +1,28 @@
+{
+  "name": "@kinpath/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "build:ios": "eas build --platform ios",
+    "build:android": "eas build --platform android",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@kinpath/shared": "*",
+    "@supabase/supabase-js": "^2.47.0",
+    "expo": "~52.0.0",
+    "expo-router": "~4.0.0",
+    "expo-status-bar": "~2.0.0",
+    "react": "^19.0.0",
+    "react-native": "0.76.0",
+    "react-native-safe-area-context": "4.14.0",
+    "react-native-screens": "~4.3.0",
+    "react-native-purchases": "^8.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
