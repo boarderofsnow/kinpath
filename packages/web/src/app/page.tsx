@@ -88,7 +88,7 @@ export default function LandingPage() {
                   "We never store health records or medical data. Your family's information stays yours.",
               },
             ].map((feature) => (
-              <div key={feature.title} className="rounded-2xl bg-white border border-stone-100 shadow-sm p-6">
+              <div key={feature.title} className="rounded-2xl bg-white border border-stone-200/60 shadow-card p-6">
                 <h3 className="text-lg font-semibold text-stone-900">
                   {feature.title}
                 </h3>

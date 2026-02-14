@@ -40,7 +40,7 @@ export function MilestoneTimeline({
     : milestones.slice(visibleStart, visibleStart + 3);
 
   return (
-    <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-stone-900">
           Pregnancy Milestones

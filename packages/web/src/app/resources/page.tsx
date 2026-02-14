@@ -112,7 +112,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           ))}
         </div>
       ) : (
-        <div className="mt-4 rounded-xl bg-white p-12 text-center shadow-sm">
+        <div className="mt-4 rounded-xl bg-white p-12 text-center shadow-card">
           <svg
             className="mx-auto h-12 w-12 text-stone-300"
             fill="none"

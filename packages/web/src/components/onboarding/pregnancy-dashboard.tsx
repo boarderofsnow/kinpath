@@ -95,7 +95,7 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Hero: Baby size + countdown */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 via-white to-sage-50 p-6 shadow-sm">
+      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 via-white to-sage-50 p-6 shadow-card">
         <div className="flex flex-col items-center gap-6 sm:flex-row">
           {/* Baby size illustration */}
           {sizeComparison && (
@@ -178,7 +178,7 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
 
       {/* This Week For You — maternal body changes */}
       {maternalChanges && (
-        <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-brand-500" />
             <h3 className="text-sm font-semibold text-stone-900">
@@ -201,7 +201,7 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
 
       {/* Planning Tips */}
       {planningTips.length > 0 && (
-        <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
           <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
           <div className="mt-3 space-y-3">
             {planningTips.map((tip, i) => {

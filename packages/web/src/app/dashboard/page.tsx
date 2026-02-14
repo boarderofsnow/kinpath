@@ -136,7 +136,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           {resources.length > 0 ? (
             <ResourceFeed resources={resources} userTopics={userTopics} />
           ) : (
-            <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+            <div className="rounded-xl bg-white p-8 text-center shadow-card">
               <p className="text-stone-500">
                 No resources found for this age range yet. Check back soon!
               </p>
@@ -146,7 +146,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       </section>
 
       {/* AI Assistant CTA */}
-      <section className="mt-12 rounded-xl bg-sage-50 p-6">
+      <section className="mt-12 rounded-2xl border border-sage-200/60 bg-sage-50 p-6 shadow-card">
         <h3 className="font-semibold text-sage-800">Have a question?</h3>
         <p className="mt-1 text-sm text-sage-600">
           Ask our AI assistant anything about parenting, nutrition, sleep, and

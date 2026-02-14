@@ -92,7 +92,7 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+        <div className="rounded-xl bg-white p-8 text-center shadow-card">
           <p className="text-stone-500">
             No resources match this filter. Try selecting a different topic.
           </p>
