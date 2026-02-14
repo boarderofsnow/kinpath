@@ -10,8 +10,10 @@ import {
   TAG_NAMESPACES,
   type TopicKey,
   type ChildWithAge,
+  type NotificationPreferences,
+  type EmailFrequency,
 } from "@kinpath/shared";
-import { Edit2, Plus, Check } from "lucide-react";
+import { Edit2, Plus, Check, Bell } from "lucide-react";
 
 interface User {
   id: string;
@@ -33,12 +35,14 @@ interface SettingsFormProps {
   user: User | null;
   childProfiles: ChildWithAge[];
   preferences: Preferences | null;
+  notificationPrefs: NotificationPreferences | null;
 }
 
 export function SettingsForm({
   user,
   childProfiles: initialChildren,
   preferences: initialPreferences,
+  notificationPrefs: initialNotificationPrefs,
 }: SettingsFormProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -71,6 +75,27 @@ export function SettingsForm({
   const [preferencesMessage, setPreferencesMessage] = useState<string | null>(
     null
   );
+
+  // Notification preferences state
+  const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>(
+    initialNotificationPrefs ?? {
+      id: "",
+      user_id: user?.id ?? "",
+      email_enabled: true,
+      email_frequency: "weekly" as EmailFrequency,
+      preferred_day: 1,
+      preferred_hour: 8,
+      pregnancy_updates: true,
+      new_resources: true,
+      planning_reminders: true,
+      product_updates: false,
+      last_email_sent_at: null,
+      created_at: "",
+      updated_at: "",
+    }
+  );
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
 
   const [accountLoading, setAccountLoading] = useState(false);
 
@@ -213,6 +238,40 @@ export function SettingsForm({
         ? prev.topics_of_interest.filter((t) => t !== topic)
         : [...prev.topics_of_interest, topic],
     }));
+  }
+
+  // Notification preferences update helpers
+  function updateNotificationPref<K extends keyof NotificationPreferences>(
+    key: K,
+    value: NotificationPreferences[K]
+  ) {
+    setNotificationPrefs((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function toggleNotificationContent(key: "pregnancy_updates" | "new_resources" | "planning_reminders" | "product_updates") {
+    setNotificationPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  // Save notification preferences
+  async function handleSaveNotifications() {
+    setNotificationLoading(true);
+    setNotificationMessage(null);
+
+    try {
+      const { id: _id, created_at: _ca, updated_at: _ua, last_email_sent_at: _le, ...prefsToSave } = notificationPrefs;
+      await supabase.from("notification_preferences").upsert({
+        ...prefsToSave,
+        user_id: user!.id,
+      });
+
+      setNotificationMessage("Saved!");
+      setTimeout(() => setNotificationMessage(null), 2000);
+    } catch (error) {
+      console.error("Failed to save notification preferences:", error);
+      setNotificationMessage("Error saving preferences");
+    } finally {
+      setNotificationLoading(false);
+    }
   }
 
   // Sign out
@@ -564,6 +623,183 @@ export function SettingsForm({
             <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
               <Check className="h-4 w-4" />
               {preferencesMessage}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* C. Email Notifications Section */}
+      <section className="rounded-2xl border border-stone-200/60 bg-white shadow-card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell className="h-5 w-5 text-brand-500" />
+          <h2 className="text-lg font-semibold text-stone-900">
+            Email Notifications
+          </h2>
+        </div>
+
+        <div className={`space-y-6 ${!notificationPrefs.email_enabled ? "opacity-50 pointer-events-none" : ""}`}>
+          {/* Master Toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Email notifications
+              </label>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={notificationPrefs.email_enabled}
+                onChange={(e) => updateNotificationPref("email_enabled", e.target.checked)}
+              />
+              <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+            </label>
+          </div>
+
+          {/* Email Frequency */}
+          <div>
+            <label className="block text-sm font-medium text-stone-700 mb-3">
+              Email frequency
+            </label>
+            <div className="flex gap-2">
+              {(["daily", "weekly", "monthly"] as EmailFrequency[]).map((freq) => (
+                <button
+                  key={freq}
+                  onClick={() => updateNotificationPref("email_frequency", freq)}
+                  className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    notificationPrefs.email_frequency === freq
+                      ? "border-brand-500 bg-brand-50 text-brand-700"
+                      : "border-stone-200 text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Preferred Day (only when weekly) */}
+          {notificationPrefs.email_frequency === "weekly" && (
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Preferred day
+              </label>
+              <select
+                value={notificationPrefs.preferred_day}
+                onChange={(e) => updateNotificationPref("preferred_day", parseInt(e.target.value))}
+                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              >
+                <option value={0}>Sunday</option>
+                <option value={1}>Monday</option>
+                <option value={2}>Tuesday</option>
+                <option value={3}>Wednesday</option>
+                <option value={4}>Thursday</option>
+                <option value={5}>Friday</option>
+                <option value={6}>Saturday</option>
+              </select>
+            </div>
+          )}
+
+          {/* Content Toggles */}
+          <div className="space-y-4 pt-4 border-t border-stone-200">
+            {/* Pregnancy Updates */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-stone-900">
+                  Pregnancy progress
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Weekly updates about your baby&apos;s development and your body
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer ml-4">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationPrefs.pregnancy_updates}
+                  onChange={() => toggleNotificationContent("pregnancy_updates")}
+                />
+                <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+
+            {/* New Resources */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-stone-900">
+                  New resources
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  When new articles match your interests and child&apos;s age
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer ml-4">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationPrefs.new_resources}
+                  onChange={() => toggleNotificationContent("new_resources")}
+                />
+                <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+
+            {/* Planning Reminders */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-stone-900">
+                  Planning reminders
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  Upcoming milestones and things to prepare
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer ml-4">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationPrefs.planning_reminders}
+                  onChange={() => toggleNotificationContent("planning_reminders")}
+                />
+                <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+
+            {/* Product Updates */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-stone-900">
+                  Product updates
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  New features and KinPath news
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer ml-4">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={notificationPrefs.product_updates}
+                  onChange={() => toggleNotificationContent("product_updates")}
+                />
+                <div className="w-9 h-5 bg-stone-300 rounded-full peer peer-checked:bg-brand-500 after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 pt-6 mt-6 border-t border-stone-200">
+          <button
+            onClick={handleSaveNotifications}
+            disabled={notificationLoading}
+            className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-medium hover:bg-brand-600 transition-colors disabled:opacity-50"
+          >
+            {notificationLoading ? "Saving..." : "Save Notifications"}
+          </button>
+          {notificationMessage && (
+            <div className="flex items-center gap-1 text-sm text-green-600 font-medium">
+              <Check className="h-4 w-4" />
+              {notificationMessage}
             </div>
           )}
         </div>

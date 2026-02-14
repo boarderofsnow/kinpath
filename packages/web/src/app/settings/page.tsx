@@ -49,6 +49,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     .eq("user_id", user.id)
     .single();
 
+  // Fetch notification preferences
+  const { data: notificationPrefs } = await supabase
+    .from("notification_preferences")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
   return (
     <>
       <AppNav currentPath="/settings" />
@@ -57,6 +64,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           user={userProfile}
           childProfiles={enrichedChildren}
           preferences={preferences}
+          notificationPrefs={notificationPrefs}
         />
       </div>
     </>
