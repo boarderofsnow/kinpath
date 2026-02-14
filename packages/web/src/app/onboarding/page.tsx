@@ -14,6 +14,23 @@ type Step = "child" | "birth" | "feeding" | "vaccines" | "lifestyle" | "topics";
 
 const STEPS: Step[] = ["child", "birth", "feeding", "vaccines", "lifestyle", "topics"];
 
+/** Descriptions for each topic shown during onboarding selection. */
+const TOPIC_DESCRIPTIONS: Record<string, string> = {
+  prenatal: "Pregnancy health, prenatal visits, and preparing for birth",
+  newborn_care: "First weeks at home, feeding basics, and newborn essentials",
+  nutrition_and_diet: "Healthy eating for you and your growing child",
+  vaccinations: "Immunization schedules and vaccine information",
+  breastfeeding: "Breastfeeding, bottle feeding, and introducing solids",
+  emotional_wellness: "Mental health, stress management, and self-care",
+  sleep: "Sleep training, routines, and solving sleep challenges",
+  milestones: "Tracking development and knowing what to expect",
+  safety: "Childproofing, safe sleep, and injury prevention",
+  postpartum: "Recovery, hormonal changes, and adjusting to parenthood",
+  infant_development: "Growth, learning, and play from 0\u201312 months",
+  toddler_development: "Walking, talking, and independence from 1\u20133 years",
+  relationships: "Keeping your partnership strong through parenthood",
+};
+
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -308,11 +325,21 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">What interests you most?</h2>
               <p className="text-sm text-gray-600">
-                Select the topics you&apos;d like to see more of. You&apos;ll still have access to everything.
+                Select the topics you&apos;d like to see more of in your feed.
+                You&apos;ll still have access to everything &mdash; this just
+                helps us personalize your experience.
               </p>
-              <div className="grid grid-cols-2 gap-2">
+              {preferences.topics_of_interest &&
+                preferences.topics_of_interest.length > 0 && (
+                  <p className="text-xs text-brand-600 font-medium">
+                    {preferences.topics_of_interest.length} topic
+                    {preferences.topics_of_interest.length === 1 ? "" : "s"} selected
+                  </p>
+                )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {TOPIC_KEYS.map((key) => {
                   const topic = TOPICS[key];
+                  const description = TOPIC_DESCRIPTIONS[key];
                   const selected = preferences.topics_of_interest?.includes(key);
                   return (
                     <button
@@ -325,13 +352,20 @@ export default function OnboardingPage() {
                             : [...(p.topics_of_interest ?? []), key],
                         }))
                       }
-                      className={`rounded-lg border-2 px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                      className={`rounded-lg border-2 px-3 py-3 text-left transition-colors ${
                         selected
-                          ? "border-brand-500 bg-brand-50 text-brand-700"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "border-brand-500 bg-brand-50"
+                          : "border-gray-200 hover:border-gray-300"
                       }`}
                     >
-                      {topic.label}
+                      <div className={`text-sm font-medium ${selected ? "text-brand-700" : "text-gray-800"}`}>
+                        {topic.label}
+                      </div>
+                      {description && (
+                        <div className="mt-0.5 text-xs text-gray-500">
+                          {description}
+                        </div>
+                      )}
                     </button>
                   );
                 })}

@@ -1,20 +1,30 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { enrichChildWithAge } from "@kinpath/shared";
+import { enrichChildWithAge, getDevelopmentStage } from "@kinpath/shared";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
+import { ResourceFeed } from "@/components/feed/resource-feed";
+import { getPersonalizedFeed } from "@/lib/resources";
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ child?: string }>;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
 
   // Check if onboarding is complete
   const { data: profile } = await supabase
     .from("users")
-    .select("onboarding_complete")
+    .select("onboarding_complete, display_name")
     .eq("id", user.id)
     .single();
 
@@ -33,8 +43,18 @@ export default async function DashboardPage() {
     enrichChildWithAge(child)
   );
 
-  // For now, use the first child's age for feed filtering
-  const activeChild = enrichedChildren[0];
+  // Determine active child (from URL param, or default to first)
+  const activeChild = params.child
+    ? enrichedChildren.find((c) => c.id === params.child) ?? enrichedChildren[0]
+    : enrichedChildren[0];
+
+  // Fetch personalized, age-filtered resources
+  const { resources, preferences } = activeChild
+    ? await getPersonalizedFeed(user.id, activeChild.age_in_weeks)
+    : { resources: [], preferences: null };
+
+  const userTopics = preferences?.topics_of_interest ?? [];
+  const stage = activeChild ? getDevelopmentStage(activeChild.age_in_weeks) : null;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
@@ -43,33 +63,44 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             Welcome back
+            {profile.display_name ? `, ${profile.display_name}` : ""}
           </h1>
           {activeChild && (
             <p className="mt-1 text-sm text-gray-600">
-              {activeChild.name} — {activeChild.age_label}
+              {activeChild.name} &mdash; {activeChild.age_label}
+              {stage && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
+                  {stage}
+                </span>
+              )}
             </p>
           )}
         </div>
         <nav className="flex items-center gap-4">
-          <a
+          <Link
             href="/settings"
             className="text-sm font-medium text-gray-600 hover:text-brand-600"
           >
             Settings
-          </a>
+          </Link>
         </nav>
       </header>
 
-      {/* Child tabs (if multiple) */}
+      {/* Child tabs (if multiple children) */}
       {enrichedChildren.length > 1 && (
         <div className="mt-6 flex gap-2">
           {enrichedChildren.map((child) => (
-            <button
+            <Link
               key={child.id}
-              className="rounded-full bg-white px-4 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-brand-50"
+              href={`/dashboard?child=${child.id}`}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
+                activeChild?.id === child.id
+                  ? "bg-brand-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-brand-50"
+              }`}
             >
               {child.name}
-            </button>
+            </Link>
           ))}
         </div>
       )}
@@ -81,39 +112,34 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* Feed placeholder */}
+      {/* Resource Feed */}
       <section className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Your Resources
-        </h2>
-        <p className="mt-2 text-sm text-gray-500">
-          Age-appropriate resources will appear here based on{" "}
-          {activeChild?.name ?? "your child"}&apos;s age and your preferences.
+        <h2 className="text-lg font-semibold text-gray-900">Your Resources</h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Personalized for {activeChild?.name ?? "your child"} &mdash;
+          showing age-appropriate content based on your interests.
         </p>
 
-        {/* Placeholder cards */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="animate-pulse rounded-xl bg-white p-6 shadow-sm"
-            >
-              <div className="h-4 w-3/4 rounded bg-gray-200" />
-              <div className="mt-3 h-3 w-full rounded bg-gray-100" />
-              <div className="mt-2 h-3 w-5/6 rounded bg-gray-100" />
+        <div className="mt-4">
+          {resources.length > 0 ? (
+            <ResourceFeed resources={resources} userTopics={userTopics} />
+          ) : (
+            <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+              <p className="text-gray-500">
+                No resources found for this age range yet. Check back soon!
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </section>
 
       {/* AI Assistant CTA */}
       <section className="mt-12 rounded-xl bg-sage-50 p-6">
-        <h3 className="font-semibold text-sage-800">
-          Have a question?
-        </h3>
+        <h3 className="font-semibold text-sage-800">Have a question?</h3>
         <p className="mt-1 text-sm text-sage-600">
           Ask our AI assistant anything about parenting, nutrition, sleep, and
-          more. Answers are grounded in our professionally-vetted resource library.
+          more. Answers are grounded in our professionally-vetted resource
+          library.
         </p>
         <button className="mt-4 rounded-lg bg-sage-500 px-4 py-2 text-sm font-medium text-white hover:bg-sage-600 transition-colors">
           Ask a Question
