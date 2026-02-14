@@ -2,17 +2,19 @@ import { z } from "zod";
 
 // ---- Child Schemas ----
 
-export const createChildSchema = z.object({
+const childBaseSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   due_date: z.string().datetime().nullable().optional(),
   dob: z.string().datetime().nullable().optional(),
   is_born: z.boolean().default(false),
-}).refine(
+});
+
+export const createChildSchema = childBaseSchema.refine(
   (data) => data.due_date || data.dob,
   { message: "Either a due date or date of birth is required" }
 );
 
-export const updateChildSchema = createChildSchema.partial();
+export const updateChildSchema = childBaseSchema.partial();
 
 // ---- Preferences Schemas ----
 

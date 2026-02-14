@@ -3,7 +3,6 @@
 -- =============================================================================
 
 -- Enable required extensions
-create extension if not exists "uuid-ossp";
 create extension if not exists "vector";      -- pgvector for AI embeddings
 
 -- =============================================================================
@@ -44,7 +43,7 @@ create trigger on_auth_user_created
 -- =============================================================================
 
 create table public.children (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
   name text not null,
   due_date date,         -- for prenatal tracking
@@ -62,7 +61,7 @@ create index idx_children_user_id on public.children(user_id);
 -- =============================================================================
 
 create table public.user_preferences (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references public.users(id) on delete cascade,
   birth_preference text check (birth_preference in ('home', 'hospital', 'birth_center', 'undecided')),
   feeding_preference text check (feeding_preference in ('breastfeeding', 'formula', 'combination', 'undecided')),
@@ -103,7 +102,7 @@ create index idx_tags_namespace on public.tags(namespace);
 -- =============================================================================
 
 create table public.resources (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   title text not null,
   slug text not null unique,
   summary text not null,
@@ -155,7 +154,7 @@ create table public.resource_tags (
 -- =============================================================================
 
 create table public.reviewers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references public.users(id) on delete cascade,
   full_name text not null,
   credentials text not null,  -- e.g., 'MD', 'RN', 'IBCLC'
@@ -169,7 +168,7 @@ create table public.reviewers (
 -- =============================================================================
 
 create table public.professional_reviews (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   resource_id uuid not null references public.resources(id) on delete cascade,
   reviewer_id uuid not null references public.reviewers(id),
   status text not null check (status in ('approved', 'rejected', 'needs_revision')),
@@ -185,7 +184,7 @@ create index idx_reviews_resource on public.professional_reviews(resource_id);
 -- =============================================================================
 
 create table public.editorial_pins (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   resource_id uuid not null references public.resources(id) on delete cascade,
   position int not null default 0,
   age_week_target int,
@@ -210,7 +209,7 @@ create table public.resource_review_schedule (
 -- =============================================================================
 
 create table public.ai_conversations (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.users(id) on delete cascade,
   child_id uuid references public.children(id) on delete set null,
   messages jsonb not null default '[]',
@@ -237,7 +236,7 @@ create table public.bookmarks (
 -- =============================================================================
 
 create table public.audit_logs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   actor_id uuid references public.users(id) on delete set null,
   action text not null,
   entity_type text not null,

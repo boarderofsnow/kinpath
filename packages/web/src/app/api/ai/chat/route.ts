@@ -3,9 +3,11 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { aiChatMessageSchema, TIER_LIMITS } from "@kinpath/shared";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+function getAnthropic() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
 
 const SYSTEM_PROMPT = `You are KinPath AI, a warm and supportive parenting assistant.
 
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
       : "";
 
     // Call Claude API
-    const response = await anthropic.messages.create({
+    const response = await getAnthropic().messages.create({
       model: "claude-sonnet-4-5-20250929",
       max_tokens: 1024,
       system: `${SYSTEM_PROMPT}\n\nRELEVANT RESOURCES:\n${resourceContext}${personalContext}`,
