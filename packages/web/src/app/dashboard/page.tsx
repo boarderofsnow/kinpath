@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge, getDevelopmentStage } from "@kinpath/shared";
+import { AppNav } from "@/components/nav/app-nav";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
 import { ResourceFeed } from "@/components/feed/resource-feed";
 import { SearchBar } from "@/components/search/search-bar";
@@ -58,40 +59,28 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const stage = activeChild ? getDevelopmentStage(activeChild.age_in_weeks) : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-stone-900">
-            Welcome back
-            {profile.display_name ? `, ${profile.display_name}` : ""}
-          </h1>
-          {activeChild && (
-            <p className="mt-1 text-sm text-stone-600">
-              {activeChild.name} &mdash; {activeChild.age_label}
-              {stage && (
-                <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
-                  {stage}
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-        <nav className="flex items-center gap-4">
-          <Link
-            href="/resources"
-            className="text-sm font-medium text-stone-600 hover:text-brand-600"
-          >
-            Browse All
-          </Link>
-          <Link
-            href="/settings"
-            className="text-sm font-medium text-stone-600 hover:text-brand-600"
-          >
-            Settings
-          </Link>
-        </nav>
-      </header>
+    <>
+      <AppNav currentPath="/dashboard" />
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        {/* Header */}
+        <header className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-stone-900">
+              Welcome back
+              {profile.display_name ? `, ${profile.display_name}` : ""}
+            </h1>
+            {activeChild && (
+              <p className="mt-1 text-sm text-stone-600">
+                {activeChild.name} &mdash; {activeChild.age_label}
+                {stage && (
+                  <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
+                    {stage}
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+        </header>
 
       {/* Search bar */}
       <div className="mt-6 max-w-md">
@@ -157,6 +146,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           Ask a Question
         </button>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { TOPICS, TOPIC_KEYS, type TopicKey } from "@kinpath/shared";
+import { AppNav } from "@/components/nav/app-nav";
 import { searchResources } from "@/lib/search";
 import { ResourceCard } from "@/components/feed/resource-card";
 import { SearchBar } from "@/components/search/search-bar";
@@ -30,22 +31,16 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <>
+      <AppNav currentPath="/resources" />
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-stone-900">Browse Resources</h1>
           <p className="mt-1 text-sm text-stone-500">
             Search and explore our full library of evidence-based parenting resources.
           </p>
         </div>
-        <Link
-          href="/dashboard"
-          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 shadow-sm hover:bg-stone-50 transition-colors"
-        >
-          Back to feed
-        </Link>
-      </div>
 
       {/* Search bar */}
       <div className="mt-6 max-w-xl">
@@ -141,6 +136,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
