@@ -40,7 +40,7 @@ export default function LandingPage() {
           <span className="text-accent-400">grows with your child</span>
         </h1>
         <p className="mt-6 max-w-xl text-lg text-white/90">
-          Evidence-based resources, professionally vetted and personalized to your
+          Evidence-based resources from trusted institutions, personalized to your
           family&apos;s values. From pregnancy through age 5, always the right
           information at the right time.
         </p>
@@ -75,9 +75,9 @@ export default function LandingPage() {
                 icon: CalendarClock,
               },
               {
-                title: "Professionally Vetted",
+                title: "Trusted Sources",
                 description:
-                  "Every resource reviewed by credentialed healthcare professionals. Evidence-based, always.",
+                  "Resources sourced from leading institutions like the AAP, CDC, WHO, and ACOG. Evidence-based, always.",
                 icon: ShieldCheck,
               },
               {
@@ -89,7 +89,7 @@ export default function LandingPage() {
               {
                 title: "AI-Powered Answers",
                 description:
-                  "Ask questions and get trustworthy answers grounded in our vetted resource library.",
+                  "Ask questions and get trustworthy answers grounded in our evidence-based resource library.",
                 icon: Sparkles,
               },
               {
@@ -194,8 +194,8 @@ export default function LandingPage() {
                 icon: GraduationCap,
               },
               {
-                number: "100%",
-                label: "Professionally Vetted",
+                number: "13",
+                label: "Trusted Institutions",
                 icon: ShieldCheck,
               },
             ].map((stat) => {

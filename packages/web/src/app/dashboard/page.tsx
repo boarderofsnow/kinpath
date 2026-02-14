@@ -139,7 +139,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <h3 className="font-semibold text-sage-800">Have a question?</h3>
         <p className="mt-1 text-sm text-sage-600">
           Ask our AI assistant anything about parenting, nutrition, sleep, and
-          more. Answers are grounded in our professionally-vetted resource
+          more. Answers are grounded in our evidence-based resource
           library.
         </p>
         <button className="mt-4 rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-accent-600 transition-colors">
