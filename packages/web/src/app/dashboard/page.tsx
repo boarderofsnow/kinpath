@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge, getDevelopmentStage } from "@kinpath/shared";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
 import { ResourceFeed } from "@/components/feed/resource-feed";
+import { SearchBar } from "@/components/search/search-bar";
 import { getPersonalizedFeed } from "@/lib/resources";
 
 interface DashboardPageProps {
@@ -78,6 +79,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
         <nav className="flex items-center gap-4">
           <Link
+            href="/resources"
+            className="text-sm font-medium text-gray-600 hover:text-brand-600"
+          >
+            Browse All
+          </Link>
+          <Link
             href="/settings"
             className="text-sm font-medium text-gray-600 hover:text-brand-600"
           >
@@ -85,6 +92,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           </Link>
         </nav>
       </header>
+
+      {/* Search bar */}
+      <div className="mt-6 max-w-md">
+        <SearchBar compact placeholder="Search all resources..." />
+      </div>
 
       {/* Child tabs (if multiple children) */}
       {enrichedChildren.length > 1 && (
