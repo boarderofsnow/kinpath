@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
-import { Link } from "expo-router";
+import { Link, type Href } from "expo-router";
 
 export default function WelcomeScreen() {
   return (
@@ -10,13 +10,13 @@ export default function WelcomeScreen() {
       </Text>
 
       <View style={styles.buttons}>
-        <Link href="/onboarding" asChild>
+        <Link href={"/onboarding" as Href} asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Get Started</Text>
           </Pressable>
         </Link>
 
-        <Link href="/dashboard" asChild>
+        <Link href={"/dashboard" as Href} asChild>
           <Pressable style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Sign In</Text>
           </Pressable>
