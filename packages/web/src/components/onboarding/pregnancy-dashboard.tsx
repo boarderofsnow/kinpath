@@ -40,10 +40,10 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-100 text-5xl">
                 {sizeComparison.emoji}
               </div>
-              <p className="mt-2 text-sm font-semibold text-gray-900">
+              <p className="mt-2 text-sm font-semibold text-stone-900">
                 Baby is the size of a {sizeComparison.object}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-stone-500">
                 ~{sizeComparison.lengthCm}cm &middot; {sizeComparison.weightDescription}
               </p>
             </div>
@@ -54,23 +54,23 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
             <div className="text-xs font-medium uppercase tracking-wide text-brand-500">
               {trimesterLabel} &middot; Week {countdown.gestationalWeek}
             </div>
-            <div className="mt-1 text-3xl font-bold text-gray-900">
+            <div className="mt-1 text-3xl font-bold text-stone-900">
               {countdown.weeksRemaining > 0 ? (
                 <>
                   {countdown.weeksRemaining}{" "}
-                  <span className="text-lg font-normal text-gray-500">
+                  <span className="text-lg font-normal text-stone-500">
                     week{countdown.weeksRemaining !== 1 ? "s" : ""}
                   </span>
                   {countdown.daysRemainder > 0 && (
                     <>
                       {" "}
                       {countdown.daysRemainder}{" "}
-                      <span className="text-lg font-normal text-gray-500">
+                      <span className="text-lg font-normal text-stone-500">
                         day{countdown.daysRemainder !== 1 ? "s" : ""}
                       </span>
                     </>
                   )}
-                  <span className="text-lg font-normal text-gray-500"> to go</span>
+                  <span className="text-lg font-normal text-stone-500"> to go</span>
                 </>
               ) : (
                 <span className="text-brand-500">Any day now!</span>
@@ -79,12 +79,12 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
 
             {/* Progress bar */}
             <div className="mt-3">
-              <div className="flex justify-between text-xs text-gray-400">
+              <div className="flex justify-between text-xs text-stone-400">
                 <span>Conception</span>
                 <span>{countdown.percentComplete}%</span>
                 <span>Due Date</span>
               </div>
-              <div className="mt-1 h-2.5 rounded-full bg-gray-200">
+              <div className="mt-1 h-2.5 rounded-full bg-stone-200">
                 <div
                   className="h-2.5 rounded-full bg-gradient-to-r from-brand-400 to-brand-500 transition-all duration-500"
                   style={{ width: `${countdown.percentComplete}%` }}
@@ -103,7 +103,7 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
 
         {/* Weekly encouragement */}
         <div className="mt-5 rounded-xl bg-white/70 p-4 text-center">
-          <p className="text-sm italic text-gray-700">
+          <p className="text-sm italic text-stone-700">
             &ldquo;{countdown.encouragement}&rdquo;
           </p>
         </div>
@@ -111,8 +111,8 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
 
       {/* Planning Tips */}
       {planningTips.length > 0 && (
-        <div className="rounded-xl bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-900">
+        <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-stone-900">
             Coming Up
           </h3>
           <div className="mt-3 space-y-3">
@@ -125,14 +125,14 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
                   className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                     tip.week === countdown.gestationalWeek
                       ? "bg-brand-100 text-brand-600"
-                      : "bg-gray-100 text-gray-400"
+                      : "bg-stone-100 text-stone-400"
                   }`}
                 >
                   {tip.week}
                 </div>
                 <div>
-                  <p className="text-sm text-gray-800">{tip.tip}</p>
-                  <span className="text-xs capitalize text-gray-400">
+                  <p className="text-sm text-stone-800">{tip.tip}</p>
+                  <span className="text-xs capitalize text-stone-400">
                     {tip.category.replace("_", " ")}
                   </span>
                 </div>

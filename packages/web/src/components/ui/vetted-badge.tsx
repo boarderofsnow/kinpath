@@ -46,14 +46,14 @@ export function VettedBadge({ vettingInfo, size = "sm" }: VettedBadgeProps) {
 
       {/* Tooltip with reviewer details */}
       {showDetails && (
-        <div className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-gray-900 px-3 py-2 text-xs text-white shadow-lg">
+        <div className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-stone-900 px-3 py-2 text-xs text-white shadow-lg">
           <div className="font-medium">Professionally Vetted</div>
-          <div className="mt-1 text-gray-300">
+          <div className="mt-1 text-stone-300">
             Reviewed by {vettingInfo.reviewer_name}, {vettingInfo.reviewer_credentials}
           </div>
-          <div className="text-gray-400">{reviewDate}</div>
+          <div className="text-stone-400">{reviewDate}</div>
           {/* Tooltip arrow */}
-          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
+          <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-stone-900" />
         </div>
       )}
     </div>
@@ -66,7 +66,7 @@ export function VettedBadge({ vettingInfo, size = "sm" }: VettedBadgeProps) {
  */
 export function UnvettedIndicator() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+    <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-xs text-stone-500">
       Community resource
     </span>
   );

@@ -5,35 +5,57 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // KinPath brand colors — adjust as needed
+        // KinPath Design System v2
+        // Primary — Warm Teal: calming, trustworthy, gender-neutral
         brand: {
-          50: "#fdf4f0",
-          100: "#fbe5dc",
-          200: "#f7c9b8",
-          300: "#f0a48a",
-          400: "#e87a5b",
-          500: "#dc5a3a", // Primary
-          600: "#c44428",
-          700: "#a33522",
-          800: "#862e21",
-          900: "#6e2a20",
+          50: "#f0fdfb",
+          100: "#cbfcf0",
+          200: "#97f8e1",
+          300: "#5aecce",
+          400: "#29d4b7",
+          500: "#10b89f", // Primary
+          600: "#099483",
+          700: "#0b776b",
+          800: "#0e5e56",
+          900: "#114e48",
         },
+        // Secondary — Modern Sage: for trust indicators, vetting, calm accents
         sage: {
-          50: "#f4f7f4",
-          100: "#e3ebe3",
-          200: "#c8d7c8",
-          300: "#a2bba2",
-          400: "#7a9c7a",
-          500: "#5a805a", // Secondary
-          600: "#466646",
-          700: "#3a5239",
-          800: "#304330",
-          900: "#293829",
+          50: "#f4f7f2",
+          100: "#e4ebe0",
+          200: "#c9d7c2",
+          300: "#a5bc9b",
+          400: "#7e9e72",
+          500: "#5f8253",
+          600: "#4b6842",
+          700: "#3c5236",
+          800: "#32432e",
+          900: "#2b3828",
+        },
+        // Accent — Warm Amber: for standout CTAs and joyful moments
+        accent: {
+          50: "#fffbeb",
+          100: "#fef3c7",
+          200: "#fde68a",
+          300: "#fcd34d",
+          400: "#fbbf24",
+          500: "#f59e0b", // Accent
+          600: "#d97706",
+          700: "#b45309",
+          800: "#92400e",
+          900: "#78350f",
         },
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        "2xl": "1rem",
+        "3xl": "1.25rem",
+      },
+      boxShadow: {
+        soft: "0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
+        card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 2px 8px -2px rgb(0 0 0 / 0.06)",
       },
     },
   },

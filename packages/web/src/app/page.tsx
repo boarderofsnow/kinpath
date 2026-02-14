@@ -9,13 +9,13 @@ export default function LandingPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/auth/login"
-            className="text-sm font-medium text-gray-700 hover:text-brand-600"
+            className="text-sm font-medium text-stone-700 hover:text-brand-600"
           >
             Log in
           </Link>
           <Link
             href="/auth/register"
-            className="rounded-full bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+            className="rounded-xl bg-accent-500 px-4 py-2 text-sm font-medium text-white hover:bg-accent-600 transition-colors"
           >
             Get Started Free
           </Link>
@@ -23,12 +23,12 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+      <section className="flex flex-1 flex-col items-center justify-center bg-gradient-to-br from-brand-900 via-brand-800 to-brand-700 px-6 py-20 text-center">
+        <h1 className="max-w-3xl text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
           Parenting guidance that{" "}
-          <span className="text-brand-500">grows with your child</span>
+          <span className="text-accent-400">grows with your child</span>
         </h1>
-        <p className="mt-6 max-w-xl text-lg text-gray-600">
+        <p className="mt-6 max-w-xl text-lg text-white/90">
           Evidence-based resources, professionally vetted and personalized to your
           family&apos;s values. From pregnancy through age 5, always the right
           information at the right time.
@@ -36,13 +36,13 @@ export default function LandingPage() {
         <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
           <Link
             href="/auth/register"
-            className="rounded-full bg-brand-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-brand-600 transition-colors"
+            className="rounded-xl bg-accent-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-accent-600 transition-colors"
           >
             Start Your Journey — Free
           </Link>
           <Link
             href="#features"
-            className="text-base font-medium text-sage-600 hover:text-sage-700"
+            className="rounded-xl border-2 border-white/30 px-6 py-2.5 text-base font-medium text-white hover:bg-white/10 transition-colors"
           >
             Learn more
           </Link>
@@ -52,7 +52,7 @@ export default function LandingPage() {
       {/* Features overview */}
       <section id="features" className="bg-white px-6 py-20 lg:px-12">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-3xl font-bold text-gray-900">
+          <h2 className="text-center text-3xl font-bold text-stone-900">
             Built for real families
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
@@ -88,11 +88,11 @@ export default function LandingPage() {
                   "We never store health records or medical data. Your family's information stays yours.",
               },
             ].map((feature) => (
-              <div key={feature.title} className="rounded-xl bg-brand-50 p-6">
-                <h3 className="text-lg font-semibold text-gray-900">
+              <div key={feature.title} className="rounded-2xl bg-white border border-stone-100 shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-stone-900">
                   {feature.title}
                 </h3>
-                <p className="mt-2 text-sm text-gray-600">
+                <p className="mt-2 text-sm text-stone-600">
                   {feature.description}
                 </p>
               </div>
@@ -102,7 +102,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 px-6 py-8 text-center text-sm text-gray-500">
+      <footer className="border-t border-stone-200 px-6 py-8 text-center text-sm text-stone-500">
         <p>&copy; {new Date().getFullYear()} KinPath. All rights reserved.</p>
         <p className="mt-1">
           Not medical advice. Always consult your pediatrician for health decisions.

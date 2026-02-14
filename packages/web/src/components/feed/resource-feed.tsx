@@ -50,7 +50,7 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               !activeFilter
                 ? "bg-brand-500 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-50 shadow-sm"
+                : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50 shadow-sm"
             }`}
           >
             All ({resources.length})
@@ -71,7 +71,7 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
                     ? "bg-brand-500 text-white"
                     : isUserTopic
                       ? "bg-brand-50 text-brand-700 hover:bg-brand-100"
-                      : "bg-white text-gray-600 hover:bg-gray-50"
+                      : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50"
                 }`}
               >
                 {topicInfo?.label ?? topicKey.replace(/_/g, " ")}
@@ -93,7 +93,7 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
         </div>
       ) : (
         <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-          <p className="text-gray-500">
+          <p className="text-stone-500">
             No resources match this filter. Try selecting a different topic.
           </p>
         </div>

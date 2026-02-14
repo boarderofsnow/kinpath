@@ -62,12 +62,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       {/* Header */}
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-stone-900">
             Welcome back
             {profile.display_name ? `, ${profile.display_name}` : ""}
           </h1>
           {activeChild && (
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-1 text-sm text-stone-600">
               {activeChild.name} &mdash; {activeChild.age_label}
               {stage && (
                 <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
@@ -80,13 +80,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <nav className="flex items-center gap-4">
           <Link
             href="/resources"
-            className="text-sm font-medium text-gray-600 hover:text-brand-600"
+            className="text-sm font-medium text-stone-600 hover:text-brand-600"
           >
             Browse All
           </Link>
           <Link
             href="/settings"
-            className="text-sm font-medium text-gray-600 hover:text-brand-600"
+            className="text-sm font-medium text-stone-600 hover:text-brand-600"
           >
             Settings
           </Link>
@@ -108,7 +108,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
                 activeChild?.id === child.id
                   ? "bg-brand-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-brand-50"
+                  : "bg-white text-stone-700 hover:bg-brand-50"
               }`}
             >
               {child.name}
@@ -126,8 +126,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {/* Resource Feed */}
       <section className="mt-8">
-        <h2 className="text-lg font-semibold text-gray-900">Your Resources</h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <h2 className="text-lg font-semibold text-stone-900">Your Resources</h2>
+        <p className="mt-1 text-sm text-stone-500">
           Personalized for {activeChild?.name ?? "your child"} &mdash;
           showing age-appropriate content based on your interests.
         </p>
@@ -137,7 +137,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <ResourceFeed resources={resources} userTopics={userTopics} />
           ) : (
             <div className="rounded-xl bg-white p-8 text-center shadow-sm">
-              <p className="text-gray-500">
+              <p className="text-stone-500">
                 No resources found for this age range yet. Check back soon!
               </p>
             </div>
@@ -153,7 +153,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           more. Answers are grounded in our professionally-vetted resource
           library.
         </p>
-        <button className="mt-4 rounded-lg bg-sage-500 px-4 py-2 text-sm font-medium text-white hover:bg-sage-600 transition-colors">
+        <button className="mt-4 rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-accent-600 transition-colors">
           Ask a Question
         </button>
       </section>

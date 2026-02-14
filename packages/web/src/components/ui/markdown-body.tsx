@@ -31,12 +31,12 @@ function markdownToHtml(markdown: string): string {
       const text = processInline(headingMatch[2]);
       const classes =
         level === 1
-          ? "text-xl font-bold text-gray-900 mt-6 mb-3"
+          ? "text-xl font-bold text-stone-900 mt-6 mb-3"
           : level === 2
-            ? "text-lg font-semibold text-gray-900 mt-5 mb-2"
+            ? "text-lg font-semibold text-stone-900 mt-5 mb-2"
             : level === 3
-              ? "text-base font-semibold text-gray-800 mt-4 mb-2"
-              : "text-sm font-semibold text-gray-800 mt-3 mb-1";
+              ? "text-base font-semibold text-stone-800 mt-4 mb-2"
+              : "text-sm font-semibold text-stone-800 mt-3 mb-1";
       output.push(`<h${level} class="${classes}">${text}</h${level}>`);
       continue;
     }
@@ -45,7 +45,7 @@ function markdownToHtml(markdown: string): string {
     const listMatch = line.match(/^[\-\*]\s+(.+)$/);
     if (listMatch) {
       if (!inList) {
-        output.push('<ul class="list-disc list-inside space-y-1 my-2 text-gray-700">');
+        output.push('<ul class="list-disc list-inside space-y-1 my-2 text-stone-700">');
         inList = true;
       }
       output.push(`<li>${processInline(listMatch[1])}</li>`);
@@ -64,7 +64,7 @@ function markdownToHtml(markdown: string): string {
     }
 
     // Regular paragraph
-    output.push(`<p class="text-gray-700 leading-relaxed my-2">${processInline(line)}</p>`);
+    output.push(`<p class="text-stone-700 leading-relaxed my-2">${processInline(line)}</p>`);
   }
 
   if (inList) {
@@ -79,7 +79,7 @@ function processInline(text: string): string {
   return (
     text
       // Bold: **text**
-      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-gray-900">$1</strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-stone-900">$1</strong>')
       // Italic: *text*
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
       // Links: [text](url)

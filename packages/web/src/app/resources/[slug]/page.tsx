@@ -48,7 +48,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       {/* Back navigation */}
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-brand-600 transition-colors"
+        className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-brand-600 transition-colors"
       >
         <svg
           className="h-4 w-4"
@@ -75,11 +75,11 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
           <UnvettedIndicator />
         </div>
 
-        <h1 className="mt-3 text-2xl font-bold text-gray-900 sm:text-3xl">
+        <h1 className="mt-3 text-2xl font-bold text-stone-900 sm:text-3xl">
           {resource.title as string}
         </h1>
 
-        <p className="mt-3 text-base text-gray-600 leading-relaxed">
+        <p className="mt-3 text-base text-stone-600 leading-relaxed">
           {resource.summary as string}
         </p>
 
@@ -103,7 +103,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       </header>
 
       {/* Divider */}
-      <hr className="mt-6 border-gray-200" />
+      <hr className="mt-6 border-stone-200" />
 
       {/* Resource body (markdown) */}
       <article className="mt-6">
@@ -132,8 +132,8 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
             </a>
           </div>
         ) : (
-          <div className="mt-8 rounded-lg bg-gray-50 p-4">
-            <p className="text-sm text-gray-600">
+          <div className="mt-8 rounded-lg bg-stone-50 p-4">
+            <p className="text-sm text-stone-600">
               <span className="font-medium">Source: </span>
               <a
                 href={resource.source_url as string}
@@ -149,10 +149,10 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
       })()}
 
       {/* Back to feed */}
-      <div className="mt-10 border-t border-gray-200 pt-6">
+      <div className="mt-10 border-t border-stone-200 pt-6">
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
+          className="inline-flex items-center gap-1 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-white hover:bg-brand-600 transition-colors"
         >
           <svg
             className="h-4 w-4"

@@ -49,14 +49,14 @@ export default function LoginPage() {
           <Link href="/" className="text-2xl font-bold text-brand-600">
             KinPath
           </Link>
-          <h1 className="mt-4 text-xl font-semibold text-gray-900">
+          <h1 className="mt-4 text-xl font-semibold text-stone-900">
             Welcome back
           </h1>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-stone-700">
               Email
             </label>
             <input
@@ -65,11 +65,11 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-stone-700">
               Password
             </label>
             <input
@@ -78,7 +78,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full rounded-xl border border-stone-200 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-brand-500 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
+            className="w-full rounded-xl bg-brand-600 py-2.5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 transition-colors"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
@@ -97,29 +97,29 @@ export default function LoginPage() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+            <div className="w-full border-t border-stone-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-brand-50 px-2 text-gray-500">or continue with</span>
+            <span className="bg-white px-2 text-stone-500">or continue with</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => handleOAuthLogin("google")}
-            className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
           >
             Google
           </button>
           <button
             onClick={() => handleOAuthLogin("apple")}
-            className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
           >
             Apple
           </button>
         </div>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-stone-600">
           Don&apos;t have an account?{" "}
           <Link href="/auth/register" className="font-medium text-brand-600 hover:text-brand-700">
             Sign up

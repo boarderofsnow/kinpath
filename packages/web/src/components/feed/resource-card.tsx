@@ -23,7 +23,7 @@ export function ResourceCard({ resource }: ResourceCardProps) {
   return (
     <Link
       href={`/resources/${resource.slug}`}
-      className="block rounded-xl bg-white p-5 shadow-sm transition-shadow hover:shadow-md group"
+      className="block rounded-2xl border border-stone-100 bg-white p-5 shadow-sm transition-all hover:shadow-md hover:border-brand-200 group"
     >
       {/* Header with type and vetting status */}
       <div className="flex items-center justify-between">
@@ -38,10 +38,10 @@ export function ResourceCard({ resource }: ResourceCardProps) {
       </div>
 
       {/* Title and summary */}
-      <h3 className="mt-2 text-base font-semibold text-gray-900 group-hover:text-brand-600 transition-colors">
+      <h3 className="mt-2 text-base font-semibold text-stone-900 group-hover:text-brand-600 transition-colors">
         {resource.title}
       </h3>
-      <p className="mt-1 text-sm text-gray-600 line-clamp-2">
+      <p className="mt-1 text-sm text-stone-600 line-clamp-2">
         {resource.summary}
       </p>
 

@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: #fdf4f0;
-    --foreground: #1a1a1a;
+    --background: #fafaf9;
+    --foreground: #1c1917;
   }
 }
 
@@ -13,4 +13,18 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Smooth transitions for interactive elements */
+a,
+button {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Modern selection color */
+::selection {
+  background-color: #cbfcf0;
+  color: #114e48;
 }

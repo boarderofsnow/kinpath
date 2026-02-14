@@ -40,7 +40,7 @@ export function SearchBar({
       <div className="relative">
         {/* Search icon */}
         <svg
-          className={`absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 ${
+          className={`absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 ${
             compact ? "h-4 w-4" : "h-5 w-5"
           }`}
           fill="none"
@@ -60,7 +60,7 @@ export function SearchBar({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={placeholder}
-          className={`w-full rounded-lg border border-gray-200 bg-white pl-10 text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400 ${
+          className={`w-full rounded-xl border border-stone-200 bg-white pl-10 text-stone-900 placeholder-stone-400 shadow-sm transition-colors focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400 ${
             compact ? "py-1.5 pr-3 text-sm" : "py-2.5 pr-4 text-sm"
           }`}
         />
@@ -72,7 +72,7 @@ export function SearchBar({
               setQuery("");
               router.push(action);
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

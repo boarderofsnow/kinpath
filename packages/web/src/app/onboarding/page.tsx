@@ -103,11 +103,11 @@ export default function OnboardingPage() {
       <div className="w-full max-w-lg space-y-8">
         {/* Progress bar */}
         <div className="space-y-2">
-          <div className="flex justify-between text-xs text-gray-500">
+          <div className="flex justify-between text-xs text-stone-500">
             <span>Step {currentStep + 1} of {STEPS.length}</span>
             <span>{Math.round(progress)}%</span>
           </div>
-          <div className="h-2 rounded-full bg-gray-200">
+          <div className="h-2 rounded-full bg-stone-200">
             <div
               className="h-2 rounded-full bg-brand-500 transition-all duration-300"
               style={{ width: `${progress}%` }}
@@ -116,12 +116,12 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step content */}
-        <div className="rounded-2xl bg-white p-8 shadow-sm">
+        <div className="rounded-2xl border border-stone-100 bg-white p-8 shadow-sm">
           {step === "child" && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Tell us about your little one</h2>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-stone-700">
                   Child&apos;s name (or nickname)
                 </label>
                 <input
@@ -129,11 +129,11 @@ export default function OnboardingPage() {
                   value={childName}
                   onChange={(e) => setChildName(e.target.value)}
                   placeholder="e.g., Baby, Emma, Little One"
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="mt-1 block w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-stone-700 mb-2">
                   Has your baby been born yet?
                 </label>
                 <div className="flex gap-3">
@@ -144,10 +144,10 @@ export default function OnboardingPage() {
                     <button
                       key={String(opt.value)}
                       onClick={() => setIsBorn(opt.value)}
-                      className={`flex-1 rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                      className={`flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                         isBorn === opt.value
                           ? "border-brand-500 bg-brand-50 text-brand-700"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          : "border-stone-200 text-stone-600 hover:border-stone-300"
                       }`}
                     >
                       {opt.label}
@@ -157,14 +157,14 @@ export default function OnboardingPage() {
               </div>
               {isBorn !== null && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-stone-700">
                     {isBorn ? "Date of birth" : "Expected due date"}
                   </label>
                   <input
                     type="date"
                     value={childDate}
                     onChange={(e) => setChildDate(e.target.value)}
-                    className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                    className="mt-1 block w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
               )}
@@ -174,7 +174,7 @@ export default function OnboardingPage() {
           {step === "birth" && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Birth preference</h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-stone-600">
                 This helps us show you the most relevant resources. You can always change this later.
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -184,10 +184,10 @@ export default function OnboardingPage() {
                     onClick={() =>
                       setPreferences((p) => ({ ...p, birth_preference: opt.value as any }))
                     }
-                    className={`rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                       preferences.birth_preference === opt.value
                         ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        : "border-stone-200 text-stone-600 hover:border-stone-300"
                     }`}
                   >
                     {opt.label}
@@ -200,7 +200,7 @@ export default function OnboardingPage() {
           {step === "feeding" && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Feeding plans</h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-stone-600">
                 Whatever you choose, we&apos;ll have resources to support you.
               </p>
               <div className="grid grid-cols-2 gap-3">
@@ -210,10 +210,10 @@ export default function OnboardingPage() {
                     onClick={() =>
                       setPreferences((p) => ({ ...p, feeding_preference: opt.value as any }))
                     }
-                    className={`rounded-lg border-2 px-4 py-3 text-sm font-medium transition-colors ${
+                    className={`rounded-xl border-2 px-4 py-3 text-sm font-medium transition-colors ${
                       preferences.feeding_preference === opt.value
                         ? "border-brand-500 bg-brand-50 text-brand-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        : "border-stone-200 text-stone-600 hover:border-stone-300"
                     }`}
                   >
                     {opt.label}
@@ -226,7 +226,7 @@ export default function OnboardingPage() {
           {step === "vaccines" && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Vaccination approach</h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-stone-600">
                 We respect every family&apos;s decision. This helps us present information in a way that&apos;s most useful to you.
               </p>
               <div className="space-y-2">
@@ -242,15 +242,15 @@ export default function OnboardingPage() {
                     onClick={() =>
                       setPreferences((p) => ({ ...p, vaccine_stance: opt.value as any }))
                     }
-                    className={`w-full rounded-lg border-2 px-4 py-3 text-left transition-colors ${
+                    className={`w-full rounded-xl border-2 px-4 py-3 text-left transition-colors ${
                       preferences.vaccine_stance === opt.value
                         ? "border-brand-500 bg-brand-50"
-                        : "border-gray-200 hover:border-gray-300"
+                        : "border-stone-200 hover:border-stone-300"
                     }`}
                   >
-                    <div className="text-sm font-medium text-gray-900">{opt.label}</div>
+                    <div className="text-sm font-medium text-stone-900">{opt.label}</div>
                     {opt.desc && (
-                      <div className="text-xs text-gray-500">{opt.desc}</div>
+                      <div className="text-xs text-stone-500">{opt.desc}</div>
                     )}
                   </button>
                 ))}
@@ -262,7 +262,7 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">A bit more about your family</h2>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-stone-700">
                   Religious or spiritual tradition (optional)
                 </label>
                 <select
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setPreferences((p) => ({ ...p, religion: e.target.value || null }))
                   }
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="mt-1 block w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 >
                   <option value="">Prefer not to say</option>
                   {TAG_NAMESPACES.faith.values.map((opt) => (
@@ -281,7 +281,7 @@ export default function OnboardingPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-stone-700">
                   Dietary preferences
                 </label>
                 <select
@@ -289,7 +289,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setPreferences((p) => ({ ...p, dietary_preference: e.target.value as any }))
                   }
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="mt-1 block w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 >
                   <option value="omnivore">No restrictions</option>
                   <option value="vegetarian">Vegetarian</option>
@@ -300,7 +300,7 @@ export default function OnboardingPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-stone-700">
                   Parenting philosophy
                 </label>
                 <select
@@ -308,7 +308,7 @@ export default function OnboardingPage() {
                   onChange={(e) =>
                     setPreferences((p) => ({ ...p, parenting_style: e.target.value as any }))
                   }
-                  className="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                  className="mt-1 block w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
                 >
                   <option value="no_preference">No strong preference</option>
                   {TAG_NAMESPACES.parenting.values.map((opt) => (
@@ -324,7 +324,7 @@ export default function OnboardingPage() {
           {step === "topics" && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">What interests you most?</h2>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-stone-600">
                 Select the topics you&apos;d like to see more of in your feed.
                 You&apos;ll still have access to everything &mdash; this just
                 helps us personalize your experience.
@@ -352,17 +352,17 @@ export default function OnboardingPage() {
                             : [...(p.topics_of_interest ?? []), key],
                         }))
                       }
-                      className={`rounded-lg border-2 px-3 py-3 text-left transition-colors ${
+                      className={`rounded-xl border-2 px-3 py-3 text-left transition-colors ${
                         selected
                           ? "border-brand-500 bg-brand-50"
-                          : "border-gray-200 hover:border-gray-300"
+                          : "border-stone-200 hover:border-stone-300"
                       }`}
                     >
-                      <div className={`text-sm font-medium ${selected ? "text-brand-700" : "text-gray-800"}`}>
+                      <div className={`text-sm font-medium ${selected ? "text-brand-700" : "text-stone-800"}`}>
                         {topic.label}
                       </div>
                       {description && (
-                        <div className="mt-0.5 text-xs text-gray-500">
+                        <div className="mt-0.5 text-xs text-stone-500">
                           {description}
                         </div>
                       )}
@@ -379,7 +379,7 @@ export default function OnboardingPage() {
           <button
             onClick={prevStep}
             disabled={currentStep === 0}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 disabled:invisible"
+            className="rounded-xl px-4 py-2 text-sm font-medium text-stone-600 hover:text-stone-900 disabled:invisible"
           >
             Back
           </button>
@@ -387,7 +387,7 @@ export default function OnboardingPage() {
             {step !== "child" && (
               <button
                 onClick={nextStep}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                className="rounded-xl px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-700"
               >
                 Skip
               </button>
@@ -395,7 +395,7 @@ export default function OnboardingPage() {
             <button
               onClick={nextStep}
               disabled={loading || (step === "child" && (!childName || isBorn === null || !childDate))}
-              className="rounded-lg bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
+              className="rounded-xl bg-brand-500 px-6 py-2 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-50 transition-colors"
             >
               {loading
                 ? "Saving..."

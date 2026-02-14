@@ -34,14 +34,14 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Browse Resources</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-stone-900">Browse Resources</h1>
+          <p className="mt-1 text-sm text-stone-500">
             Search and explore our full library of evidence-based parenting resources.
           </p>
         </div>
         <Link
           href="/dashboard"
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50 transition-colors"
+          className="rounded-lg border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-600 shadow-sm hover:bg-stone-50 transition-colors"
         >
           Back to feed
         </Link>
@@ -59,7 +59,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           className={`rounded-full px-3 py-1.5 text-sm font-medium shadow-sm transition-colors ${
             !activeTopic
               ? "bg-brand-500 text-white"
-              : "bg-white text-gray-600 hover:bg-gray-50"
+              : "bg-white text-stone-600 hover:bg-stone-50"
           }`}
         >
           All topics
@@ -77,7 +77,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               className={`rounded-full px-3 py-1.5 text-sm font-medium shadow-sm transition-colors ${
                 activeTopic === key
                   ? "bg-brand-500 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
+                  : "bg-white text-stone-600 hover:bg-stone-50"
               }`}
             >
               {topic.label}
@@ -89,7 +89,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       {/* Results info */}
       <div className="mt-6">
         {query && (
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-stone-500 mb-4">
             {total} result{total !== 1 ? "s" : ""} for &ldquo;{query}&rdquo;
             {activeTopic && (
               <> in <span className="font-medium">{TOPICS[activeTopic as TopicKey]?.label ?? activeTopic}</span></>
@@ -97,7 +97,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           </p>
         )}
         {!query && activeTopic && (
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-stone-500 mb-4">
             Showing {resources.length} resource{resources.length !== 1 ? "s" : ""} in{" "}
             <span className="font-medium">{TOPICS[activeTopic as TopicKey]?.label ?? activeTopic}</span>
           </p>
@@ -114,7 +114,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
       ) : (
         <div className="mt-4 rounded-xl bg-white p-12 text-center shadow-sm">
           <svg
-            className="mx-auto h-12 w-12 text-gray-300"
+            className="mx-auto h-12 w-12 text-stone-300"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -126,7 +126,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
               d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
             />
           </svg>
-          <p className="mt-4 text-gray-500">
+          <p className="mt-4 text-stone-500">
             {query
               ? `No resources found for "${query}". Try a different search term.`
               : "No resources available for this topic yet."}
