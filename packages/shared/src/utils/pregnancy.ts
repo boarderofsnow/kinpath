@@ -201,6 +201,71 @@ export function getPlanningTips(
   return PLANNING_TIPS.filter((tip) => tip.week >= start && tip.week <= end);
 }
 
+// =============================================================================
+// Maternal Body Changes — week-by-week "what's happening with you"
+// =============================================================================
+
+export interface MaternalChange {
+  week: number;
+  body: string; // Physical change or symptom
+  tip: string; // Self-care suggestion
+}
+
+const MATERNAL_CHANGES: MaternalChange[] = [
+  { week: 4, body: "You might notice a missed period and some light cramping.", tip: "Start prenatal vitamins if you haven't already." },
+  { week: 5, body: "Morning sickness may begin. Fatigue is very common.", tip: "Eat small, frequent meals to manage nausea." },
+  { week: 6, body: "Breast tenderness and frequent urination are typical.", tip: "Wear a comfortable, supportive bra." },
+  { week: 7, body: "Nausea may intensify. Food aversions are normal.", tip: "Ginger tea or crackers before getting up can help." },
+  { week: 8, body: "Your uterus is about the size of a large orange now.", tip: "Stay hydrated — aim for 8-10 glasses of water daily." },
+  { week: 9, body: "Your waistline may start to thicken slightly.", tip: "Gentle walks can help with fatigue and mood." },
+  { week: 10, body: "Visible veins may appear as blood volume increases.", tip: "Increase iron-rich foods to support blood production." },
+  { week: 11, body: "Bloating and gas are common this week.", tip: "Eat slowly and avoid carbonated drinks." },
+  { week: 12, body: "Morning sickness often starts to ease around now.", tip: "This is a great week to celebrate — you made it through the first trimester!" },
+  { week: 13, body: "Energy levels often improve as you enter the second trimester.", tip: "Take advantage of the energy boost for light exercise." },
+  { week: 14, body: "Your appetite may return. The baby bump may become visible.", tip: "Focus on nutrient-dense foods — protein, iron, calcium." },
+  { week: 15, body: "Nasal congestion and occasional nosebleeds can occur.", tip: "Use a humidifier at night for congestion relief." },
+  { week: 16, body: "You may feel the first flutters of movement (quickening).", tip: "Sit or lie quietly to notice those first tiny movements." },
+  { week: 17, body: "Your center of gravity is shifting. Balance may feel off.", tip: "Wear flat, supportive shoes when possible." },
+  { week: 18, body: "Leg cramps and mild swelling in feet may begin.", tip: "Stretch your calves before bed. Elevate feet when resting." },
+  { week: 19, body: "Skin changes like darkening of the linea alba are common.", tip: "Wear sunscreen — pregnancy hormones increase sun sensitivity." },
+  { week: 20, body: "Your uterus has reached your navel. Halfway there!", tip: "Consider prenatal yoga or swimming for gentle exercise." },
+  { week: 21, body: "Stretch marks may start to appear. Heartburn can increase.", tip: "Keep skin moisturized. Eat smaller meals for heartburn." },
+  { week: 22, body: "Braxton Hicks contractions may start — your body is practicing.", tip: "Stay hydrated — dehydration can trigger Braxton Hicks." },
+  { week: 23, body: "Swollen gums and occasional bleeding when brushing are normal.", tip: "Keep up dental hygiene — see your dentist if needed." },
+  { week: 24, body: "Back pain may increase as baby grows.", tip: "Practice good posture and consider a pregnancy pillow." },
+  { week: 25, body: "Trouble sleeping is common. Heartburn may worsen at night.", tip: "Sleep on your left side with a pillow between your knees." },
+  { week: 26, body: "Baby's kicks are getting stronger and more regular.", tip: "Start counting kicks — note patterns of activity." },
+  { week: 27, body: "Shortness of breath may begin as your uterus presses up.", tip: "Slow down and take breaks. This is completely normal." },
+  { week: 28, body: "Swelling in ankles and feet may increase.", tip: "Reduce salt intake and prop your feet up when resting." },
+  { week: 29, body: "Frequent urination returns as baby presses on your bladder.", tip: "Don't reduce water intake — just plan for bathroom breaks." },
+  { week: 30, body: "Fatigue returns. Your body is working hard growing baby.", tip: "Nap when you can. Accept help from others." },
+  { week: 31, body: "Braxton Hicks may become more noticeable.", tip: "Practice breathing techniques for labor preparation." },
+  { week: 32, body: "Heartburn and shortness of breath may peak.", tip: "Eat smaller meals, and prop yourself up at night." },
+  { week: 33, body: "Baby may drop lower (lightening), easing breathing.", tip: "Pelvic floor exercises can help with increased pressure." },
+  { week: 34, body: "Pelvic pressure increases. Waddle walk is normal.", tip: "Warm baths can soothe aches. Avoid very hot water." },
+  { week: 35, body: "Colostrum may begin leaking from breasts.", tip: "Nursing pads can help. This is your body preparing." },
+  { week: 36, body: "You may gain about a pound per week now.", tip: "Finalize your hospital bag and birth plan." },
+  { week: 37, body: "Cervix may begin to dilate. Nesting instinct kicks in.", tip: "Channel nesting energy wisely — rest is important too." },
+  { week: 38, body: "Increased vaginal discharge and mucus plug loss are normal.", tip: "Know the signs of labor vs. false labor." },
+  { week: 39, body: "Contractions may become more regular. Baby drops further.", tip: "Time any contractions. Call your provider if they're 5 min apart." },
+  { week: 40, body: "Due date week. Only 5% of babies arrive right on time.", tip: "Stay patient and comfortable. Your baby is almost here." },
+];
+
+/**
+ * Get maternal body changes for the current gestational week.
+ */
+export function getMaternalChanges(gestationalWeek: number): MaternalChange | null {
+  const clampedWeek = Math.max(4, Math.min(40, Math.round(gestationalWeek)));
+  return MATERNAL_CHANGES.find((m) => m.week === clampedWeek) ?? null;
+}
+
+/**
+ * Get all pregnancy milestones (for timeline rendering).
+ */
+export function getAllMilestones(): { week: number; label: string }[] {
+  return [...MILESTONES];
+}
+
 const PLANNING_TIPS: PlanningTip[] = [
   // First trimester
   { week: 5, category: "health", tip: "Schedule your first prenatal appointment", icon: "calendar" },

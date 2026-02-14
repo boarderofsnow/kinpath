@@ -5,15 +5,76 @@ import {
   getDueDateCountdown,
   getBabySizeComparison,
   getPlanningTips,
+  getMaternalChanges,
+  getAllMilestones,
 } from "@kinpath/shared";
+import {
+  Calendar,
+  Heart,
+  Moon,
+  Users,
+  ClipboardList,
+  ShoppingBag,
+  Activity,
+  Search,
+  Gift,
+  BookOpen,
+  CheckCircle,
+  Briefcase,
+  UtensilsCrossed,
+  Sun,
+  Clock,
+  Home,
+  Car,
+  FileText,
+  Megaphone,
+  Pill,
+  Scan,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
+import { MilestoneTimeline } from "./milestone-timeline";
 
 interface PregnancyDashboardProps {
   child: ChildWithAge;
 }
 
+/** Map planning tip icon names → Lucide components */
+const ICON_MAP: Record<string, LucideIcon> = {
+  calendar: Calendar,
+  pill: Pill,
+  heart: Heart,
+  moon: Moon,
+  users: Users,
+  clipboard: ClipboardList,
+  megaphone: Megaphone,
+  "shopping-bag": ShoppingBag,
+  activity: Activity,
+  search: Search,
+  scan: Scan,
+  gift: Gift,
+  book: BookOpen,
+  "file-text": FileText,
+  home: Home,
+  car: Car,
+  "check-circle": CheckCircle,
+  briefcase: Briefcase,
+  utensils: UtensilsCrossed,
+  sun: Sun,
+  clock: Clock,
+};
+
+const CATEGORY_COLORS: Record<string, string> = {
+  health: "bg-brand-100 text-brand-600",
+  preparation: "bg-amber-100 text-amber-700",
+  shopping: "bg-violet-100 text-violet-600",
+  social: "bg-sky-100 text-sky-600",
+  self_care: "bg-rose-100 text-rose-600",
+};
+
 /**
  * A rich, engaging dashboard for expecting parents.
- * Shows baby size comparison, due date countdown, encouragement, and planning tips.
+ * Shows baby size, countdown, body changes, milestone timeline, and planning tips.
  */
 export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
   const countdown = getDueDateCountdown(child);
@@ -21,6 +82,8 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
 
   const sizeComparison = getBabySizeComparison(countdown.gestationalWeek);
   const planningTips = getPlanningTips(countdown.gestationalWeek, 3);
+  const maternalChanges = getMaternalChanges(countdown.gestationalWeek);
+  const allMilestones = getAllMilestones();
 
   const trimesterLabel =
     countdown.trimester === 1
@@ -44,7 +107,8 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
                 Baby is the size of a {sizeComparison.object}
               </p>
               <p className="text-xs text-stone-500">
-                ~{sizeComparison.lengthCm}cm &middot; {sizeComparison.weightDescription}
+                ~{sizeComparison.lengthCm}cm &middot;{" "}
+                {sizeComparison.weightDescription}
               </p>
             </div>
           )}
@@ -70,7 +134,10 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
                       </span>
                     </>
                   )}
-                  <span className="text-lg font-normal text-stone-500"> to go</span>
+                  <span className="text-lg font-normal text-stone-500">
+                    {" "}
+                    to go
+                  </span>
                 </>
               ) : (
                 <span className="text-brand-500">Any day now!</span>
@@ -109,35 +176,67 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
         </div>
       </div>
 
+      {/* This Week For You — maternal body changes */}
+      {maternalChanges && (
+        <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-brand-500" />
+            <h3 className="text-sm font-semibold text-stone-900">
+              This Week for You
+            </h3>
+          </div>
+          <p className="mt-2 text-sm text-stone-700">{maternalChanges.body}</p>
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-sage-50 p-3">
+            <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-sage-500" />
+            <p className="text-xs text-sage-700">{maternalChanges.tip}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Milestone Timeline */}
+      <MilestoneTimeline
+        milestones={allMilestones}
+        currentWeek={countdown.gestationalWeek}
+      />
+
       {/* Planning Tips */}
       {planningTips.length > 0 && (
         <div className="rounded-2xl border border-stone-100 bg-white p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-stone-900">
-            Coming Up
-          </h3>
+          <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
           <div className="mt-3 space-y-3">
-            {planningTips.map((tip, i) => (
-              <div
-                key={`${tip.week}-${i}`}
-                className="flex items-start gap-3"
-              >
+            {planningTips.map((tip, i) => {
+              const IconComponent = ICON_MAP[tip.icon] ?? Calendar;
+              const colorClasses =
+                CATEGORY_COLORS[tip.category] ?? "bg-stone-100 text-stone-500";
+              const isCurrentWeek = tip.week === countdown.gestationalWeek;
+
+              return (
                 <div
-                  className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    tip.week === countdown.gestationalWeek
-                      ? "bg-brand-100 text-brand-600"
-                      : "bg-stone-100 text-stone-400"
-                  }`}
+                  key={`${tip.week}-${i}`}
+                  className="flex items-start gap-3"
                 >
-                  {tip.week}
+                  <div
+                    className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
+                      isCurrentWeek ? "bg-brand-100 text-brand-600" : colorClasses
+                    }`}
+                  >
+                    <IconComponent className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-stone-800">{tip.tip}</p>
+                    <div className="mt-0.5 flex items-center gap-2">
+                      <span className="text-xs text-stone-400">
+                        Week {tip.week}
+                      </span>
+                      <span className="text-stone-300">&middot;</span>
+                      <span className="text-xs capitalize text-stone-400">
+                        {tip.category.replace("_", " ")}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-stone-800">{tip.tip}</p>
-                  <span className="text-xs capitalize text-stone-400">
-                    {tip.category.replace("_", " ")}
-                  </span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
