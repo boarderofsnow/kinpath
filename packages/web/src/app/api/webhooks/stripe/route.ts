@@ -3,9 +3,25 @@ import Stripe from "stripe";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not set");
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-02-24.acacia",
   });
+}
+
+/**
+ * Resolve a Stripe Price ID to a KinPath subscription tier.
+ */
+function resolveTier(priceId: string | undefined): string {
+  if (
+    priceId === process.env.STRIPE_FAMILY_PRICE_ID ||
+    priceId === process.env.STRIPE_FAMILY_ANNUAL_PRICE_ID
+  ) {
+    return "family";
+  }
+  return "premium";
 }
 
 export async function POST(request: Request) {
@@ -35,19 +51,30 @@ export async function POST(request: Request) {
       // Get the subscription to determine the tier
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const priceId = subscription.items.data[0]?.price.id;
+      const tier = resolveTier(priceId);
 
-      let tier: string = "premium";
-      if (priceId === process.env.STRIPE_FAMILY_PRICE_ID) {
-        tier = "family";
+      // Use userId from metadata if available (most reliable for new customers)
+      const userId = subscription.metadata?.userId;
+
+      if (userId) {
+        // Update by user ID — works for new and existing customers
+        await supabase
+          .from("users")
+          .update({
+            subscription_tier: tier,
+            stripe_customer_id: customerId,
+          })
+          .eq("id", userId);
+      } else {
+        // Fallback: match by stripe_customer_id (existing customers)
+        await supabase
+          .from("users")
+          .update({
+            subscription_tier: tier,
+            stripe_customer_id: customerId,
+          })
+          .eq("stripe_customer_id", customerId);
       }
-
-      await supabase
-        .from("users")
-        .update({
-          subscription_tier: tier,
-          stripe_customer_id: customerId,
-        })
-        .eq("stripe_customer_id", customerId);
 
       break;
     }
@@ -58,10 +85,7 @@ export async function POST(request: Request) {
 
       if (subscription.status === "active") {
         const priceId = subscription.items.data[0]?.price.id;
-        let tier = "premium";
-        if (priceId === process.env.STRIPE_FAMILY_PRICE_ID) {
-          tier = "family";
-        }
+        const tier = resolveTier(priceId);
 
         await supabase
           .from("users")
@@ -84,7 +108,6 @@ export async function POST(request: Request) {
     }
 
     default:
-      // Unhandled event type — that's fine
       break;
   }
 

@@ -79,11 +79,21 @@ export default function PricingPage() {
     }
   };
 
-  const handleDowngrade = async () => {
+  const handleManageSubscription = async () => {
     if (!user) return;
-
-    // Redirect to account settings or show downgrade confirmation
-    router.push('/settings');
+    setCheckoutLoading('manage');
+    try {
+      const response = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!response.ok) throw new Error('Failed to open portal');
+      const data = await response.json();
+      if (data.url) window.location.href = data.url;
+    } catch (error) {
+      console.error('Portal error:', error);
+      setCheckoutLoading(null);
+    }
   };
 
   const plans = [
@@ -123,9 +133,10 @@ export default function PricingPage() {
         { name: 'Partner sharing', included: false },
         { name: 'Priority support', included: false },
       ],
-      buttonText: 'Get Premium',
-      buttonAction: 'checkout',
+      buttonText: user?.subscription_tier === 'premium' ? 'Current Plan' : 'Get Premium',
+      buttonAction: user?.subscription_tier === 'premium' ? 'manage' : 'checkout',
       buttonPlan: 'premium',
+      buttonDisabled: user?.subscription_tier === 'premium',
     },
     {
       name: 'Family',
@@ -143,9 +154,10 @@ export default function PricingPage() {
         { name: '', included: false },
         { name: '', included: false },
       ],
-      buttonText: 'Get Family',
-      buttonAction: 'checkout',
+      buttonText: user?.subscription_tier === 'family' ? 'Current Plan' : 'Get Family',
+      buttonAction: user?.subscription_tier === 'family' ? 'manage' : 'checkout',
       buttonPlan: 'family',
+      buttonDisabled: user?.subscription_tier === 'family',
     },
   ];
 
@@ -260,8 +272,8 @@ export default function PricingPage() {
                   onClick={() => {
                     if (plan.buttonAction === 'checkout') {
                       handleCheckout(plan.buttonPlan as 'premium' | 'family');
-                    } else if (plan.buttonAction === 'downgrade') {
-                      handleDowngrade();
+                    } else if (plan.buttonAction === 'manage') {
+                      handleManageSubscription();
                     }
                   }}
                   disabled={

@@ -101,6 +101,22 @@ export async function POST(request: Request) {
     };
 
     if (userData.stripe_customer_id) {
+      // Check if customer already has an active subscription
+      const existingSubs = await stripe.subscriptions.list({
+        customer: userData.stripe_customer_id,
+        status: "active",
+        limit: 1,
+      });
+
+      if (existingSubs.data.length > 0) {
+        // Already subscribed — redirect to portal to manage/change plan
+        const portal = await stripe.billingPortal.sessions.create({
+          customer: userData.stripe_customer_id,
+          return_url: `${appUrl}/settings`,
+        });
+        return NextResponse.json({ url: portal.url });
+      }
+
       sessionParams.customer = userData.stripe_customer_id;
     } else {
       sessionParams.customer_email = userData.email;
