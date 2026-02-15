@@ -13,7 +13,7 @@ import {
   type NotificationPreferences,
   type EmailFrequency,
 } from "@kinpath/shared";
-import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight } from "lucide-react";
+import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 interface User {
@@ -67,6 +67,7 @@ export function SettingsForm({
   const [newChildName, setNewChildName] = useState("");
   const [newChildIsBorn, setNewChildIsBorn] = useState<boolean | null>(null);
   const [newChildDate, setNewChildDate] = useState("");
+  const [deletingChildId, setDeletingChildId] = useState<string | null>(null);
 
   // Preferences state
   const [preferences, setPreferences] = useState<Preferences>(
@@ -193,6 +194,25 @@ export function SettingsForm({
     setNewChildName("");
     setNewChildIsBorn(null);
     setNewChildDate("");
+  }
+
+  // Remove child
+  async function handleRemoveChild(childId: string) {
+    if (deletingChildId !== childId) {
+      setDeletingChildId(childId);
+      return;
+    }
+
+    setChildrenLoading(true);
+    try {
+      await supabase.from("children").delete().eq("id", childId);
+      setChildren(children.filter((c) => c.id !== childId));
+      setDeletingChildId(null);
+    } catch (error) {
+      console.error("Failed to remove child:", error);
+    } finally {
+      setChildrenLoading(false);
+    }
   }
 
   async function handleSubmitAddChild() {
@@ -463,13 +483,40 @@ export function SettingsForm({
                         {child.is_born ? "Born" : "Expecting"}
                       </span>
                     </div>
-                    <button
-                      onClick={() => startEditChild(child)}
-                      className="rounded-lg hover:bg-stone-100 p-2 transition-colors"
-                      title="Edit child"
-                    >
-                      <Edit2 className="h-4 w-4 text-stone-600" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => startEditChild(child)}
+                        className="rounded-lg hover:bg-stone-100 p-2 transition-colors"
+                        title="Edit child"
+                      >
+                        <Edit2 className="h-4 w-4 text-stone-600" />
+                      </button>
+                      {deletingChildId === child.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleRemoveChild(child.id)}
+                            disabled={childrenLoading}
+                            className="rounded-lg bg-red-600 text-white px-2 py-1 text-xs font-medium hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setDeletingChildId(null)}
+                            className="rounded-lg border border-stone-300 text-stone-600 px-2 py-1 text-xs font-medium hover:bg-stone-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleRemoveChild(child.id)}
+                          className="rounded-lg hover:bg-red-50 p-2 transition-colors"
+                          title="Remove child"
+                        >
+                          <Trash2 className="h-4 w-4 text-stone-400 hover:text-red-500" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
