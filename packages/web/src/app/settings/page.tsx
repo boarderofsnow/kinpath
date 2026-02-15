@@ -25,7 +25,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   // Fetch user profile
   const { data: userProfile } = await supabase
     .from("users")
-    .select("id, display_name, email")
+    .select("id, display_name, email, subscription_tier, stripe_customer_id")
     .eq("id", user.id)
     .single();
 

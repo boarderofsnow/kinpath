@@ -13,12 +13,15 @@ import {
   type NotificationPreferences,
   type EmailFrequency,
 } from "@kinpath/shared";
-import { Edit2, Plus, Check, Bell } from "lucide-react";
+import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 interface User {
   id: string;
   display_name: string | null;
   email: string;
+  subscription_tier?: string;
+  stripe_customer_id?: string | null;
 }
 
 interface Preferences {
@@ -100,6 +103,7 @@ export function SettingsForm({
   const [accountLoading, setAccountLoading] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   // Profile save
   async function handleSaveProfile() {
@@ -305,6 +309,27 @@ export function SettingsForm({
       setDeleteConfirm(false);
     }
   }
+
+  // Manage subscription via Stripe portal
+  async function handleManageSubscription() {
+    setPortalLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) throw new Error("Failed to open billing portal");
+      const data = await res.json();
+      if (data.url) window.location.href = data.url;
+    } catch (error) {
+      console.error("Portal error:", error);
+      setPortalLoading(false);
+    }
+  }
+
+  const tier = user?.subscription_tier ?? "free";
+  const isFree = tier === "free";
+  const tierLabel = tier === "family" ? "Family" : tier === "premium" ? "Premium" : "Free";
 
   return (
     <div className="space-y-8">
@@ -830,7 +855,60 @@ export function SettingsForm({
         </div>
       </section>
 
-      {/* D. Account Section */}
+      {/* D. Subscription Section */}
+      <section id="subscription" className="rounded-2xl border border-stone-200/60 bg-white shadow-card p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="h-5 w-5 text-stone-700" />
+          <h2 className="text-lg font-semibold text-stone-900">Subscription</h2>
+        </div>
+
+        <div className="rounded-xl border border-stone-200/60 bg-stone-50 p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                {!isFree && <Crown className="h-4 w-4 text-accent-500" />}
+                <p className="font-semibold text-stone-900">
+                  {tierLabel} Plan
+                </p>
+              </div>
+              <p className="mt-1 text-sm text-stone-600">
+                {isFree
+                  ? "5 AI questions/month, 1 child profile, basic resources"
+                  : tier === "premium"
+                  ? "Unlimited AI, full library, bookmarks, email digests"
+                  : "Everything in Premium plus partner sharing"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {isFree ? (
+            <Link
+              href="/pricing"
+              className="flex items-center justify-center gap-2 w-full rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-accent-600 transition-colors"
+            >
+              Upgrade Plan
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          ) : (
+            <>
+              <button
+                onClick={handleManageSubscription}
+                disabled={portalLoading}
+                className="w-full rounded-xl border border-stone-200/60 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors disabled:opacity-50"
+              >
+                {portalLoading ? "Opening..." : "Manage Subscription & Billing"}
+              </button>
+              <p className="text-xs text-stone-500 text-center">
+                Change plan, update payment method, or cancel
+              </p>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* E. Account Section */}
       <section className="rounded-2xl border border-stone-200/60 bg-white shadow-card p-6">
         <h2 className="text-lg font-semibold text-stone-900 mb-4">Account</h2>
 
