@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Home, BookOpen, Settings, MessageCircle } from "lucide-react";
 
 interface AppNavProps {
@@ -33,8 +34,8 @@ export function AppNav({ currentPath }: AppNavProps) {
     <div className="border-b border-stone-200/60 bg-white">
       <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/dashboard" className="text-lg font-bold text-brand-600">
-          KinPath
+        <Link href="/dashboard">
+          <Image src="/kinpath-logo.png" alt="KinPath" width={120} height={36} className="h-8 w-auto" priority />
         </Link>
 
         {/* Nav Links */}

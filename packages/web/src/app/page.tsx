@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   CalendarClock,
   ShieldCheck,
@@ -16,7 +17,9 @@ export default function LandingPage() {
     <main className="flex min-h-screen flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12">
-        <span className="text-xl font-bold text-brand-600">KinPath</span>
+        <Link href="/">
+          <Image src="/kinpath-logo.png" alt="KinPath" width={130} height={40} className="h-9 w-auto" priority />
+        </Link>
         <div className="flex items-center gap-4">
           <Link
             href="/auth/login"
@@ -251,7 +254,7 @@ export default function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-3">
             {/* Column 1: About */}
             <div>
-              <h3 className="font-semibold text-stone-900">KinPath</h3>
+              <Image src="/kinpath-logo.png" alt="KinPath" width={100} height={30} className="h-7 w-auto" />
               <p className="mt-2 text-sm text-stone-600">
                 Evidence-based parenting guidance that grows with your family.
                 Personalized, professional, and always there when you need it.

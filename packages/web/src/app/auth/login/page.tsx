@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -46,8 +47,8 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-bold text-brand-600">
-            KinPath
+          <Link href="/">
+            <Image src="/kinpath-logo.png" alt="KinPath" width={140} height={42} className="h-10 w-auto mx-auto" priority />
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-stone-900">
             Welcome back
