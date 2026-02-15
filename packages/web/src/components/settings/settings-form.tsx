@@ -13,7 +13,7 @@ import {
   type NotificationPreferences,
   type EmailFrequency,
 } from "@kinpath/shared";
-import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, Trash2 } from "lucide-react";
+import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 
 interface User {
@@ -510,10 +510,10 @@ export function SettingsForm({
                       ) : (
                         <button
                           onClick={() => handleRemoveChild(child.id)}
-                          className="rounded-lg hover:bg-red-50 p-2 transition-colors"
+                          className="rounded-lg hover:bg-stone-100 p-2 transition-colors"
                           title="Remove child"
                         >
-                          <Trash2 className="h-4 w-4 text-stone-400 hover:text-red-500" />
+                          <X className="h-4 w-4 text-stone-400 hover:text-stone-600" />
                         </button>
                       )}
                     </div>
