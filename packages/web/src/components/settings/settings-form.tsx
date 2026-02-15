@@ -62,6 +62,12 @@ export function SettingsForm({
   const [editChildDate, setEditChildDate] = useState("");
   const [childrenLoading, setChildrenLoading] = useState(false);
 
+  // Add child form state
+  const [showAddChild, setShowAddChild] = useState(false);
+  const [newChildName, setNewChildName] = useState("");
+  const [newChildIsBorn, setNewChildIsBorn] = useState<boolean | null>(null);
+  const [newChildDate, setNewChildDate] = useState("");
+
   // Preferences state
   const [preferences, setPreferences] = useState<Preferences>(
     initialPreferences ?? {
@@ -175,13 +181,22 @@ export function SettingsForm({
   }
 
   // Add child
-  async function handleAddChild() {
-    const newChildName = prompt("Child's name (or nickname):");
-    if (!newChildName) return;
+  function handleShowAddChild() {
+    setShowAddChild(true);
+    setNewChildName("");
+    setNewChildIsBorn(null);
+    setNewChildDate("");
+  }
 
-    const isBorn = confirm("Has this baby been born yet?");
-    const dateStr = prompt(isBorn ? "Date of birth (YYYY-MM-DD):" : "Due date (YYYY-MM-DD):");
-    if (!dateStr) return;
+  function handleCancelAddChild() {
+    setShowAddChild(false);
+    setNewChildName("");
+    setNewChildIsBorn(null);
+    setNewChildDate("");
+  }
+
+  async function handleSubmitAddChild() {
+    if (!newChildName.trim() || newChildIsBorn === null || !newChildDate) return;
 
     setChildrenLoading(true);
     try {
@@ -189,10 +204,10 @@ export function SettingsForm({
         .from("children")
         .insert({
           user_id: user!.id,
-          name: newChildName,
-          is_born: isBorn,
-          dob: isBorn ? dateStr : null,
-          due_date: !isBorn ? dateStr : null,
+          name: newChildName.trim(),
+          is_born: newChildIsBorn,
+          dob: newChildIsBorn ? newChildDate : null,
+          due_date: !newChildIsBorn ? newChildDate : null,
         })
         .select()
         .single();
@@ -200,9 +215,9 @@ export function SettingsForm({
       if (newChild) {
         setChildren([...children, enrichChildWithAge(newChild)]);
       }
+      handleCancelAddChild();
     } catch (error) {
       console.error("Failed to add child:", error);
-      alert("Failed to add child");
     } finally {
       setChildrenLoading(false);
     }
@@ -466,14 +481,98 @@ export function SettingsForm({
           </p>
         )}
 
-        <button
-          onClick={handleAddChild}
-          disabled={childrenLoading}
-          className="flex items-center gap-2 rounded-xl border border-dashed border-stone-300 px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors w-full justify-center disabled:opacity-50"
-        >
-          <Plus className="h-4 w-4" />
-          Add Another Child
-        </button>
+        {showAddChild ? (
+          <div className="rounded-xl border border-brand-200 bg-brand-50/30 p-4 space-y-4">
+            <h3 className="text-sm font-semibold text-stone-900">Add a child</h3>
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-1">
+                Name or nickname
+              </label>
+              <input
+                type="text"
+                value={newChildName}
+                onChange={(e) => setNewChildName(e.target.value)}
+                placeholder="e.g. Emma"
+                className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                autoFocus
+              />
+            </div>
+
+            {/* Born yet? */}
+            <div>
+              <label className="block text-sm font-medium text-stone-700 mb-2">
+                Has this child been born yet?
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setNewChildIsBorn(true); setNewChildDate(""); }}
+                  className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                    newChildIsBorn === true
+                      ? "border-brand-500 bg-brand-50 text-brand-700"
+                      : "border-stone-200 text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setNewChildIsBorn(false); setNewChildDate(""); }}
+                  className={`flex-1 rounded-xl border-2 px-4 py-2.5 text-sm font-medium transition-colors ${
+                    newChildIsBorn === false
+                      ? "border-brand-500 bg-brand-50 text-brand-700"
+                      : "border-stone-200 text-stone-600 hover:border-stone-300"
+                  }`}
+                >
+                  Not yet
+                </button>
+              </div>
+            </div>
+
+            {/* Date input — only show after born/not-born selection */}
+            {newChildIsBorn !== null && (
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">
+                  {newChildIsBorn ? "Date of birth" : "Expected due date"}
+                </label>
+                <input
+                  type="date"
+                  value={newChildDate}
+                  onChange={(e) => setNewChildDate(e.target.value)}
+                  className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
+                />
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleSubmitAddChild}
+                disabled={childrenLoading || !newChildName.trim() || newChildIsBorn === null || !newChildDate}
+                className="rounded-xl bg-brand-500 text-white px-4 py-2 text-sm font-medium hover:bg-brand-600 transition-colors disabled:opacity-50"
+              >
+                {childrenLoading ? "Adding..." : "Add Child"}
+              </button>
+              <button
+                onClick={handleCancelAddChild}
+                className="rounded-xl border border-stone-300 text-stone-600 px-4 py-2 text-sm font-medium hover:bg-stone-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={handleShowAddChild}
+            disabled={childrenLoading}
+            className="flex items-center gap-2 rounded-xl border border-dashed border-stone-300 px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-50 transition-colors w-full justify-center disabled:opacity-50"
+          >
+            <Plus className="h-4 w-4" />
+            Add Another Child
+          </button>
+        )}
       </section>
 
       {/* C. Preferences Section */}
