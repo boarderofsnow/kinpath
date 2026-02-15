@@ -98,6 +98,8 @@ export function SettingsForm({
   const [notificationMessage, setNotificationMessage] = useState<string | null>(null);
 
   const [accountLoading, setAccountLoading] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Profile save
   async function handleSaveProfile() {
@@ -279,6 +281,29 @@ export function SettingsForm({
     setAccountLoading(true);
     await supabase.auth.signOut();
     router.push("/");
+  }
+
+  // Delete account
+  async function handleDeleteAccount() {
+    if (!deleteConfirm) {
+      setDeleteConfirm(true);
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete account");
+      }
+      await supabase.auth.signOut();
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+      setDeleteLoading(false);
+      setDeleteConfirm(false);
+    }
   }
 
   return (
@@ -819,11 +844,28 @@ export function SettingsForm({
           </button>
 
           <button
-            disabled
-            className="w-full rounded-xl px-4 py-2 text-sm font-medium text-stone-500 cursor-not-allowed"
+            onClick={handleDeleteAccount}
+            disabled={deleteLoading}
+            className={`w-full rounded-xl px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
+              deleteConfirm
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "border border-red-200 text-red-600 hover:bg-red-50"
+            }`}
           >
-            Delete Account
+            {deleteLoading
+              ? "Deleting..."
+              : deleteConfirm
+              ? "Confirm: Delete my account permanently"
+              : "Delete Account"}
           </button>
+          {deleteConfirm && !deleteLoading && (
+            <button
+              onClick={() => setDeleteConfirm(false)}
+              className="w-full rounded-xl px-4 py-2 text-sm font-medium text-stone-500 hover:text-stone-700"
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </section>
     </div>

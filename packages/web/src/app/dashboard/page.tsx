@@ -9,6 +9,7 @@ import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard"
 import { ResourceFeed } from "@/components/feed/resource-feed";
 import { SearchBar } from "@/components/search/search-bar";
 import { getPersonalizedFeed } from "@/lib/resources";
+import { UpgradeBanner } from "@/components/ui/upgrade-banner";
 
 interface DashboardPageProps {
   searchParams: Promise<{ child?: string }>;
@@ -26,7 +27,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Check if onboarding is complete
   const { data: profile } = await supabase
     .from("users")
-    .select("onboarding_complete, display_name")
+    .select("onboarding_complete, display_name, subscription_tier")
     .eq("id", user.id)
     .single();
 
@@ -57,6 +58,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const userTopics = preferences?.topics_of_interest ?? [];
   const stage = activeChild ? getDevelopmentStage(activeChild.age_in_weeks) : null;
+  const tier = profile.subscription_tier ?? "free";
+  const isFree = tier === "free";
+  // Free users see a preview of 3 resources; paid users see all
+  const displayResources = isFree ? resources.slice(0, 3) : resources;
 
   return (
     <>
@@ -122,8 +127,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </p>
 
         <div className="mt-4">
-          {resources.length > 0 ? (
-            <ResourceFeed resources={resources} userTopics={userTopics} />
+          {displayResources.length > 0 ? (
+            <ResourceFeed resources={displayResources} userTopics={userTopics} />
           ) : (
             <div className="rounded-xl bg-white p-8 text-center shadow-card">
               <p className="text-stone-500">
@@ -132,6 +137,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </div>
           )}
         </div>
+
+        {isFree && resources.length > 3 && (
+          <div className="mt-4">
+            <UpgradeBanner feature="the full resource library" />
+          </div>
+        )}
       </section>
 
       {/* AI Assistant CTA */}

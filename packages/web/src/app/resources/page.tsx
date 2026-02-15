@@ -8,6 +8,7 @@ import { AppNav } from "@/components/nav/app-nav";
 import { searchResources } from "@/lib/search";
 import { ResourceCard } from "@/components/feed/resource-card";
 import { SearchBar } from "@/components/search/search-bar";
+import { UpgradeBanner } from "@/components/ui/upgrade-banner";
 
 interface BrowsePageProps {
   searchParams: Promise<{ q?: string; topic?: string }>;
@@ -21,6 +22,16 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
+
+  // Fetch subscription tier
+  const { data: profile } = await supabase
+    .from("users")
+    .select("subscription_tier")
+    .eq("id", user.id)
+    .single();
+
+  const tier = profile?.subscription_tier ?? "free";
+  const isFree = tier === "free";
 
   const query = params.q ?? "";
   const activeTopic = params.topic ?? "";
@@ -101,11 +112,18 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
       {/* Results grid */}
       {resources.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {resources.map((resource) => (
-            <ResourceCard key={resource.id} resource={resource} />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(isFree ? resources.slice(0, 6) : resources).map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
+          </div>
+          {isFree && resources.length > 6 && (
+            <div className="mt-6">
+              <UpgradeBanner feature="the full resource library" />
+            </div>
+          )}
+        </>
       ) : (
         <div className="mt-4 rounded-xl bg-white p-12 text-center shadow-card">
           <svg
