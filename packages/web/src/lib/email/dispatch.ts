@@ -1,9 +1,9 @@
-import { resend, EMAIL_FROM } from "./client";
+import { getResend, EMAIL_FROM } from "./client";
 import { buildWeeklyDigest, WeeklyDigestData } from "./templates/weekly-digest";
 import { buildMilestoneAlert, MilestoneAlertData } from "./templates/milestone-alert";
 
 export async function sendWeeklyDigest(to: string, data: WeeklyDigestData) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: EMAIL_FROM,
     to,
     subject: `${data.childName}'s Week ${data.gestationalWeek ?? ""} Update — KinPath`,
@@ -12,7 +12,7 @@ export async function sendWeeklyDigest(to: string, data: WeeklyDigestData) {
 }
 
 export async function sendMilestoneAlert(to: string, data: MilestoneAlertData) {
-  return resend.emails.send({
+  return getResend().emails.send({
     from: EMAIL_FROM,
     to,
     subject: `Milestone: ${data.milestoneName} — ${data.childName}`,
