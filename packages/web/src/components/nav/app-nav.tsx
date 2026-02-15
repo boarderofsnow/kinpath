@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Home, BookOpen, Settings } from "lucide-react";
+import { Home, BookOpen, Settings, MessageCircle } from "lucide-react";
 
 interface AppNavProps {
   currentPath: string; // e.g. "/dashboard", "/resources", "/settings"
@@ -16,6 +16,11 @@ export function AppNav({ currentPath }: AppNavProps) {
       label: "Browse",
       href: "/resources",
       icon: BookOpen,
+    },
+    {
+      label: "Chat",
+      href: "/chat",
+      icon: MessageCircle,
     },
     {
       label: "Settings",

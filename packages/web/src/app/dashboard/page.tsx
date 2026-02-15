@@ -142,9 +142,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           more. Answers are grounded in our evidence-based resource
           library.
         </p>
-        <button className="mt-4 rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-accent-600 transition-colors">
+        <Link href="/chat" className="mt-4 inline-block rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-accent-600 transition-colors">
           Ask a Question
-        </button>
+        </Link>
       </section>
       </div>
     </>
