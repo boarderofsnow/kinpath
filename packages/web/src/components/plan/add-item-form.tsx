@@ -1,21 +1,33 @@
 "use client";
 
 import { useState } from "react";
+import type { ChildWithAge } from "@kinpath/shared";
+import { ChildTagSelector } from "./child-tag-selector";
 
 interface AddItemFormProps {
-  onSave: (title: string, description: string, dueDate: string | null) => void;
+  onSave: (title: string, description: string, dueDate: string | null, childIds?: string[]) => void;
   onCancel: () => void;
+  childProfiles?: ChildWithAge[];
+  defaultChildIds?: string[];
 }
 
-export function AddItemForm({ onSave, onCancel }: AddItemFormProps) {
+export function AddItemForm({
+  onSave,
+  onCancel,
+  childProfiles,
+  defaultChildIds,
+}: AddItemFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [selectedChildIds, setSelectedChildIds] = useState<string[]>(
+    defaultChildIds ?? []
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onSave(title.trim(), description.trim(), dueDate || null);
+    onSave(title.trim(), description.trim(), dueDate || null, selectedChildIds);
   };
 
   return (
@@ -38,6 +50,17 @@ export function AddItemForm({ onSave, onCancel }: AddItemFormProps) {
         placeholder="Add a note (optional)"
         className="mt-2 w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
       />
+
+      {childProfiles && childProfiles.length > 1 && (
+        <div className="mt-3">
+          <ChildTagSelector
+            childProfiles={childProfiles}
+            selectedIds={selectedChildIds}
+            onChange={setSelectedChildIds}
+          />
+        </div>
+      )}
+
       <div className="mt-2 flex items-center gap-3">
         <input
           type="date"

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { ChecklistItem } from "@kinpath/shared";
+import type { ChecklistItem, ChildWithAge } from "@kinpath/shared";
 import { X, Calendar } from "lucide-react";
 
 interface ChecklistItemRowProps {
   item: ChecklistItem;
+  childProfiles?: ChildWithAge[];
   onToggle: (id: string, completed: boolean) => void;
   onDateChange: (id: string, newDate: string) => void;
   onDelete: (id: string) => void;
@@ -13,12 +14,20 @@ interface ChecklistItemRowProps {
 
 export function ChecklistItemRow({
   item,
+  childProfiles,
   onToggle,
   onDateChange,
   onDelete,
 }: ChecklistItemRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const displayDate = item.due_date ?? item.suggested_date;
+
+  const showChildTags =
+    childProfiles &&
+    childProfiles.length > 1 &&
+    item.child_ids &&
+    item.child_ids.length > 0 &&
+    item.child_ids.length < childProfiles.length;
 
   return (
     <div className="group flex items-start gap-3 px-5 py-3 transition-colors hover:bg-stone-50">
@@ -48,9 +57,7 @@ export function ChecklistItemRow({
       <div className="min-w-0 flex-1">
         <p
           className={`text-sm font-medium ${
-            item.is_completed
-              ? "text-stone-400 line-through"
-              : "text-stone-800"
+            item.is_completed ? "text-stone-400 line-through" : "text-stone-800"
           }`}
         >
           {item.title}
@@ -61,24 +68,34 @@ export function ChecklistItemRow({
           )}
         </p>
         {item.description && (
-          <p
-            className={`mt-0.5 text-xs ${
-              item.is_completed ? "text-stone-300" : "text-stone-500"
-            }`}
-          >
+          <p className={`mt-0.5 text-xs ${item.is_completed ? "text-stone-300" : "text-stone-500"}`}>
             {item.description}
           </p>
         )}
 
-        {/* Date display / editor */}
-        <div className="mt-1 flex items-center gap-2">
-          <Calendar className="h-3 w-3 text-stone-400" />
-          <input
-            type="date"
-            value={displayDate ?? ""}
-            onChange={(e) => onDateChange(item.id, e.target.value)}
-            className="rounded border-none bg-transparent p-0 text-xs text-stone-500 focus:outline-none focus:ring-0"
-          />
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3 text-stone-400" />
+            <input
+              type="date"
+              value={displayDate ?? ""}
+              onChange={(e) => onDateChange(item.id, e.target.value)}
+              className="rounded border-none bg-transparent p-0 text-xs text-stone-500 focus:outline-none focus:ring-0"
+            />
+          </div>
+
+          {showChildTags &&
+            item.child_ids!.map((cid) => {
+              const child = childProfiles!.find((c) => c.id === cid);
+              return child ? (
+                <span
+                  key={cid}
+                  className="rounded-full bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-600"
+                >
+                  {child.name}
+                </span>
+              ) : null;
+            })}
         </div>
       </div>
 

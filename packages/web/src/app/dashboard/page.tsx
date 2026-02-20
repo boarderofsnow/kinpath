@@ -4,8 +4,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge, getDevelopmentStage } from "@kinpath/shared";
+import type { ChecklistItem } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
+import { PostBirthDashboard } from "@/components/dashboard/post-birth-dashboard";
 import { ResourceFeed } from "@/components/feed/resource-feed";
 import { SearchBar } from "@/components/search/search-bar";
 import { getPersonalizedFeed } from "@/lib/resources";
@@ -55,6 +57,28 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const { resources, preferences } = activeChild
     ? await getPersonalizedFeed(user.id, activeChild.age_in_weeks)
     : { resources: [], preferences: null };
+
+  // Fetch checklist items for the active child (for Coming Up tile on born children)
+  let activeChildChecklist: ChecklistItem[] = [];
+  if (activeChild?.is_born) {
+    const { data: rawItems } = await supabase
+      .from("checklist_items")
+      .select("*, checklist_item_children(child_id)")
+      .eq("user_id", user.id)
+      .order("sort_order", { ascending: true });
+
+    activeChildChecklist = (rawItems ?? []).map((row: any) => {
+      const junctionRows = row.checklist_item_children ?? [];
+      const childIds = junctionRows.map((j: { child_id: string }) => j.child_id);
+      const { checklist_item_children: _, ...item } = row;
+      return { ...item, child_ids: childIds } as ChecklistItem;
+    }).filter((item: ChecklistItem) => {
+      if (item.child_ids && item.child_ids.length > 0) {
+        return item.child_ids.includes(activeChild.id);
+      }
+      return item.child_id === activeChild.id;
+    });
+  }
 
   const userTopics = preferences?.topics_of_interest ?? [];
   const stage = activeChild ? getDevelopmentStage(activeChild.age_in_weeks) : null;
@@ -115,6 +139,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       {activeChild && !activeChild.is_born && (
         <section className="mt-8">
           <PregnancyDashboard child={activeChild} />
+        </section>
+      )}
+
+      {/* Post-Birth Dashboard (for born children) */}
+      {activeChild && activeChild.is_born && (
+        <section className="mt-8">
+          <PostBirthDashboard child={activeChild} checklistItems={activeChildChecklist} />
         </section>
       )}
 

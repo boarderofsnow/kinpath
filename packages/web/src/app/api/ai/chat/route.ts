@@ -13,14 +13,15 @@ const SYSTEM_PROMPT = `You are KinPath AI, a warm and supportive parenting assis
 
 RULES:
 - Always ground your answers in the provided resource excerpts when available
-- Cite resources by title when referencing them
+- When referencing a resource, cite it using a bracketed number like [1], [2] matching the order of the RELEVANT RESOURCES provided below
 - Never provide medical diagnoses or treatment plans
 - For urgent medical concerns, always recommend contacting a pediatrician or calling emergency services
 - Be warm, supportive, and non-judgmental regardless of parenting choices
 - Respect the user's stated preferences (e.g., vaccine stance, feeding method) — present information neutrally
 - If a question falls outside your vetted knowledge, say so honestly
 - Never store, request, or reference protected health information
-- Keep responses concise but thorough (aim for 2-4 paragraphs)`;
+- Keep responses concise but thorough (aim for 2-4 paragraphs)
+- Use markdown formatting: **bold** for emphasis, bullet lists for multiple points, numbered lists for steps`;
 
 export async function POST(request: Request) {
   try {
@@ -87,10 +88,10 @@ export async function POST(request: Request) {
       })
       .limit(5);
 
-    // Build context from retrieved resources
+    // Build context from retrieved resources (numbered for citation)
     const resourceContext = resources?.length
       ? resources
-          .map((r) => `## ${r.title}\n${r.summary}\n\n${r.body.slice(0, 500)}`)
+          .map((r, i) => `[${i + 1}] ${r.title}\n${r.summary}\n\n${r.body.slice(0, 500)}`)
           .join("\n\n---\n\n")
       : "No specific resources found for this query.";
 
@@ -118,18 +119,23 @@ export async function POST(request: Request) {
 
     // Save conversation
     const citedResourceIds = resources?.map((r) => r.id) ?? [];
-    await supabase.from("ai_conversations").insert({
-      user_id: user.id,
-      child_id: child_id ?? null,
-      messages: [
-        { role: "user", content: message },
-        { role: "assistant", content: assistantMessage },
-      ],
-      cited_resource_ids: citedResourceIds,
-    });
+    const { data: savedConversation } = await supabase
+      .from("ai_conversations")
+      .insert({
+        user_id: user.id,
+        child_id: child_id ?? null,
+        messages: [
+          { role: "user", content: message },
+          { role: "assistant", content: assistantMessage },
+        ],
+        cited_resource_ids: citedResourceIds,
+      })
+      .select("id")
+      .single();
 
     return NextResponse.json({
       message: assistantMessage,
+      conversation_id: savedConversation?.id ?? null,
       cited_resources: resources?.map((r) => ({
         id: r.id,
         title: r.title,

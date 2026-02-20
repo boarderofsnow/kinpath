@@ -4,3 +4,5 @@ export * from "./resource";
 export * from "./subscription";
 export * from "./notification";
 export * from "./checklist";
+export * from "./conversation";
+export * from "./doctor";

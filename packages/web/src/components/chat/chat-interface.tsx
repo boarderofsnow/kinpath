@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChildWithAge } from "@kinpath/shared";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -9,8 +10,13 @@ import {
   Loader2,
   AlertCircle,
   Sparkles,
-  ChevronDown,
+  Bookmark,
+  BookmarkCheck,
+  Archive,
+  Stethoscope,
+  Check,
 } from "lucide-react";
+import { MarkdownBody } from "@/components/ui/markdown-body";
 
 interface ChatInterfaceProps {
   childProfiles: ChildWithAge[];
@@ -21,7 +27,9 @@ interface ChatInterfaceProps {
 interface Message {
   role: "user" | "assistant";
   content: string;
+  conversation_id?: string | null;
   cited_resources?: Array<{ id: string; title: string }>;
+  is_saved?: boolean;
 }
 
 export function ChatInterface({
@@ -39,6 +47,8 @@ export function ChatInterface({
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(
     null
   );
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [addedToDoctorList, setAddedToDoctorList] = useState<Set<number>>(new Set());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -126,13 +136,15 @@ export function ChatInterface({
 
       const data = await response.json();
 
-      // Add AI message with cited resources
+      // Add AI message with cited resources and conversation_id
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content: data.content || data.message,
+          conversation_id: data.conversation_id,
           cited_resources: data.cited_resources,
+          is_saved: false,
         },
       ]);
 
@@ -151,6 +163,76 @@ export function ChatInterface({
     }
   };
 
+  const handleSaveConversation = async (msg: Message, msgIdx: number) => {
+    if (!msg.conversation_id || savingId) return;
+
+    setSavingId(msg.conversation_id);
+    try {
+      if (msg.is_saved) {
+        // Unsave
+        await fetch("/api/chat/save", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversation_id: msg.conversation_id }),
+        });
+        setMessages((prev) =>
+          prev.map((m, i) => (i === msgIdx ? { ...m, is_saved: false } : m))
+        );
+      } else {
+        // Save
+        await fetch("/api/chat/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversation_id: msg.conversation_id }),
+        });
+        setMessages((prev) =>
+          prev.map((m, i) => (i === msgIdx ? { ...m, is_saved: true } : m))
+        );
+      }
+    } catch {
+      // Silently fail — not critical
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleAddToDoctorList = async (msg: Message, msgIdx: number) => {
+    if (addedToDoctorList.has(msgIdx)) return;
+
+    // Find the preceding user message to use as title
+    let title = "Chat topic";
+    for (let i = msgIdx - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        title = messages[i].content.slice(0, 120);
+        break;
+      }
+    }
+
+    const childIds = selectedChildId ? [selectedChildId] : childProfiles.map((c) => c.id);
+
+    const { data, error: insertErr } = await supabase
+      .from("doctor_discussion_items")
+      .insert({
+        user_id: userId,
+        title,
+        notes: msg.content.slice(0, 500),
+        priority: "normal",
+        conversation_id: msg.conversation_id ?? null,
+        sort_order: 0,
+      })
+      .select()
+      .single();
+
+    if (data && !insertErr) {
+      if (childIds.length > 0) {
+        await supabase.from("doctor_item_children").insert(
+          childIds.map((cid) => ({ doctor_item_id: data.id, child_id: cid }))
+        );
+      }
+      setAddedToDoctorList((prev) => new Set(prev).add(msgIdx));
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -164,33 +246,42 @@ export function ChatInterface({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Header with child selector */}
+      {/* Header with child selector and saved link */}
       {childProfiles.length > 0 && (
         <div className="border-b border-stone-200/60 bg-white px-6 py-4 shadow-sm">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedChildId(null)}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                selectedChildId === null
-                  ? "bg-brand-500 text-white shadow-sm"
-                  : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
-              }`}
-            >
-              All Children
-            </button>
-            {childProfiles.map((child) => (
+          <div className="flex items-center justify-between">
+            <div className="flex flex-wrap gap-2">
               <button
-                key={child.id}
-                onClick={() => setSelectedChildId(child.id)}
+                onClick={() => setSelectedChildId(null)}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  selectedChildId === child.id
+                  selectedChildId === null
                     ? "bg-brand-500 text-white shadow-sm"
                     : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
                 }`}
               >
-                {child.name}
+                All Children
               </button>
-            ))}
+              {childProfiles.map((child) => (
+                <button
+                  key={child.id}
+                  onClick={() => setSelectedChildId(child.id)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    selectedChildId === child.id
+                      ? "bg-brand-500 text-white shadow-sm"
+                      : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
+                  }`}
+                >
+                  {child.name}
+                </button>
+              ))}
+            </div>
+            <Link
+              href="/chat/saved"
+              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100"
+            >
+              <Archive className="h-4 w-4" />
+              Saved
+            </Link>
           </div>
         </div>
       )}
@@ -229,23 +320,63 @@ export function ChatInterface({
                       : "rounded-2xl rounded-bl-md border border-stone-200/60 bg-white px-4 py-3 shadow-card"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
-                  {msg.role === "assistant" && msg.cited_resources?.length ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {msg.cited_resources.map((resource) => (
-                        <a
-                          key={resource.id}
-                          href={`/resources?search=${encodeURIComponent(
-                            resource.title
-                          )}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700 hover:bg-brand-100"
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          {resource.title}
-                        </a>
-                      ))}
+                  {msg.role === "user" ? (
+                    <p className="text-sm leading-relaxed">{msg.content}</p>
+                  ) : (
+                    <div className="text-sm leading-relaxed">
+                      <MarkdownBody content={msg.content} compact />
                     </div>
-                  ) : null}
+                  )}
+                  {msg.role === "assistant" && (
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      {msg.cited_resources?.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {msg.cited_resources.map((resource) => (
+                            <a
+                              key={resource.id}
+                              href={`/resources?search=${encodeURIComponent(
+                                resource.title
+                              )}`}
+                              className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700 hover:bg-brand-100"
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              {resource.title}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <div />
+                      )}
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          onClick={() => handleAddToDoctorList(msg, idx)}
+                          disabled={addedToDoctorList.has(idx)}
+                          className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+                          title={addedToDoctorList.has(idx) ? "Added to doctor list" : "Add to doctor list"}
+                        >
+                          {addedToDoctorList.has(idx) ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <Stethoscope className="h-4 w-4" />
+                          )}
+                        </button>
+                        {msg.conversation_id && (
+                          <button
+                            onClick={() => handleSaveConversation(msg, idx)}
+                            disabled={savingId === msg.conversation_id}
+                            className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+                            title={msg.is_saved ? "Unsave conversation" : "Save conversation"}
+                          >
+                            {msg.is_saved ? (
+                              <BookmarkCheck className="h-4 w-4 text-brand-500" />
+                            ) : (
+                              <Bookmark className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

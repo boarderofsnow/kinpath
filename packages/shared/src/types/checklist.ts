@@ -1,6 +1,6 @@
 export interface ChecklistItem {
   id: string;
-  child_id: string;
+  child_id: string | null;
   user_id: string;
   title: string;
   description: string | null;
@@ -13,6 +13,7 @@ export interface ChecklistItem {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  child_ids?: string[]; // populated from checklist_item_children junction table
 }
 
 export interface MilestoneTemplate {
