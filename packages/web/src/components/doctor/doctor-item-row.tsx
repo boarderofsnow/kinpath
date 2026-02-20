@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { DoctorDiscussionItem, ChildWithAge } from "@kinpath/shared";
 import { X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
+import { MarkdownBody } from "@/components/ui/markdown-body";
 
 const PRIORITY_DOT: Record<string, string> = {
   high: "bg-red-500",
@@ -74,9 +75,9 @@ export function DoctorItemRow({
           </div>
 
           {item.notes && (
-            <p className={`mt-0.5 ml-4 text-xs ${item.is_discussed ? "text-stone-300" : "text-stone-500"}`}>
-              {item.notes}
-            </p>
+            <div className={`mt-0.5 ml-4 text-xs ${item.is_discussed ? "text-stone-300" : "text-stone-500"}`}>
+              <MarkdownBody content={item.notes} compact />
+            </div>
           )}
 
           <div className="mt-1 ml-4 flex flex-wrap items-center gap-2">
