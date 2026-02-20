@@ -32,18 +32,18 @@ const config: Config = {
           800: "#343e43",
           900: "#2a3236",
         },
-        // Accent — Warm Camel: for standout CTAs and joyful moments
+        // Accent — Warm Coral-Amber: for standout CTAs and joyful moments
         accent: {
-          50: "#faf6f1",
-          100: "#f2e8db",
-          200: "#e5d0b6",
-          300: "#d4b28a",
-          400: "#c99b70", // Palette tan
-          500: "#b58560", // Palette terracotta
-          600: "#9c6d4a",
-          700: "#81573d",
-          800: "#6a4735",
-          900: "#573c2e",
+          50: "#fff7ed",
+          100: "#ffedd5",
+          200: "#fed7aa",
+          300: "#fdba74",
+          400: "#fb923c",
+          500: "#f97316", // Warm orange — vibrant, high contrast
+          600: "#ea580c",
+          700: "#c2410c",
+          800: "#9a3412",
+          900: "#7c2d12",
         },
         // Warm cream override for stone neutrals
         stone: {
