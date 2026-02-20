@@ -5,45 +5,58 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // KinPath Design System v2
-        // Primary — Warm Teal: calming, trustworthy, gender-neutral
+        // KinPath Design System v3 — Updated palette
+        // Primary — Muted Sage: calming, trustworthy, gender-neutral
         brand: {
-          50: "#f0fdfb",
-          100: "#cbfcf0",
-          200: "#97f8e1",
-          300: "#5aecce",
-          400: "#29d4b7",
-          500: "#10b89f", // Primary
-          600: "#099483",
-          700: "#0b776b",
-          800: "#0e5e56",
-          900: "#114e48",
+          50: "#f3f5f2",
+          100: "#e2e7e0",
+          200: "#c5cfc2",
+          300: "#a3b39f",
+          400: "#8f9e8c", // Palette sage
+          500: "#6e836b", // Primary
+          600: "#576a55",
+          700: "#465544",
+          800: "#3a4639",
+          900: "#303a2f",
         },
-        // Secondary — Modern Sage: for trust indicators, vetting, calm accents
+        // Secondary — Dark Slate: for grounding, trust indicators, strong text
         sage: {
-          50: "#f4f7f2",
-          100: "#e4ebe0",
-          200: "#c9d7c2",
-          300: "#a5bc9b",
-          400: "#7e9e72",
-          500: "#5f8253",
-          600: "#4b6842",
-          700: "#3c5236",
-          800: "#32432e",
-          900: "#2b3828",
+          50: "#f0f2f3",
+          100: "#dce0e2",
+          200: "#b8c0c5",
+          300: "#8e9aa1",
+          400: "#6b7980",
+          500: "#536068",
+          600: "#4a555c",
+          700: "#3d4a4f", // Palette charcoal
+          800: "#343e43",
+          900: "#2a3236",
         },
-        // Accent — Warm Amber: for standout CTAs and joyful moments
+        // Accent — Warm Camel: for standout CTAs and joyful moments
         accent: {
-          50: "#fffbeb",
-          100: "#fef3c7",
-          200: "#fde68a",
-          300: "#fcd34d",
-          400: "#fbbf24",
-          500: "#f59e0b", // Accent
-          600: "#d97706",
-          700: "#b45309",
-          800: "#92400e",
-          900: "#78350f",
+          50: "#faf6f1",
+          100: "#f2e8db",
+          200: "#e5d0b6",
+          300: "#d4b28a",
+          400: "#c99b70", // Palette tan
+          500: "#b58560", // Palette terracotta
+          600: "#9c6d4a",
+          700: "#81573d",
+          800: "#6a4735",
+          900: "#573c2e",
+        },
+        // Warm cream override for stone neutrals
+        stone: {
+          50: "#faf9f7",
+          100: "#f3f1ed",
+          200: "#e8e0d6", // Palette cream
+          300: "#d6cbbe",
+          400: "#bfb0a0",
+          500: "#a89785",
+          600: "#8e7d6d",
+          700: "#75665a",
+          800: "#61544b",
+          900: "#524840",
         },
       },
       fontFamily: {
