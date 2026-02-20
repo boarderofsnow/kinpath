@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Home, BookOpen, Settings, MessageCircle } from "lucide-react";
+import { Home, BookOpen, Settings, MessageCircle, ClipboardList } from "lucide-react";
 
 interface AppNavProps {
   currentPath: string; // e.g. "/dashboard", "/resources", "/settings"
@@ -12,6 +12,11 @@ export function AppNav({ currentPath }: AppNavProps) {
       label: "Dashboard",
       href: "/dashboard",
       icon: Home,
+    },
+    {
+      label: "Plan",
+      href: "/plan",
+      icon: ClipboardList,
     },
     {
       label: "Browse",
