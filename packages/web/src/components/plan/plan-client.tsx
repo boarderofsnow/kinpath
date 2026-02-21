@@ -10,7 +10,7 @@ import {
   groupByTimeframe,
   toISODateString,
 } from "@kinpath/shared";
-import type { ChecklistItem, MilestoneTemplate, ChildWithAge, DoctorDiscussionItem } from "@kinpath/shared";
+import type { ChecklistItem, MilestoneTemplate, ChildWithAge, DoctorDiscussionItem, HouseholdMember } from "@kinpath/shared";
 import { ChecklistItemRow } from "./checklist-item-row";
 import { AddItemForm } from "./add-item-form";
 import { DoctorClient } from "@/components/doctor/doctor-client";
@@ -23,6 +23,7 @@ interface PlanClientProps {
   initialItems: ChecklistItem[];
   initialDoctorItems: DoctorDiscussionItem[];
   initialTab?: "checklist" | "doctor";
+  householdMembers?: HouseholdMember[];
 }
 
 export function PlanClient({
@@ -32,6 +33,7 @@ export function PlanClient({
   initialItems,
   initialDoctorItems,
   initialTab = "checklist",
+  householdMembers = [],
 }: PlanClientProps) {
   const supabase = createClient();
   const [items, setItems] = useState<ChecklistItem[]>(initialItems);
@@ -111,12 +113,26 @@ export function PlanClient({
   );
 
   const handleAddCustom = useCallback(
-    async (title: string, description: string, dueDate: string | null, childIds?: string[]) => {
+    async (
+      title: string,
+      description: string,
+      dueDate: string | null,
+      childIds?: string[],
+      assigneeMemberId?: string | null
+    ) => {
       const tagChildIds = childIds && childIds.length > 0
         ? childIds
         : filterChildId !== "all"
           ? [filterChildId]
           : childProfiles.map((c) => c.id);
+
+      // Resolve assignee name for optimistic display
+      const assigneeMember = assigneeMemberId
+        ? householdMembers.find((m) => m.id === assigneeMemberId)
+        : null;
+      const assigneeName = assigneeMember
+        ? (assigneeMember.display_name ?? assigneeMember.invited_email)
+        : null;
 
       const newItem = {
         child_id: tagChildIds[0],
@@ -130,6 +146,7 @@ export function PlanClient({
         is_completed: false,
         completed_at: null,
         sort_order: items.length,
+        assignee_member_id: assigneeMemberId ?? null,
       };
 
       const { data, error } = await supabase
@@ -144,11 +161,14 @@ export function PlanClient({
             tagChildIds.map((cid) => ({ checklist_item_id: data.id, child_id: cid }))
           );
         }
-        setItems((prev) => [...prev, { ...data, child_ids: tagChildIds }]);
+        setItems((prev) => [
+          ...prev,
+          { ...data, child_ids: tagChildIds, assignee_name: assigneeName },
+        ]);
       }
       setShowAddForm(false);
     },
-    [supabase, filterChildId, childProfiles, userId, items.length]
+    [supabase, filterChildId, childProfiles, userId, items.length, householdMembers]
   );
 
   const handleAddMilestone = useCallback(
@@ -287,6 +307,7 @@ export function PlanClient({
                   key={item.id}
                   item={item}
                   childProfiles={childProfiles}
+                  householdMembers={householdMembers}
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
@@ -306,6 +327,7 @@ export function PlanClient({
                   key={item.id}
                   item={item}
                   childProfiles={childProfiles}
+                  householdMembers={householdMembers}
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
@@ -325,6 +347,7 @@ export function PlanClient({
                   key={item.id}
                   item={item}
                   childProfiles={childProfiles}
+                  householdMembers={householdMembers}
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
@@ -350,6 +373,7 @@ export function PlanClient({
                 defaultChildIds={
                   filterChildId !== "all" ? [filterChildId] : childProfiles.map((c) => c.id)
                 }
+                householdMembers={householdMembers}
               />
             ) : (
               <button
@@ -423,6 +447,7 @@ export function PlanClient({
                   key={item.id}
                   item={item}
                   childProfiles={childProfiles}
+                  householdMembers={householdMembers}
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}

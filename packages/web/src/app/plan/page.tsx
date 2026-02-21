@@ -4,7 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
-import type { ChecklistItem, DoctorDiscussionItem } from "@kinpath/shared";
+import type { ChecklistItem, DoctorDiscussionItem, HouseholdMember } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { PlanClient } from "@/components/plan/plan-client";
 
@@ -94,6 +94,27 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     return { ...item, child_ids: childIds } as DoctorDiscussionItem;
   });
 
+  // Fetch household members if user is on family plan
+  let householdMembers: HouseholdMember[] = [];
+  if (profile?.subscription_tier === "family") {
+    const { data: household } = await supabase
+      .from("households")
+      .select("id")
+      .eq("owner_user_id", user.id)
+      .maybeSingle();
+
+    if (household) {
+      const { data: members } = await supabase
+        .from("household_members")
+        .select("*")
+        .eq("household_id", household.id)
+        .eq("status", "accepted")
+        .order("invited_at", { ascending: true });
+
+      householdMembers = (members as HouseholdMember[]) ?? [];
+    }
+  }
+
   return (
     <>
       <AppNav currentPath="/plan" />
@@ -105,6 +126,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
           initialItems={checklistItems}
           initialDoctorItems={doctorItems}
           initialTab={(params.tab as "checklist" | "doctor") ?? "checklist"}
+          householdMembers={householdMembers}
         />
       </div>
     </>

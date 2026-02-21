@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import type { ChildWithAge } from "@kinpath/shared";
+import type { ChildWithAge, HouseholdMember } from "@kinpath/shared";
 import { ChildTagSelector } from "./child-tag-selector";
 
 interface AddItemFormProps {
-  onSave: (title: string, description: string, dueDate: string | null, childIds?: string[]) => void;
+  onSave: (
+    title: string,
+    description: string,
+    dueDate: string | null,
+    childIds?: string[],
+    assigneeMemberId?: string | null
+  ) => void;
   onCancel: () => void;
   childProfiles?: ChildWithAge[];
   defaultChildIds?: string[];
+  householdMembers?: HouseholdMember[];
 }
 
 export function AddItemForm({
@@ -16,6 +23,7 @@ export function AddItemForm({
   onCancel,
   childProfiles,
   defaultChildIds,
+  householdMembers,
 }: AddItemFormProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -23,11 +31,20 @@ export function AddItemForm({
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>(
     defaultChildIds ?? []
   );
+  const [assigneeMemberId, setAssigneeMemberId] = useState<string>("");
+
+  const hasMembers = householdMembers && householdMembers.length > 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onSave(title.trim(), description.trim(), dueDate || null, selectedChildIds);
+    onSave(
+      title.trim(),
+      description.trim(),
+      dueDate || null,
+      selectedChildIds,
+      assigneeMemberId || null
+    );
   };
 
   return (
@@ -61,7 +78,27 @@ export function AddItemForm({
         </div>
       )}
 
-      <div className="mt-2 flex items-center gap-3">
+      {hasMembers && (
+        <div className="mt-3">
+          <label className="text-xs font-medium text-stone-500">
+            Assign to
+          </label>
+          <select
+            value={assigneeMemberId}
+            onChange={(e) => setAssigneeMemberId(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
+          >
+            <option value="">Anyone</option>
+            {householdMembers!.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.display_name ?? m.invited_email}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center gap-3">
         <input
           type="date"
           value={dueDate}

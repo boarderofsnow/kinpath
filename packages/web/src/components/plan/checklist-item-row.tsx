@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { ChecklistItem, ChildWithAge } from "@kinpath/shared";
-import { X, Calendar } from "lucide-react";
+import type { ChecklistItem, ChildWithAge, HouseholdMember } from "@kinpath/shared";
+import { X, Calendar, User } from "lucide-react";
 
 interface ChecklistItemRowProps {
   item: ChecklistItem;
   childProfiles?: ChildWithAge[];
+  householdMembers?: HouseholdMember[];
   onToggle: (id: string, completed: boolean) => void;
   onDateChange: (id: string, newDate: string) => void;
   onDelete: (id: string) => void;
@@ -15,6 +16,7 @@ interface ChecklistItemRowProps {
 export function ChecklistItemRow({
   item,
   childProfiles,
+  householdMembers,
   onToggle,
   onDateChange,
   onDelete,
@@ -28,6 +30,14 @@ export function ChecklistItemRow({
     item.child_ids &&
     item.child_ids.length > 0 &&
     item.child_ids.length < childProfiles.length;
+
+  // Resolve assignee display name
+  const assignee = item.assignee_member_id
+    ? householdMembers?.find((m) => m.id === item.assignee_member_id)
+    : null;
+  const assigneeName =
+    item.assignee_name ??
+    (assignee ? (assignee.display_name ?? assignee.invited_email) : null);
 
   return (
     <div className="group flex items-start gap-3 px-5 py-3 transition-colors hover:bg-stone-50">
@@ -96,6 +106,13 @@ export function ChecklistItemRow({
                 </span>
               ) : null;
             })}
+
+          {assigneeName && (
+            <span className="flex items-center gap-0.5 rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] font-medium text-sage-700">
+              <User className="h-2.5 w-2.5" />
+              {assigneeName}
+            </span>
+          )}
         </div>
       </div>
 

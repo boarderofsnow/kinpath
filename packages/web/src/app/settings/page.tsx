@@ -3,11 +3,13 @@ export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
+import type { HouseholdMember } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { HouseholdSection } from "@/components/settings/household-section";
 
 interface SettingsPageProps {
-  searchParams: Promise<{}>;
+  searchParams: Promise<Record<string, string>>;
 }
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
@@ -56,16 +58,41 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     .eq("user_id", user.id)
     .single();
 
+  // Fetch household members (family tier only)
+  let householdMembers: HouseholdMember[] = [];
+  if (userProfile?.subscription_tier === "family") {
+    const { data: household } = await supabase
+      .from("households")
+      .select("id")
+      .eq("owner_user_id", user.id)
+      .maybeSingle();
+
+    if (household) {
+      const { data: members } = await supabase
+        .from("household_members")
+        .select("*")
+        .eq("household_id", household.id)
+        .order("invited_at", { ascending: true });
+
+      householdMembers = (members as HouseholdMember[]) ?? [];
+    }
+  }
+
   return (
     <>
       <AppNav currentPath="/settings" />
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <SettingsForm
           user={userProfile}
           childProfiles={enrichedChildren}
           preferences={preferences}
           notificationPrefs={notificationPrefs}
         />
+
+        {/* Family sharing — only shown for family tier */}
+        {userProfile?.subscription_tier === "family" && (
+          <HouseholdSection initialMembers={householdMembers} />
+        )}
       </div>
     </>
   );

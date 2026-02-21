@@ -14,6 +14,8 @@ export interface ChecklistItem {
   created_at: string;
   updated_at: string;
   child_ids?: string[]; // populated from checklist_item_children junction table
+  assignee_member_id?: string | null; // household member assigned to this item
+  assignee_name?: string | null; // denormalized display name for the assignee
 }
 
 export interface MilestoneTemplate {
