@@ -30,6 +30,9 @@ export default function LoginPage() {
       return;
     }
 
+    // Refresh the server-side session before navigating so server
+    // components pick up the newly-set auth cookies.
+    router.refresh();
     router.push("/dashboard");
   }
 

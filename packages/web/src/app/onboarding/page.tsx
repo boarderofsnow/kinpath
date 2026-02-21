@@ -95,6 +95,7 @@ export default function OnboardingPage() {
       .update({ onboarding_complete: true })
       .eq("id", user.id);
 
+    router.refresh();
     router.push("/dashboard");
   }
 
