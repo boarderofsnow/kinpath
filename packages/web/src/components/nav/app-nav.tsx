@@ -40,7 +40,7 @@ export function AppNav({ currentPath }: AppNavProps) {
       <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard">
-          <Image src="/kinpath-logo.png" alt="KinPath" width={120} height={36} className="h-8 w-auto" priority />
+          <Image src="/kinpath-logo.png" alt="KinPath" width={120} height={36} className="h-8 w-auto" priority unoptimized />
         </Link>
 
         {/* Nav Links */}

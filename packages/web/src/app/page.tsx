@@ -4,7 +4,7 @@ import {
   CalendarClock,
   ShieldCheck,
   Heart,
-  Sparkles,
+  MessageCircle,
   LayoutGrid,
   Lock,
   BookOpen,
@@ -18,7 +18,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12">
         <Link href="/">
-          <Image src="/kinpath-logo.png" alt="KinPath" width={130} height={40} className="h-9 w-auto" priority />
+          <Image src="/kinpath-logo.png" alt="KinPath" width={130} height={40} className="h-9 w-auto" priority unoptimized />
         </Link>
         <div className="flex items-center gap-4">
           <Link
@@ -90,10 +90,10 @@ export default function LandingPage() {
                 icon: Heart,
               },
               {
-                title: "AI-Powered Answers",
+                title: "Find Answers Fast",
                 description:
-                  "Ask questions and get trustworthy answers grounded in our evidence-based resource library.",
-                icon: Sparkles,
+                  "Our chat feature makes it effortless to find exactly what you need from our evidence-based resource library — no searching required.",
+                icon: MessageCircle,
               },
               {
                 title: "All-in-One",
@@ -254,7 +254,7 @@ export default function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-3">
             {/* Column 1: About */}
             <div>
-              <Image src="/kinpath-logo.png" alt="KinPath" width={100} height={30} className="h-7 w-auto" />
+              <Image src="/kinpath-logo.png" alt="KinPath" width={100} height={30} className="h-7 w-auto" unoptimized />
               <p className="mt-2 text-sm text-stone-600">
                 Evidence-based parenting guidance that grows with your family.
                 Personalized, professional, and always there when you need it.
