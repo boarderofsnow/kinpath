@@ -219,16 +219,14 @@ export function HouseholdSection({ initialMembers }: HouseholdSectionProps) {
                     <StatusIcon className="h-3 w-3" />
                     {config.label}
                   </span>
-                  {member.status !== "accepted" && (
-                    <button
-                      onClick={() => handleRemove(member.id)}
-                      disabled={removingId === member.id}
-                      className="rounded p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
-                      title="Remove invite"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleRemove(member.id)}
+                    disabled={removingId === member.id}
+                    className="rounded p-1 text-stone-400 hover:bg-stone-200 hover:text-stone-600 disabled:opacity-50"
+                    title={member.status === "accepted" ? "Remove partner" : "Cancel invite"}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             );
