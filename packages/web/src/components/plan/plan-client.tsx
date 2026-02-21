@@ -24,6 +24,8 @@ interface PlanClientProps {
   initialDoctorItems: DoctorDiscussionItem[];
   initialTab?: "checklist" | "doctor";
   householdMembers?: HouseholdMember[];
+  /** True when the current user is a household partner (not the owner). Partners can view and mark items complete, but cannot add or delete. */
+  isPartner?: boolean;
 }
 
 export function PlanClient({
@@ -34,6 +36,7 @@ export function PlanClient({
   initialDoctorItems,
   initialTab = "checklist",
   householdMembers = [],
+  isPartner = false,
 }: PlanClientProps) {
   const supabase = createClient();
   const [items, setItems] = useState<ChecklistItem[]>(initialItems);
@@ -311,6 +314,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  readOnly={isPartner}
                 />
               ))}
             </Section>
@@ -331,6 +335,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  readOnly={isPartner}
                 />
               ))}
             </Section>
@@ -351,6 +356,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  readOnly={isPartner}
                 />
               ))}
             </Section>
@@ -359,34 +365,38 @@ export function PlanClient({
           {total === 0 && !showAddForm && (
             <div className="mt-8 rounded-2xl border border-stone-200/60 bg-white p-8 text-center shadow-card">
               <p className="text-stone-500">
-                No items yet. Add a custom task or browse suggested milestones below.
+                {isPartner
+                  ? "No items on your partner's checklist yet."
+                  : "No items yet. Add a custom task or browse suggested milestones below."}
               </p>
             </div>
           )}
 
-          <div className="mt-6">
-            {showAddForm ? (
-              <AddItemForm
-                onSave={handleAddCustom}
-                onCancel={() => setShowAddForm(false)}
-                childProfiles={childProfiles}
-                defaultChildIds={
-                  filterChildId !== "all" ? [filterChildId] : childProfiles.map((c) => c.id)
-                }
-                householdMembers={householdMembers}
-              />
-            ) : (
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="flex w-full items-center gap-2 rounded-xl border border-dashed border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-600 transition-colors hover:border-brand-400 hover:text-brand-600"
-              >
-                <Plus className="h-4 w-4" />
-                Add custom item
-              </button>
-            )}
-          </div>
+          {!isPartner && (
+            <div className="mt-6">
+              {showAddForm ? (
+                <AddItemForm
+                  onSave={handleAddCustom}
+                  onCancel={() => setShowAddForm(false)}
+                  childProfiles={childProfiles}
+                  defaultChildIds={
+                    filterChildId !== "all" ? [filterChildId] : childProfiles.map((c) => c.id)
+                  }
+                  householdMembers={householdMembers}
+                />
+              ) : (
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="flex w-full items-center gap-2 rounded-xl border border-dashed border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-600 transition-colors hover:border-brand-400 hover:text-brand-600"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add custom item
+                </button>
+              )}
+            </div>
+          )}
 
-          {suggestions.length > 0 && (
+          {!isPartner && suggestions.length > 0 && (
             <div className="mt-6">
               <button
                 onClick={() => setShowSuggestions((v) => !v)}
@@ -451,6 +461,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  readOnly={isPartner}
                 />
               ))}
             </Section>

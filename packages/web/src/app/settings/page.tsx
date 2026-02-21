@@ -6,6 +6,7 @@ import { enrichChildWithAge } from "@kinpath/shared";
 import type { HouseholdMember } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { SettingsForm } from "@/components/settings/settings-form";
+import { getHouseholdContext } from "@/lib/household";
 
 interface SettingsPageProps {
   searchParams: Promise<Record<string, string>>;
@@ -23,6 +24,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     redirect("/auth/login");
   }
 
+  // Resolve household context to know if this user is a partner.
+  const { isPartner, householdId } = await getHouseholdContext(user.id);
+
   // Fetch user profile
   const { data: userProfile } = await supabase
     .from("users")
@@ -30,7 +34,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     .eq("id", user.id)
     .single();
 
-  // Fetch children
+  // Fetch children (partner's own settings — they manage their own profile here)
   const { data: children } = await supabase
     .from("children")
     .select("*")
@@ -60,17 +64,23 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   // Fetch household members (family tier only)
   let householdMembers: HouseholdMember[] = [];
   if (userProfile?.subscription_tier === "family") {
-    const { data: household } = await supabase
-      .from("households")
-      .select("id")
-      .eq("owner_user_id", user.id)
-      .maybeSingle();
+    // For partners, use their known householdId; for owners, look up by owner_user_id.
+    let resolvedHouseholdId: string | null = householdId;
 
-    if (household) {
+    if (!resolvedHouseholdId) {
+      const { data: household } = await supabase
+        .from("households")
+        .select("id")
+        .eq("owner_user_id", user.id)
+        .maybeSingle();
+      resolvedHouseholdId = household?.id ?? null;
+    }
+
+    if (resolvedHouseholdId) {
       const { data: members } = await supabase
         .from("household_members")
         .select("*")
-        .eq("household_id", household.id)
+        .eq("household_id", resolvedHouseholdId)
         .order("invited_at", { ascending: true });
 
       householdMembers = (members as HouseholdMember[]) ?? [];
@@ -87,6 +97,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           preferences={preferences}
           notificationPrefs={notificationPrefs}
           householdMembers={householdMembers}
+          isPartner={isPartner}
         />
       </div>
     </>

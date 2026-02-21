@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { ChatInterface } from "@/components/chat/chat-interface";
+import { getHouseholdContext } from "@/lib/household";
 
 export default async function ChatPage() {
   // Fetch authenticated user
@@ -17,11 +18,14 @@ export default async function ChatPage() {
     redirect("/auth/login");
   }
 
-  // Fetch user's children
+  // Resolve household context — partners use the owner's user_id for data queries.
+  const { effectiveOwnerId } = await getHouseholdContext(user.id);
+
+  // Fetch user's children (using effectiveOwnerId so partners see owner's children)
   const { data: childrenData, error: childrenError } = await supabase
     .from("children")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveOwnerId)
     .order("created_at", { ascending: true });
 
   if (childrenError) {

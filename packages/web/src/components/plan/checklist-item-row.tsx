@@ -11,6 +11,8 @@ interface ChecklistItemRowProps {
   onToggle: (id: string, completed: boolean) => void;
   onDateChange: (id: string, newDate: string) => void;
   onDelete: (id: string) => void;
+  /** When true, hides delete button and disables date editing (for household partners). */
+  readOnly?: boolean;
 }
 
 export function ChecklistItemRow({
@@ -20,6 +22,7 @@ export function ChecklistItemRow({
   onToggle,
   onDateChange,
   onDelete,
+  readOnly = false,
 }: ChecklistItemRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const displayDate = item.due_date ?? item.suggested_date;
@@ -116,32 +119,34 @@ export function ChecklistItemRow({
         </div>
       </div>
 
-      {/* Delete */}
-      <div className="shrink-0">
-        {confirmDelete ? (
-          <div className="flex items-center gap-1">
+      {/* Delete — hidden for read-only (partner) users */}
+      {!readOnly && (
+        <div className="shrink-0">
+          {confirmDelete ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => onDelete(item.id)}
+                className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                className="rounded px-2 py-1 text-xs font-medium text-stone-500 hover:bg-stone-100"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => onDelete(item.id)}
-              className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+              onClick={() => setConfirmDelete(true)}
+              className="rounded p-1 text-stone-300 opacity-0 transition-all hover:bg-stone-100 hover:text-stone-500 group-hover:opacity-100"
             >
-              Confirm
+              <X className="h-3.5 w-3.5" />
             </button>
-            <button
-              onClick={() => setConfirmDelete(false)}
-              className="rounded px-2 py-1 text-xs font-medium text-stone-500 hover:bg-stone-100"
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="rounded p-1 text-stone-300 opacity-0 transition-all hover:bg-stone-100 hover:text-stone-500 group-hover:opacity-100"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
