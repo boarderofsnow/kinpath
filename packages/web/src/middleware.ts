@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all routes except static files and API routes that don't need auth
-    "/((?!_next/static|_next/image|favicon.ico|api/webhooks).*)",
+    // Match all routes except Next.js internals, static assets, and webhooks
+    "/((?!_next/static|_next/image|favicon.ico|api/webhooks|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|otf|css|js|map)).*)",
   ],
 };
