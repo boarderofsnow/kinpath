@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Home, BookOpen, Settings, MessageCircle, ClipboardList } from "lucide-react";
 
 interface AppNavProps {
@@ -40,7 +39,8 @@ export function AppNav({ currentPath }: AppNavProps) {
       <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard">
-          <Image src="/kinpath-logo.png" alt="KinPath" width={120} height={36} className="h-8 w-auto" priority unoptimized />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/kinpath-logo.png" alt="KinPath" className="h-8 w-auto" />
         </Link>
 
         {/* Nav Links */}

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import Image from "next/image";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -49,7 +48,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link href="/">
-            <Image src="/kinpath-logo.png" alt="KinPath" width={140} height={42} className="h-10 w-auto mx-auto" priority unoptimized />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/kinpath-logo.png" alt="KinPath" className="h-10 w-auto mx-auto" />
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-stone-900">
             Welcome back

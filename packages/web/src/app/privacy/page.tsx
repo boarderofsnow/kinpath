@@ -5,7 +5,6 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — KinPath",
@@ -23,15 +22,8 @@ export default function PrivacyPolicyPage() {
       <header className="sticky top-0 z-50 border-b border-stone-200 bg-white/90 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/">
-            <Image
-              src="/kinpath-logo.png"
-              alt="KinPath"
-              width={120}
-              height={36}
-              className="h-8 w-auto"
-              priority
-              unoptimized
-            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/kinpath-logo.png" alt="KinPath" className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link
