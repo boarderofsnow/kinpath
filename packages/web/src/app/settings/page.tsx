@@ -6,7 +6,6 @@ import { enrichChildWithAge } from "@kinpath/shared";
 import type { HouseholdMember } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { SettingsForm } from "@/components/settings/settings-form";
-import { HouseholdSection } from "@/components/settings/household-section";
 
 interface SettingsPageProps {
   searchParams: Promise<Record<string, string>>;
@@ -87,12 +86,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
           childProfiles={enrichedChildren}
           preferences={preferences}
           notificationPrefs={notificationPrefs}
+          householdMembers={householdMembers}
         />
-
-        {/* Family sharing — only shown for family tier */}
-        {userProfile?.subscription_tier === "family" && (
-          <HouseholdSection initialMembers={householdMembers} />
-        )}
       </div>
     </>
   );

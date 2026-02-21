@@ -15,6 +15,8 @@ import {
 } from "@kinpath/shared";
 import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
+import { HouseholdSection } from "@/components/settings/household-section";
+import type { HouseholdMember } from "@kinpath/shared";
 
 interface User {
   id: string;
@@ -39,6 +41,7 @@ interface SettingsFormProps {
   childProfiles: ChildWithAge[];
   preferences: Preferences | null;
   notificationPrefs: NotificationPreferences | null;
+  householdMembers?: HouseholdMember[];
 }
 
 export function SettingsForm({
@@ -46,6 +49,7 @@ export function SettingsForm({
   childProfiles: initialChildren,
   preferences: initialPreferences,
   notificationPrefs: initialNotificationPrefs,
+  householdMembers = [],
 }: SettingsFormProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -1054,7 +1058,12 @@ export function SettingsForm({
         </div>
       </section>
 
-      {/* E. Account Section */}
+      {/* E. Family Sharing Section — family tier only */}
+      {user?.subscription_tier === "family" && (
+        <HouseholdSection initialMembers={householdMembers} />
+      )}
+
+      {/* F. Account Section */}
       <section className="rounded-2xl border border-stone-200/60 bg-white shadow-card p-6">
         <h2 className="text-lg font-semibold text-stone-900 mb-4">Account</h2>
 
