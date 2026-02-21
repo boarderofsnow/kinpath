@@ -116,8 +116,13 @@ export async function POST(req: NextRequest) {
   );
 
   if (inviteError) {
-    // Don't fail the whole operation — the record is created, the user can resend
-    console.warn("Failed to send invite email:", inviteError.message);
+    // Roll back the member row so the same email can be retried cleanly.
+    await serviceSupabase.from("household_members").delete().eq("id", member.id);
+    console.error("Failed to send invite email:", inviteError.message);
+    return NextResponse.json(
+      { error: "Failed to send invite. Please try again." },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ success: true, member_id: member.id });
