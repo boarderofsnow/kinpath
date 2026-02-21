@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
         household_member_id: member.id,
         invited_by: user.id,
       },
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/auth/callback?next=/dashboard`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/auth/callback?next=/dashboard`,
     }
   );
 
