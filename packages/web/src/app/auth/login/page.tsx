@@ -4,14 +4,12 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   async function handleLogin(e: React.FormEvent) {
@@ -30,10 +28,10 @@ export default function LoginPage() {
       return;
     }
 
-    // Refresh the server-side session before navigating so server
-    // components pick up the newly-set auth cookies.
-    router.refresh();
-    router.push("/dashboard");
+    // Use a full page navigation so the browser sends the newly-set
+    // auth cookies with the request — router.push() is client-side
+    // and can race with cookie propagation to the server.
+    window.location.href = "/dashboard";
   }
 
   async function handleOAuthLogin(provider: "google" | "apple") {

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import {
   TOPICS,
   TOPIC_KEYS,
@@ -34,7 +33,6 @@ const TOPIC_DESCRIPTIONS: Record<string, string> = {
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   // Child form state
@@ -95,8 +93,7 @@ export default function OnboardingPage() {
       .update({ onboarding_complete: true })
       .eq("id", user.id);
 
-    router.refresh();
-    router.push("/dashboard");
+    window.location.href = "/dashboard";
   }
 
   return (
