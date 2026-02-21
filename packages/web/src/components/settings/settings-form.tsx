@@ -42,6 +42,8 @@ interface SettingsFormProps {
   preferences: Preferences | null;
   notificationPrefs: NotificationPreferences | null;
   householdMembers?: HouseholdMember[];
+  /** True when the current user is a partner (not the household owner). */
+  isPartner?: boolean;
 }
 
 export function SettingsForm({
@@ -50,6 +52,7 @@ export function SettingsForm({
   preferences: initialPreferences,
   notificationPrefs: initialNotificationPrefs,
   householdMembers = [],
+  isPartner = false,
 }: SettingsFormProps) {
   const router = useRouter();
   const supabase = createClient();
@@ -1060,7 +1063,26 @@ export function SettingsForm({
 
       {/* E. Family Sharing Section — family tier only */}
       {user?.subscription_tier === "family" && (
-        <HouseholdSection initialMembers={householdMembers} />
+        isPartner ? (
+          // Partners see a read-only view — they joined someone else's household.
+          <section className="rounded-2xl border border-stone-200/60 bg-white shadow-card p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <h2 className="text-lg font-semibold text-stone-900">Family Sharing</h2>
+            </div>
+            <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-4">
+              <p className="text-sm font-medium text-brand-800">
+                You&apos;re sharing a household
+              </p>
+              <p className="mt-1 text-sm text-stone-600">
+                You have access to your partner&apos;s children, checklist, and doctor discussion list.
+                Visit the <strong>Plan</strong> or <strong>Dashboard</strong> pages to view shared data.
+              </p>
+            </div>
+          </section>
+        ) : (
+          <HouseholdSection initialMembers={householdMembers} />
+        )
       )}
 
       {/* F. Account Section */}

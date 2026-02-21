@@ -125,7 +125,8 @@ export async function POST(req: NextRequest) {
 
 /**
  * DELETE /api/household/invite
- * Remove a pending household member invite.
+ * Remove a household member (pending invite or accepted partner).
+ * If the member had accepted, their subscription_tier is reset to "free".
  */
 export async function DELETE(req: NextRequest) {
   const supabase = await createServerSupabaseClient();
@@ -153,7 +154,7 @@ export async function DELETE(req: NextRequest) {
   // Confirm the member belongs to a household owned by this user
   const { data: member } = await serviceSupabase
     .from("household_members")
-    .select("id, household_id, households!inner(owner_user_id)")
+    .select("id, household_id, user_id, households!inner(owner_user_id)")
     .eq("id", body.member_id)
     .maybeSingle();
 
@@ -174,6 +175,15 @@ export async function DELETE(req: NextRequest) {
   if (deleteError) {
     console.error("Failed to delete household member:", deleteError);
     return NextResponse.json({ error: "Failed to remove invite." }, { status: 500 });
+  }
+
+  // If the partner had accepted (user_id is set), reset their subscription tier back to free.
+  const partnerUserId = (member as Record<string, unknown>).user_id as string | null;
+  if (partnerUserId) {
+    await serviceSupabase
+      .from("users")
+      .update({ subscription_tier: "free" })
+      .eq("id", partnerUserId);
   }
 
   return NextResponse.json({ success: true });

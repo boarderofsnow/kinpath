@@ -7,6 +7,7 @@ import { enrichChildWithAge } from "@kinpath/shared";
 import type { ChecklistItem, DoctorDiscussionItem, HouseholdMember } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { PlanClient } from "@/components/plan/plan-client";
+import { getHouseholdContext } from "@/lib/household";
 
 interface PlanPageProps {
   searchParams: Promise<{ child?: string; tab?: string }>;
@@ -32,11 +33,14 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     redirect("/onboarding");
   }
 
+  // Resolve household context — partners use the owner's user_id for data queries.
+  const { effectiveOwnerId, isPartner, householdId } = await getHouseholdContext(user.id);
+
   // Fetch children
   const { data: childrenData } = await supabase
     .from("children")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveOwnerId)
     .order("created_at", { ascending: true });
 
   const enrichedChildren = (childrenData ?? []).map((child) =>
@@ -65,11 +69,11 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     ? enrichedChildren.find((c) => c.id === params.child) ?? enrichedChildren[0]
     : enrichedChildren[0];
 
-  // Fetch ALL checklist items for this user with child tags via junction table
+  // Fetch ALL checklist items (using effectiveOwnerId so partners see owner's items)
   const { data: rawItems } = await supabase
     .from("checklist_items")
     .select("*, checklist_item_children(child_id)")
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveOwnerId)
     .order("sort_order", { ascending: true });
 
   // Normalize: extract child_ids from the junction table join
@@ -80,11 +84,11 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     return { ...item, child_ids: childIds } as ChecklistItem;
   });
 
-  // Fetch doctor discussion items with child tags
+  // Fetch doctor discussion items (using effectiveOwnerId so partners see owner's items)
   const { data: rawDoctorItems } = await supabase
     .from("doctor_discussion_items")
     .select("*, doctor_item_children(child_id)")
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveOwnerId)
     .order("sort_order", { ascending: true });
 
   const doctorItems: DoctorDiscussionItem[] = (rawDoctorItems ?? []).map((row: any) => {
@@ -94,20 +98,26 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     return { ...item, child_ids: childIds } as DoctorDiscussionItem;
   });
 
-  // Fetch household members if user is on family plan
+  // Fetch household members if user is on family plan (works for both owners and partners)
   let householdMembers: HouseholdMember[] = [];
   if (profile?.subscription_tier === "family") {
-    const { data: household } = await supabase
-      .from("households")
-      .select("id")
-      .eq("owner_user_id", user.id)
-      .maybeSingle();
+    // For partners, householdId is known directly; for owners, look up by owner_user_id.
+    let resolvedHouseholdId: string | null = householdId;
 
-    if (household) {
+    if (!resolvedHouseholdId) {
+      const { data: household } = await supabase
+        .from("households")
+        .select("id")
+        .eq("owner_user_id", user.id)
+        .maybeSingle();
+      resolvedHouseholdId = household?.id ?? null;
+    }
+
+    if (resolvedHouseholdId) {
       const { data: members } = await supabase
         .from("household_members")
         .select("*")
-        .eq("household_id", household.id)
+        .eq("household_id", resolvedHouseholdId)
         .eq("status", "accepted")
         .order("invited_at", { ascending: true });
 
@@ -127,6 +137,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
           initialDoctorItems={doctorItems}
           initialTab={(params.tab as "checklist" | "doctor") ?? "checklist"}
           householdMembers={householdMembers}
+          isPartner={isPartner}
         />
       </div>
     </>

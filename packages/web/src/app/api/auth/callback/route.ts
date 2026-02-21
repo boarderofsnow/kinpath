@@ -21,7 +21,14 @@ export async function GET(request: Request) {
         try {
           const serviceClient = createServiceRoleClient();
 
-          // 1. Link the household_members record to this user and mark accepted.
+          // 1. Fetch the member record to get household_id and the owner's subscription_tier.
+          const { data: memberRow } = await serviceClient
+            .from("household_members")
+            .select("household_id, households!inner(owner_user_id, users!inner(subscription_tier))")
+            .eq("id", householdMemberId)
+            .single();
+
+          // 2. Link the household_members record to this user and mark accepted.
           await serviceClient
             .from("household_members")
             .update({
@@ -31,11 +38,14 @@ export async function GET(request: Request) {
             })
             .eq("id", householdMemberId);
 
-          // 2. Skip onboarding for partners — they join the household owner's
-          //    family and don't need to set up their own child profiles.
+          // 3. Skip onboarding AND copy the owner's subscription_tier so the
+          //    partner's Settings page shows the correct plan immediately.
+          const ownerTier =
+            (memberRow as any)?.households?.users?.subscription_tier ?? "free";
+
           await serviceClient
             .from("users")
-            .update({ onboarding_complete: true })
+            .update({ onboarding_complete: true, subscription_tier: ownerTier })
             .eq("id", user.id);
         } catch (linkError) {
           // Non-fatal — log and continue to dashboard.

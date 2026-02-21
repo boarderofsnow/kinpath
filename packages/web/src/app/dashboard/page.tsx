@@ -12,6 +12,7 @@ import { ResourceFeed } from "@/components/feed/resource-feed";
 import { SearchBar } from "@/components/search/search-bar";
 import { getPersonalizedFeed } from "@/lib/resources";
 import { UpgradeBanner } from "@/components/ui/upgrade-banner";
+import { getHouseholdContext } from "@/lib/household";
 
 interface DashboardPageProps {
   searchParams: Promise<{ child?: string }>;
@@ -37,11 +38,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/onboarding");
   }
 
+  // Resolve household context — partners use the owner's user_id for data queries.
+  const { effectiveOwnerId } = await getHouseholdContext(user.id);
+
   // Fetch children
   const { data: children } = await supabase
     .from("children")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", effectiveOwnerId)
     .order("created_at", { ascending: true });
 
   const enrichedChildren = (children ?? []).map((child) =>
@@ -64,7 +68,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     const { data: rawItems } = await supabase
       .from("checklist_items")
       .select("*, checklist_item_children(child_id)")
-      .eq("user_id", user.id)
+      .eq("user_id", effectiveOwnerId)
       .order("sort_order", { ascending: true });
 
     activeChildChecklist = (rawItems ?? []).map((row: any) => {
