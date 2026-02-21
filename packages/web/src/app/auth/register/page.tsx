@@ -46,7 +46,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
           <Link href="/">
-            <Image src="/kinpath-logo.png" alt="KinPath" width={140} height={42} className="h-10 w-auto mx-auto" priority />
+            <Image src="/kinpath-logo.png" alt="KinPath" width={140} height={42} className="h-10 w-auto mx-auto" priority unoptimized />
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-stone-900">
             Create your account
