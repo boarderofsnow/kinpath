@@ -306,7 +306,7 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <Link
-                    href="#"
+                    href="/privacy"
                     className="text-stone-600 hover:text-brand-600 transition-colors"
                   >
                     Privacy Policy
@@ -314,7 +314,7 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <Link
-                    href="#"
+                    href="/terms"
                     className="text-stone-600 hover:text-brand-600 transition-colors"
                   >
                     Terms of Service

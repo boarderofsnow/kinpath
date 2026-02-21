@@ -113,8 +113,15 @@ export default function RegisterPage() {
         </form>
 
         <p className="text-center text-xs text-stone-500">
-          By creating an account, you agree to our Terms of Service and Privacy
-          Policy. KinPath is intended for users 18 and older.
+          By creating an account, you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-stone-700">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline hover:text-stone-700">
+            Privacy Policy
+          </Link>
+          . KinPath is intended for users 18 and older.
         </p>
 
         <p className="text-center text-sm text-stone-600">
