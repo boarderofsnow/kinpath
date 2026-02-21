@@ -1,3 +1,8 @@
+// TODO: Once the official domain is purchased and the site transitions, update all
+// email addresses in this file from the placeholder domain to the real domain:
+//   support@kinpath.com  → support@<official-domain>
+//   privacy@kinpath.com  → privacy@<official-domain>
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
