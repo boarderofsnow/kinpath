@@ -29,7 +29,11 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     .eq("id", user.id)
     .single();
 
-  if (!profile?.onboarding_complete) {
+  if (!profile) {
+    redirect("/auth/login");
+  }
+
+  if (!profile.onboarding_complete) {
     redirect("/onboarding");
   }
 

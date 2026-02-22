@@ -35,7 +35,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     .eq("id", user.id)
     .single();
 
-  if (!profile?.onboarding_complete) {
+  // If the profile query failed (null), don't mistakenly redirect to onboarding.
+  // This can happen during session refresh or transient DB issues.
+  if (!profile) {
+    redirect("/auth/login");
+  }
+
+  if (!profile.onboarding_complete) {
     redirect("/onboarding");
   }
 
