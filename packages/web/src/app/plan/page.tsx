@@ -137,7 +137,6 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
           initialDoctorItems={doctorItems}
           initialTab={(params.tab as "checklist" | "doctor") ?? "checklist"}
           householdMembers={householdMembers}
-          isPartner={isPartner}
         />
       </div>
     </>
