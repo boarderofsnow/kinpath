@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X, Crown, Star, Users, Sparkles, Loader2 } from 'lucide-react';
+import { Check, X, Star, Users, Sparkles, Loader2 } from 'lucide-react';
 import { AppNav } from '@/components/nav/app-nav';
 import { createClient } from '@/lib/supabase/client';
+import { FadeInUp, ScrollReveal, StaggerContainer, StaggerItem } from '@/components/ui/motion';
 
 interface User {
   id: string;
@@ -149,10 +150,6 @@ export default function PricingPage() {
         { name: 'Everything in Premium', included: true },
         { name: 'Partner/co-parent sharing', included: true },
         { name: 'Priority support', included: true },
-        { name: '', included: false },
-        { name: '', included: false },
-        { name: '', included: false },
-        { name: '', included: false },
       ],
       buttonText: user?.subscription_tier === 'family' ? 'Current Plan' : 'Get Family',
       buttonAction: user?.subscription_tier === 'family' ? 'manage' : 'checkout',
@@ -172,53 +169,55 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50" style={{ backgroundColor: '#f0eeec' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#f0eeec' }}>
       <AppNav currentPath="/pricing" />
 
       <main className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         {/* Hero Section */}
-        <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-stone-900 sm:text-5xl">
-            Choose Your Plan
-          </h1>
-          <p className="mx-auto max-w-2xl text-xl text-stone-600">
-            Evidence-based parenting guidance, tailored to your family
-          </p>
-        </div>
+        <FadeInUp>
+          <div className="mb-12 text-center">
+            <h1 className="mb-4 text-4xl font-bold text-stone-900 sm:text-5xl">
+              Choose Your Plan
+            </h1>
+            <p className="mx-auto max-w-2xl text-xl text-stone-600">
+              Evidence-based parenting guidance, tailored to your family
+            </p>
+          </div>
+        </FadeInUp>
 
         {/* Billing Toggle */}
-        <div className="mb-12 flex justify-center">
-          <div className="inline-flex rounded-lg border border-stone-200/60 bg-white p-1">
-            <button
-              onClick={() => setBillingInterval('monthly')}
-              className={`px-6 py-2 font-medium transition-all ${
-                billingInterval === 'monthly'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingInterval('annual')}
-              className={`relative px-6 py-2 font-medium transition-all ${
-                billingInterval === 'annual'
-                  ? 'bg-stone-100 text-stone-900'
-                  : 'text-stone-600 hover:text-stone-900'
-              }`}
-            >
-              Annual
-              {billingInterval === 'annual' && (
-                <span className="absolute -top-2 -right-2 inline-block rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+        <FadeInUp delay={0.1}>
+          <div className="mb-12 flex justify-center">
+            <div className="relative inline-flex rounded-full border border-stone-200/60 bg-white p-1">
+              <button
+                onClick={() => setBillingInterval('monthly')}
+                className={`relative z-10 rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                  billingInterval === 'monthly'
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingInterval('annual')}
+                className={`relative z-10 rounded-full px-6 py-2 text-sm font-medium transition-all ${
+                  billingInterval === 'annual'
+                    ? 'bg-brand-500 text-white shadow-sm'
+                    : 'text-stone-600 hover:text-stone-900'
+                }`}
+              >
+                Annual
+                <span className="ml-1.5 inline-block rounded-full bg-accent-100 px-1.5 py-0.5 text-xs font-semibold text-accent-800">
                   Save
                 </span>
-              )}
-            </button>
+              </button>
+            </div>
           </div>
-        </div>
+        </FadeInUp>
 
         {/* Pricing Cards */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <StaggerContainer className="grid gap-8 lg:grid-cols-3">
           {plans.map((plan) => {
             const PlanIcon = plan.icon;
             const currentPlanPrice = currentPrice(plan);
@@ -228,89 +227,78 @@ export default function PricingPage() {
                 : 0;
 
             return (
-              <div
-                key={plan.name}
-                className={`relative rounded-2xl border transition-all ${
-                  plan.highlighted
-                    ? 'border-2 border-cyan-600 bg-white shadow-lg'
-                    : 'border border-stone-200/60 bg-white'
-                } p-8`}
-                style={
-                  plan.highlighted
-                    ? { borderColor: '#10b89f', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }
-                    : { boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)' }
-                }
-              >
-                {/* Badge */}
-                {plan.badge && (
-                  <div className="mb-4 inline-block rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900">
-                    {plan.badge}
-                  </div>
-                )}
-
-                {/* Plan Header */}
-                <div className="mb-6 flex items-center gap-3">
-                  <PlanIcon className="h-6 w-6 text-cyan-600" style={{ color: '#10b89f' }} />
-                  <h2 className="text-2xl font-bold text-stone-900">{plan.name}</h2>
-                </div>
-
-                {/* Price */}
-                <div className="mb-2">
-                  <span className="text-5xl font-bold text-stone-900">${currentPlanPrice.toFixed(2)}</span>
-                  <span className="text-stone-600">/{billingInterval === 'monthly' ? 'month' : 'year'}</span>
-                </div>
-
-                {/* Savings Badge */}
-                {savings > 0 && (
-                  <div className="mb-6 text-sm text-stone-600">
-                    Save ${savings}/yr
-                  </div>
-                )}
-
-                {/* Button */}
-                <button
-                  onClick={() => {
-                    if (plan.buttonAction === 'checkout') {
-                      handleCheckout(plan.buttonPlan as 'premium' | 'family');
-                    } else if (plan.buttonAction === 'manage') {
-                      handleManageSubscription();
-                    }
-                  }}
-                  disabled={
-                    plan.buttonDisabled ||
-                    checkoutLoading === plan.buttonPlan ||
-                    checkoutLoading === 'downgrade'
-                  }
-                  className={`mb-8 w-full py-3 font-semibold transition-all rounded-lg ${
-                    plan.buttonDisabled
-                      ? 'bg-stone-300 text-stone-600 cursor-not-allowed'
-                      : plan.highlighted
-                        ? 'bg-amber-500 text-white hover:bg-amber-600'
-                        : 'border border-stone-200 text-stone-900 hover:border-stone-300 hover:bg-stone-50'
-                  }`}
-                  style={
-                    plan.highlighted && !plan.buttonDisabled
-                      ? { backgroundColor: '#f59e0b' }
-                      : {}
-                  }
+              <StaggerItem key={plan.name}>
+                <div
+                  className={`relative rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 ${
+                    plan.highlighted
+                      ? 'border-2 border-brand-500 bg-white shadow-lg hover:shadow-xl'
+                      : 'border border-stone-200/60 bg-white shadow-card hover:shadow-card-hover'
+                  } p-8`}
                 >
-                  {checkoutLoading === plan.buttonPlan || checkoutLoading === 'downgrade' ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Processing...
-                    </span>
-                  ) : (
-                    plan.buttonText
+                  {/* Badge */}
+                  {plan.badge && (
+                    <div className="mb-4 inline-block rounded-full bg-accent-100 px-3 py-1 text-sm font-semibold text-accent-800">
+                      {plan.badge}
+                    </div>
                   )}
-                </button>
 
-                {/* Features List */}
-                <div className="space-y-4">
-                  {plan.features.map((feature, index) => (
-                    feature.name && (
+                  {/* Plan Header */}
+                  <div className="mb-6 flex items-center gap-3">
+                    <PlanIcon className="h-6 w-6 text-brand-500" />
+                    <h2 className="font-sans text-2xl font-bold text-stone-900">{plan.name}</h2>
+                  </div>
+
+                  {/* Price */}
+                  <div className="mb-2">
+                    <span className="font-sans text-5xl font-bold text-stone-900">${currentPlanPrice.toFixed(2)}</span>
+                    <span className="text-stone-600">/{billingInterval === 'monthly' ? 'month' : 'year'}</span>
+                  </div>
+
+                  {/* Savings Badge */}
+                  {savings > 0 && (
+                    <div className="mb-6 text-sm text-brand-600 font-medium">
+                      Save ${savings}/yr
+                    </div>
+                  )}
+
+                  {/* Button */}
+                  <button
+                    onClick={() => {
+                      if (plan.buttonAction === 'checkout') {
+                        handleCheckout(plan.buttonPlan as 'premium' | 'family');
+                      } else if (plan.buttonAction === 'manage') {
+                        handleManageSubscription();
+                      }
+                    }}
+                    disabled={
+                      plan.buttonDisabled ||
+                      checkoutLoading === plan.buttonPlan ||
+                      checkoutLoading === 'downgrade'
+                    }
+                    className={`mb-8 w-full rounded-xl py-3 font-semibold transition-all ${
+                      plan.buttonDisabled
+                        ? 'bg-stone-200 text-stone-500 cursor-not-allowed'
+                        : plan.highlighted
+                          ? 'bg-accent-500 text-white hover:bg-accent-600 shadow-sm'
+                          : 'border border-stone-200 text-stone-900 hover:border-stone-300 hover:bg-stone-50'
+                    }`}
+                  >
+                    {checkoutLoading === plan.buttonPlan || checkoutLoading === 'downgrade' ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Processing...
+                      </span>
+                    ) : (
+                      plan.buttonText
+                    )}
+                  </button>
+
+                  {/* Features List */}
+                  <div className="space-y-4">
+                    {plan.features.map((feature, index) => (
                       <div key={index} className="flex items-start gap-3">
                         {feature.included ? (
-                          <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-cyan-600" style={{ color: '#10b89f' }} />
+                          <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-brand-500" />
                         ) : (
                           <X className="mt-0.5 h-5 w-5 flex-shrink-0 text-stone-300" />
                         )}
@@ -322,44 +310,46 @@ export default function PricingPage() {
                           {feature.name}
                         </span>
                       </div>
-                    )
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </StaggerItem>
             );
           })}
-        </div>
+        </StaggerContainer>
 
         {/* FAQ Section */}
-        <div className="mt-20 rounded-2xl border border-stone-200/60 bg-white p-8">
-          <h2 className="mb-8 text-2xl font-bold text-stone-900">Frequently Asked Questions</h2>
-          <div className="grid gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="mb-2 font-semibold text-stone-900">Can I change plans anytime?</h3>
-              <p className="text-stone-600">
-                Yes! You can upgrade, downgrade, or cancel your subscription at any time from your account settings.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold text-stone-900">What payment methods do you accept?</h3>
-              <p className="text-stone-600">
-                We accept all major credit and debit cards through Stripe, including Visa, Mastercard, and American Express.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold text-stone-900">Is there a free trial?</h3>
-              <p className="text-stone-600">
-                Our Free plan gives you access to core features with no credit card required. Upgrade anytime to unlock more.
-              </p>
-            </div>
-            <div>
-              <h3 className="mb-2 font-semibold text-stone-900">What&apos;s the difference between Premium and Family?</h3>
-              <p className="text-stone-600">
-                Family plans include co-parent sharing and priority support, perfect for couples managing parenting together.
-              </p>
+        <ScrollReveal>
+          <div className="mt-20 rounded-2xl border border-stone-200/60 bg-white p-8 shadow-card">
+            <h2 className="mb-8 text-2xl font-bold text-stone-900">Frequently Asked Questions</h2>
+            <div className="grid gap-8 md:grid-cols-2">
+              <div>
+                <h3 className="mb-2 font-sans font-semibold text-stone-900">Can I change plans anytime?</h3>
+                <p className="text-sm text-stone-600">
+                  Yes! You can upgrade, downgrade, or cancel your subscription at any time from your account settings.
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-2 font-sans font-semibold text-stone-900">What payment methods do you accept?</h3>
+                <p className="text-sm text-stone-600">
+                  We accept all major credit and debit cards through Stripe, including Visa, Mastercard, and American Express.
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-2 font-sans font-semibold text-stone-900">Is there a free trial?</h3>
+                <p className="text-sm text-stone-600">
+                  Our Free plan gives you access to core features with no credit card required. Upgrade anytime to unlock more.
+                </p>
+              </div>
+              <div>
+                <h3 className="mb-2 font-sans font-semibold text-stone-900">What&apos;s the difference between Premium and Family?</h3>
+                <p className="text-sm text-stone-600">
+                  Family plans include co-parent sharing and priority support, perfect for couples managing parenting together.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </ScrollReveal>
       </main>
     </div>
   );

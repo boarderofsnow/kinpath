@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { BookOpen } from "lucide-react";
 import { ResourceCard } from "./resource-card";
 import { TOPICS, type TopicKey } from "@kinpath/shared";
 import type { ResourceWithMeta } from "@kinpath/shared";
@@ -93,8 +94,12 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
         </div>
       ) : (
         <div className="rounded-xl bg-white p-8 text-center shadow-card">
+          <BookOpen className="mx-auto mb-3 h-8 w-8 text-stone-300" />
           <p className="text-stone-500">
-            No resources match this filter. Try selecting a different topic.
+            No resources match this filter.
+          </p>
+          <p className="mt-1 text-sm text-stone-400">
+            Try selecting a different topic or browse all resources.
           </p>
         </div>
       )}

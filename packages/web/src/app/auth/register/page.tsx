@@ -41,8 +41,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
+    <main className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm space-y-6 rounded-2xl bg-white/80 p-8 shadow-card backdrop-blur-sm">
         <div className="text-center">
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
