@@ -8,6 +8,7 @@ import {
   TAG_NAMESPACES,
   type UserPreferencesInput,
 } from "@kinpath/shared";
+import { AnimatePresence, motion } from "@/components/ui/motion";
 
 type Step = "child" | "birth" | "feeding" | "vaccines" | "lifestyle" | "topics";
 
@@ -97,7 +98,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-brand-50/50 via-white to-sage-50/50 px-4">
       <div className="w-full max-w-lg space-y-8">
         {/* Progress bar */}
         <div className="space-y-2">
@@ -114,7 +115,15 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step content */}
-        <div className="rounded-2xl border border-stone-200/60 bg-white p-8 shadow-card">
+        <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="rounded-2xl border border-stone-200/60 bg-white p-8 shadow-card"
+        >
           {step === "child" && (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Tell us about your little one</h2>
@@ -370,7 +379,8 @@ export default function OnboardingPage() {
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
+        </AnimatePresence>
 
         {/* Navigation buttons */}
         <div className="flex justify-between">

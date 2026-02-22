@@ -13,6 +13,7 @@ import { SearchBar } from "@/components/search/search-bar";
 import { getPersonalizedFeed } from "@/lib/resources";
 import { UpgradeBanner } from "@/components/ui/upgrade-banner";
 import { getHouseholdContext } from "@/lib/household";
+import { FadeInUp } from "@/components/ui/motion";
 
 interface DashboardPageProps {
   searchParams: Promise<{ child?: string }>;
@@ -96,6 +97,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <AppNav currentPath="/dashboard" />
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
+        <FadeInUp>
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-stone-900">
@@ -114,6 +116,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             )}
           </div>
         </header>
+        </FadeInUp>
 
       {/* Search bar */}
       <div className="mt-6 max-w-md">

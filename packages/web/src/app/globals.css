@@ -7,6 +7,12 @@
     --background: #f0eeec;
     --foreground: #1c1917;
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), Georgia, serif;
+  }
 }
 
 body {
@@ -18,13 +24,41 @@ body {
 /* Smooth transitions for interactive elements */
 a,
 button {
-  transition-property: color, background-color, border-color, box-shadow;
+  transition-property: color, background-color, border-color, box-shadow,
+    transform;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Subtle press feedback on buttons */
+button:not(:disabled):active {
+  transform: scale(0.98);
 }
 
 /* Modern selection color */
 ::selection {
   background-color: #cbfcf0;
   color: #114e48;
+}
+
+/* Noise texture overlay — apply with .bg-noise on a relative container */
+.bg-noise {
+  position: relative;
+}
+.bg-noise::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* Mobile bottom nav spacing */
+@media (max-width: 639px) {
+  body {
+    padding-bottom: 4.5rem;
+  }
 }

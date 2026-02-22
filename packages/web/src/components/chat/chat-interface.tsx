@@ -295,13 +295,34 @@ export function ChatInterface({
           // Empty state
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
-              <MessageCircle className="mx-auto mb-4 h-12 w-12 text-stone-400" />
-              <p className="text-base text-stone-600">
-                Ask me anything about parenting, nutrition, sleep, and more.
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-50 to-brand-100">
+                <MessageCircle className="h-8 w-8 text-brand-500" />
+              </div>
+              <p className="text-base font-medium text-stone-700">
+                Ask me anything about parenting
               </p>
-              <p className="text-sm text-stone-500">
+              <p className="mt-1 text-sm text-stone-500">
                 I&apos;ll draw from our evidence-based resource library to help you.
               </p>
+              {/* Suggested questions */}
+              <div className="mt-6 flex flex-wrap justify-center gap-2">
+                {[
+                  "How much sleep does my baby need?",
+                  "When should I introduce solid foods?",
+                  "Tips for managing teething pain",
+                ].map((question) => (
+                  <button
+                    key={question}
+                    onClick={() => {
+                      setInputValue(question);
+                      textareaRef.current?.focus();
+                    }}
+                    className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-600 hover:shadow-card"
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         ) : (
@@ -383,16 +404,14 @@ export function ChatInterface({
             {loading && (
               <div className="flex justify-start">
                 <div className="rounded-2xl rounded-bl-md border border-stone-200/60 bg-white px-4 py-3 shadow-card">
-                  <div className="flex gap-2">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-stone-400" />
-                    <span
-                      className="h-2 w-2 animate-bounce rounded-full bg-stone-400"
-                      style={{ animationDelay: "0.2s" }}
-                    />
-                    <span
-                      className="h-2 w-2 animate-bounce rounded-full bg-stone-400"
-                      style={{ animationDelay: "0.4s" }}
-                    />
+                  <div className="flex items-center gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="h-2 w-2 rounded-full bg-brand-400 animate-pulse-soft"
+                        style={{ animationDelay: `${i * 0.2}s` }}
+                      />
+                    ))}
                   </div>
                 </div>
               </div>

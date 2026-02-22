@@ -45,7 +45,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-sm space-y-6 rounded-2xl bg-white/80 p-8 shadow-card backdrop-blur-sm">
         <div className="text-center">
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -107,7 +107,7 @@ export default function LoginPage() {
             <div className="w-full border-t border-stone-200" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-stone-500">or continue with</span>
+            <span className="bg-white/80 px-2 text-stone-500">or continue with</span>
           </div>
         </div>
 
