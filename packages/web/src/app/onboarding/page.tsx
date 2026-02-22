@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   TOPICS,
@@ -34,7 +34,31 @@ const TOPIC_DESCRIPTIONS: Record<string, string> = {
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const supabase = createClient();
+
+  // Guard: redirect already-onboarded users back to dashboard
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        window.location.href = "/auth/login";
+        return;
+      }
+      const { data } = await supabase
+        .from("users")
+        .select("onboarding_complete")
+        .eq("id", user.id)
+        .single();
+
+      if (data?.onboarding_complete) {
+        window.location.href = "/dashboard";
+        return;
+      }
+      setReady(true);
+    };
+    checkOnboardingStatus();
+  }, [supabase]);
 
   // Child form state
   const [childName, setChildName] = useState("");
@@ -95,6 +119,15 @@ export default function OnboardingPage() {
       .eq("id", user.id);
 
     window.location.href = "/dashboard";
+  }
+
+  // Don't render the form until we've confirmed onboarding is needed
+  if (!ready) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50/50 via-white to-sage-50/50">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
+      </main>
+    );
   }
 
   return (
