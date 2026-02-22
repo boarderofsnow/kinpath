@@ -119,9 +119,22 @@ export async function POST(req: NextRequest) {
     // Roll back the member row so the same email can be retried cleanly.
     await serviceSupabase.from("household_members").delete().eq("id", member.id);
     console.error("Failed to send invite email:", inviteError.message);
+
+    // Detect Supabase auth rate-limit errors and surface them as 429 so the
+    // client can show a helpful "wait before retrying" message instead of a
+    // generic failure.
+    const isRateLimited =
+      inviteError.message?.toLowerCase().includes("rate limit") ||
+      (inviteError as any)?.status === 429 ||
+      (inviteError as any)?.code === "over_email_send_rate_limit";
+
     return NextResponse.json(
-      { error: "Failed to send invite. Please try again." },
-      { status: 500 }
+      {
+        error: isRateLimited
+          ? "Too many invitations sent. Please wait a few minutes before trying again."
+          : "Failed to send invite. Please try again.",
+      },
+      { status: isRateLimited ? 429 : 500 }
     );
   }
 
