@@ -10,13 +10,13 @@ export default function WelcomeScreen() {
       </Text>
 
       <View style={styles.buttons}>
-        <Link href={"/onboarding" as Href} asChild>
+        <Link href={"/(auth)/register" as Href} asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Get Started</Text>
           </Pressable>
         </Link>
 
-        <Link href={"/dashboard" as Href} asChild>
+        <Link href={"/(auth)/login" as Href} asChild>
           <Pressable style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Sign In</Text>
           </Pressable>
