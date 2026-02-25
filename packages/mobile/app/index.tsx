@@ -53,7 +53,7 @@ export default function WelcomeScreen() {
                 color={COLORS.primary}
               />
             </View>
-            <Text style={styles.featureText}>AI-powered chat</Text>
+            <Text style={styles.featureText}>Expert chat support</Text>
           </View>
         </View>
 
