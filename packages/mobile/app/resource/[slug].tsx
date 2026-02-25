@@ -10,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { ArrowLeft } from "lucide-react-native";
 import { supabase } from "../../lib/supabase";
 const COLORS = {
   primary: "#10b89f",
@@ -319,7 +319,7 @@ export default function ResourceDetailScreen() {
             style={styles.headerBackButton}
             onPress={handleBackPress}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
+            <ArrowLeft size={24} color={COLORS.dark} strokeWidth={2} />
           </TouchableOpacity>
           <Text style={{ flex: 1, fontSize: 16, fontWeight: "600", color: COLORS.dark }}>
             Resource
@@ -342,7 +342,7 @@ export default function ResourceDetailScreen() {
           style={styles.headerBackButton}
           onPress={handleBackPress}
         >
-          <Ionicons name="arrow-back" size={24} color={COLORS.dark} />
+          <ArrowLeft size={24} color={COLORS.dark} strokeWidth={2} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 16, fontWeight: "600", color: COLORS.dark }}>
           {resource.title.length > 30
