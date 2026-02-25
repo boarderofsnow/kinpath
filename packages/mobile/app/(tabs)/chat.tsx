@@ -6,7 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
 } from "react-native";
-import { MessageCircle } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const COLORS = {
   primary: "#10b89f",
@@ -61,7 +61,7 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.emptyStateIcon}>
-          <MessageCircle size={48} color={COLORS.primary} strokeWidth={1.5} />
+          <Ionicons name="chatbubble-outline" size={48} color={COLORS.primary} />
         </View>
         <Text style={styles.emptyStateText}>Ask KinPath AI</Text>
         <Text style={styles.emptyStateSubtext}>

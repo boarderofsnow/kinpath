@@ -1,12 +1,7 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import { StyleSheet } from "react-native";
-import {
-  Home,
-  BookOpen,
-  MessageCircle,
-  Settings,
-} from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const COLORS = {
   primary: "#10b89f",
@@ -48,7 +43,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, size }) => (
-            <Home size={size} color={color} strokeWidth={2} />
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
@@ -58,7 +53,7 @@ export default function TabLayout() {
         options={{
           title: "Browse",
           tabBarIcon: ({ color, size }) => (
-            <BookOpen size={size} color={color} strokeWidth={2} />
+            <Ionicons name="book-outline" size={size} color={color} />
           ),
         }}
       />
@@ -68,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: "Chat",
           tabBarIcon: ({ color, size }) => (
-            <MessageCircle size={size} color={color} strokeWidth={2} />
+            <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
         }}
       />
@@ -78,7 +73,7 @@ export default function TabLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color, size }) => (
-            <Settings size={size} color={color} strokeWidth={2} />
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
         }}
       />

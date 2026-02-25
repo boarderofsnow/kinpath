@@ -10,7 +10,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronRight } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
 import {
@@ -419,7 +419,7 @@ export default function HomeScreen() {
                         <Text style={styles.checklistItemText} numberOfLines={1}>
                           {item.title}
                         </Text>
-                        <ChevronRight size={16} color={COLORS.stone200} />
+                        <Ionicons name="chevron-forward" size={16} color={COLORS.stone200} />
                       </View>
                     ))}
                   </View>
