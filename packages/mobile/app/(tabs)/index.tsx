@@ -469,7 +469,7 @@ export default function HomeScreen() {
                   style={styles.quickActionIcon}
                 />
                 <Text style={[styles.quickActionText, styles.quickActionTextActive]}>
-                  Ask AI
+                  Chat
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -590,7 +590,7 @@ export default function HomeScreen() {
                   style={styles.quickActionIcon}
                 />
                 <Text style={[styles.quickActionText, styles.quickActionTextActive]}>
-                  Ask AI
+                  Chat
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity

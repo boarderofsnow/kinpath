@@ -59,6 +59,16 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
+        name="checklist"
+        options={{
+          title: "Checklist",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="checkbox-outline" size={size} color={color} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
         name="chat"
         options={{
           title: "Chat",
