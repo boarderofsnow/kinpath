@@ -8,10 +8,12 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  SafeAreaView,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { useAuth } from "../../lib/auth-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const COLORS = {
   primary: "#10b89f",
@@ -21,6 +23,7 @@ const COLORS = {
   error: "#dc2626",
   border: "#d4cfc8",
   lightText: "#78716c",
+  white: "#ffffff",
 };
 
 export default function RegisterScreen() {
@@ -95,103 +98,128 @@ export default function RegisterScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.logo}>KinPath</Text>
-          <Text style={styles.subtitle}>Create your account</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Display Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Your name"
-              placeholderTextColor={COLORS.lightText}
-              value={displayName}
-              onChangeText={setDisplayName}
-              editable={!isLoading}
-              autoCapitalize="words"
-              autoComplete="name"
-            />
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="you@example.com"
-              placeholderTextColor={COLORS.lightText}
-              value={email}
-              onChangeText={setEmail}
-              editable={!isLoading}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
-            />
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={COLORS.lightText}
-              value={password}
-              onChangeText={setPassword}
-              editable={!isLoading}
-              secureTextEntry
-              autoComplete="password-new"
-            />
-            <Text style={styles.hint}>Minimum 8 characters</Text>
-          </View>
-
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Confirm Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor={COLORS.lightText}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              editable={!isLoading}
-              secureTextEntry
-              autoComplete="password-new"
-            />
-          </View>
-
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Back Button */}
           <Pressable
-            style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleSignUp}
-            disabled={isLoading}
+            style={styles.backButton}
+            onPress={() => router.back()}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
-            )}
+            <MaterialCommunityIcons
+              name="chevron-left"
+              size={28}
+              color={COLORS.darkText}
+            />
           </Pressable>
 
-          <View style={styles.divider} />
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/(auth)/login" asChild>
-              <Pressable>
-                <Text style={styles.linkText}>Sign in</Text>
-              </Pressable>
-            </Link>
+          <View style={styles.header}>
+            <Text style={styles.logo}>KinPath</Text>
+            <Text style={styles.subtitle}>Create your account</Text>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+
+          <View style={styles.form}>
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Display Name</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Your name"
+                placeholderTextColor={COLORS.lightText}
+                value={displayName}
+                onChangeText={setDisplayName}
+                editable={!isLoading}
+                autoCapitalize="words"
+                autoComplete="name"
+              />
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="you@example.com"
+                placeholderTextColor={COLORS.lightText}
+                value={email}
+                onChangeText={setEmail}
+                editable={!isLoading}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoComplete="email"
+              />
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor={COLORS.lightText}
+                value={password}
+                onChangeText={setPassword}
+                editable={!isLoading}
+                secureTextEntry
+                autoComplete="password-new"
+              />
+              <Text style={styles.hint}>Minimum 8 characters</Text>
+            </View>
+
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Confirm Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="••••••••"
+                placeholderTextColor={COLORS.lightText}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                editable={!isLoading}
+                secureTextEntry
+                autoComplete="password-new"
+              />
+            </View>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+
+            <Pressable
+              style={[styles.button, isLoading && styles.buttonDisabled]}
+              onPress={handleSignUp}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color={COLORS.white} size="small" />
+              ) : (
+                <Text style={styles.buttonText}>Create Account</Text>
+              )}
+            </Pressable>
+
+            <View style={styles.divider} />
+
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Already have an account? </Text>
+              <Link href="/(auth)/login" asChild>
+                <Pressable>
+                  <Text style={styles.linkText}>Sign in</Text>
+                </Pressable>
+              </Link>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
@@ -199,8 +227,13 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingVertical: 40,
+    paddingVertical: 16,
     justifyContent: "center",
+  },
+  backButton: {
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    padding: 8,
   },
   header: {
     marginBottom: 48,
@@ -211,6 +244,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: COLORS.primary,
     marginBottom: 16,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 16,
@@ -237,7 +271,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: COLORS.darkText,
-    backgroundColor: "#fff",
+    backgroundColor: COLORS.white,
   },
   hint: {
     fontSize: 12,
@@ -257,14 +291,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 12,
+    elevation: 2,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: "#fff",
+    color: COLORS.white,
     fontSize: 16,
     fontWeight: "700",
+    letterSpacing: 0.3,
   },
   divider: {
     height: 1,

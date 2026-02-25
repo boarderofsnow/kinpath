@@ -14,7 +14,8 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
-import type { User } from "@kinpath/shared";
+import { calculateAgeInWeeks, formatAgeLabel } from "@kinpath/shared";
+import type { User, Child } from "@kinpath/shared";
 import Constants from "expo-constants";
 
 const COLORS = {
@@ -41,6 +42,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 24,
+  },
+  profileHeader: {
+    alignItems: "center",
+    marginBottom: 32,
+    paddingVertical: 24,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  avatarText: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: COLORS.white,
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: COLORS.dark,
+    marginBottom: 4,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: "#666",
   },
   header: {
     fontSize: 24,
@@ -100,11 +137,75 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
+  badgeContainerFree: {
+    backgroundColor: "#d1d5db",
+  },
+  badgeContainerPremium: {
+    backgroundColor: COLORS.primary,
+  },
   badgeText: {
     color: COLORS.white,
     fontSize: 12,
     fontWeight: "600",
     textTransform: "capitalize",
+  },
+  childRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomColor: COLORS.stone200,
+    borderBottomWidth: 1,
+  },
+  childRowContent: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  childAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.secondary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  childAvatarText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  childInfo: {
+    flex: 1,
+  },
+  childName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLORS.dark,
+  },
+  childAge: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
+  },
+  supportRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomColor: COLORS.stone200,
+    borderBottomWidth: 1,
+  },
+  supportRowLabel: {
+    fontSize: 15,
+    color: COLORS.dark,
+    fontWeight: "500",
+  },
+  chevron: {
+    marginLeft: 8,
   },
   button: {
     paddingHorizontal: 16,
@@ -124,6 +225,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginLeft: 8,
   },
+  deleteButton: {
+    marginTop: 16,
+    paddingVertical: 12,
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    fontWeight: "500",
+  },
   versionText: {
     fontSize: 12,
     color: "#999",
@@ -135,18 +246,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  subscriptionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  userInfoContainer: {
-    marginBottom: 8,
-  },
-  email: {
-    fontSize: 13,
-    color: "#666",
-    marginTop: 2,
+  emptyStateText: {
+    fontSize: 14,
+    color: "#999",
+    textAlign: "center",
+    paddingVertical: 20,
   },
 });
 
@@ -155,6 +259,7 @@ export default function SettingsScreen() {
   const router = useRouter();
 
   const [userData, setUserData] = useState<User | null>(null);
+  const [children, setChildren] = useState<Child[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -163,6 +268,7 @@ export default function SettingsScreen() {
     if (!user?.id) return;
 
     try {
+      // Load user data
       const { data: userRecord } = await supabase
         .from("users")
         .select("*")
@@ -172,8 +278,19 @@ export default function SettingsScreen() {
       if (userRecord) {
         setUserData(userRecord);
       }
+
+      // Load children data
+      const { data: childrenRecords } = await supabase
+        .from("children")
+        .select("*")
+        .eq("parent_id", user.id)
+        .order("created_at", { ascending: true });
+
+      if (childrenRecords) {
+        setChildren(childrenRecords);
+      }
     } catch (error) {
-      console.error("Error loading user data:", error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -222,7 +339,33 @@ export default function SettingsScreen() {
     return Constants.expoConfig?.version || "1.0.0";
   };
 
+  const getSubscriptionBadgeStyle = () => {
+    if (userData?.subscription_tier === "free") {
+      return styles.badgeContainerFree;
+    } else if (userData?.subscription_tier === "premium") {
+      return styles.badgeContainerPremium;
+    } else if (userData?.subscription_tier === "family") {
+      return { backgroundColor: COLORS.accent };
+    }
+    return styles.badgeContainer;
+  };
+
+  const getSubscriptionLabel = (): string => {
+    if (!userData?.subscription_tier) return "Free Plan";
+    switch (userData.subscription_tier) {
+      case "free":
+        return "Free Plan";
+      case "premium":
+        return "Premium";
+      case "family":
+        return "Family";
+      default:
+        return userData.subscription_tier;
+    }
+  };
+
   const displayName = userData?.display_name || user?.email?.split("@")[0] || "User";
+  const userInitial = displayName.charAt(0).toUpperCase();
 
   if (authLoading || loading) {
     return (
@@ -247,35 +390,102 @@ export default function SettingsScreen() {
           />
         }
       >
-        <Text style={styles.header}>Settings</Text>
+        {/* Profile Header */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{userInitial}</Text>
+          </View>
+          <Text style={styles.profileName}>{displayName}</Text>
+          <Text style={styles.profileEmail}>{user?.email}</Text>
+        </View>
 
         {/* Account Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Account</Text>
           <View style={styles.card}>
-            <View style={[styles.row]}>
-              <View style={styles.userInfoContainer}>
-                <Text style={styles.rowLabel}>{displayName}</Text>
-                <Text style={styles.email}>{user?.email}</Text>
-              </View>
-            </View>
-
             <View style={[styles.row, styles.rowLast]}>
               <Text style={styles.rowLabel}>Subscription</Text>
               {userData?.subscription_tier && (
-                <View style={styles.badgeContainer}>
+                <View style={[styles.badgeContainer, getSubscriptionBadgeStyle()]}>
                   <Text style={styles.badgeText}>
-                    {userData.subscription_tier === "free"
-                      ? "Free Plan"
-                      : userData.subscription_tier === "premium"
-                        ? "Premium"
-                        : userData.subscription_tier === "family"
-                          ? "Family"
-                          : userData.subscription_tier}
+                    {getSubscriptionLabel()}
                   </Text>
                 </View>
               )}
             </View>
+          </View>
+        </View>
+
+        {/* Children Section */}
+        {children && children.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Children</Text>
+            <View style={styles.card}>
+              {children.map((child, index) => {
+                const childInitial = child.name.charAt(0).toUpperCase();
+                const ageInWeeks = calculateAgeInWeeks(child);
+                const ageLabel = formatAgeLabel(ageInWeeks);
+
+                return (
+                  <View
+                    key={child.id}
+                    style={[
+                      styles.childRow,
+                      index === children.length - 1 && { borderBottomWidth: 0 },
+                    ]}
+                  >
+                    <View style={styles.childRowContent}>
+                      <View style={styles.childAvatar}>
+                        <Text style={styles.childAvatarText}>{childInitial}</Text>
+                      </View>
+                      <View style={styles.childInfo}>
+                        <Text style={styles.childName}>{child.name}</Text>
+                        <Text style={styles.childAge}>{ageLabel}</Text>
+                      </View>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={COLORS.stone200}
+                    />
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Support Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.supportRow}>
+              <Text style={styles.supportRowLabel}>Help & FAQ</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={COLORS.stone200}
+                style={styles.chevron}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.supportRow}>
+              <Text style={styles.supportRowLabel}>Privacy Policy</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={COLORS.stone200}
+                style={styles.chevron}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.supportRow, styles.rowLast]}>
+              <Text style={styles.supportRowLabel}>Terms of Service</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={COLORS.stone200}
+                style={styles.chevron}
+              />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -290,7 +500,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Actions */}
+        {/* Sign Out Button */}
         <TouchableOpacity
           style={[styles.button, styles.signOutButton]}
           onPress={handleSignOut}
@@ -304,6 +514,11 @@ export default function SettingsScreen() {
               <Text style={styles.signOutButtonText}>Sign Out</Text>
             </>
           )}
+        </TouchableOpacity>
+
+        {/* Danger Zone - Delete Account */}
+        <TouchableOpacity style={styles.deleteButton}>
+          <Text style={styles.deleteButtonText}>Delete Account</Text>
         </TouchableOpacity>
 
         <Text style={styles.versionText}>KinPath Expo v{getAppVersion()}</Text>
