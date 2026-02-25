@@ -9,8 +9,8 @@
 FROM node:20-alpine AS builder
 WORKDIR /repo
 
-# Copy workspace manifests first for better layer caching
-COPY package.json package-lock.json ./
+# Copy workspace manifests + root tsconfig (shared/api extend it) for better layer caching
+COPY package.json package-lock.json tsconfig.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/api/package.json     ./packages/api/
 
