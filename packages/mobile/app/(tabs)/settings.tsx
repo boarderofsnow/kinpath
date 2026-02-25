@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { LogOut, ChevronRight } from "lucide-react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
 import type { User } from "@kinpath/shared";
@@ -300,7 +300,7 @@ export default function SettingsScreen() {
             <ActivityIndicator color={COLORS.white} size="small" />
           ) : (
             <>
-              <LogOut size={18} color={COLORS.white} />
+              <Ionicons name="log-out-outline" size={18} color={COLORS.white} />
               <Text style={styles.signOutButtonText}>Sign Out</Text>
             </>
           )}
