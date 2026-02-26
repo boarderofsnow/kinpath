@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
@@ -16,55 +14,53 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   await searchParams; // await the promise
 
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) {
     redirect("/auth/login");
   }
 
-  // Resolve household context to know if this user is a partner.
-  const { isPartner, householdId } = await getHouseholdContext(user.id);
-
-  // Fetch user profile
-  const { data: userProfile } = await supabase
-    .from("users")
-    .select("id, display_name, email, subscription_tier, stripe_customer_id")
-    .eq("id", user.id)
-    .single();
-
-  // Fetch children (partner's own settings — they manage their own profile here)
-  const { data: children } = await supabase
-    .from("children")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: true });
+  // Parallel — all 5 queries depend only on user.id
+  const [
+    { isPartner, householdId },
+    { data: userProfile },
+    { data: children },
+    { data: preferences },
+    { data: notificationPrefs },
+  ] = await Promise.all([
+    getHouseholdContext(user.id, supabase),
+    supabase
+      .from("users")
+      .select("id, display_name, email, subscription_tier, stripe_customer_id")
+      .eq("id", user.id)
+      .single(),
+    supabase
+      .from("children")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("user_preferences")
+      .select(
+        "birth_preference, feeding_preference, vaccine_stance, religion, dietary_preference, parenting_style, topics_of_interest"
+      )
+      .eq("user_id", user.id)
+      .single(),
+    supabase
+      .from("notification_preferences")
+      .select("*")
+      .eq("user_id", user.id)
+      .single(),
+  ]);
 
   const enrichedChildren = (children ?? []).map((child) =>
     enrichChildWithAge(child)
   );
 
-  // Fetch user preferences
-  const { data: preferences } = await supabase
-    .from("user_preferences")
-    .select(
-      "birth_preference, feeding_preference, vaccine_stance, religion, dietary_preference, parenting_style, topics_of_interest"
-    )
-    .eq("user_id", user.id)
-    .single();
-
-  // Fetch notification preferences
-  const { data: notificationPrefs } = await supabase
-    .from("notification_preferences")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  // Fetch household members (family tier only)
+  // Fetch household members (family tier only, conditional)
   let householdMembers: HouseholdMember[] = [];
   if (userProfile?.subscription_tier === "family") {
-    // For partners, use their known householdId; for owners, look up by owner_user_id.
     let resolvedHouseholdId: string | null = householdId;
 
     if (!resolvedHouseholdId) {

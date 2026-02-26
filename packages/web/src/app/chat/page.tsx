@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
@@ -10,18 +8,24 @@ import { getHouseholdContext } from "@/lib/household";
 export default async function ChatPage() {
   // Fetch authenticated user
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) {
     redirect("/auth/login");
   }
 
-  // Resolve household context — partners use the owner's user_id for data queries.
-  const { effectiveOwnerId } = await getHouseholdContext(user.id);
+  // Parallel — household context + subscription tier
+  const [{ effectiveOwnerId }, { data: userData, error: userError }] = await Promise.all([
+    getHouseholdContext(user.id, supabase),
+    supabase.from("users").select("subscription_tier").eq("id", user.id).single(),
+  ]);
 
-  // Fetch user's children (using effectiveOwnerId so partners see owner's children)
+  if (userError) {
+    console.error("Error fetching user subscription:", userError);
+  }
+
+  // Fetch children (needs effectiveOwnerId from household context)
   const { data: childrenData, error: childrenError } = await supabase
     .from("children")
     .select("*")
@@ -32,21 +36,9 @@ export default async function ChatPage() {
     console.error("Error fetching children:", childrenError);
   }
 
-  // Enrich children with age
   const children = (childrenData || []).map((child) =>
     enrichChildWithAge(child)
   );
-
-  // Fetch user's subscription tier
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("subscription_tier")
-    .eq("id", user.id)
-    .single();
-
-  if (userError) {
-    console.error("Error fetching user subscription:", userError);
-  }
 
   const subscriptionTier = userData?.subscription_tier || "free";
 

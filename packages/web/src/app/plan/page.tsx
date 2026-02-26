@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -16,18 +14,20 @@ interface PlanPageProps {
 export default async function PlanPage({ searchParams }: PlanPageProps) {
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) redirect("/auth/login");
 
-  // Check onboarding
-  const { data: profile } = await supabase
-    .from("users")
-    .select("onboarding_complete, display_name, subscription_tier")
-    .eq("id", user.id)
-    .single();
+  // Step A: Parallel — profile + household context
+  const [{ data: profile }, { effectiveOwnerId, householdId }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("onboarding_complete, display_name, subscription_tier")
+      .eq("id", user.id)
+      .single(),
+    getHouseholdContext(user.id, supabase),
+  ]);
 
   if (!profile) {
     redirect("/auth/login");
@@ -37,15 +37,24 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     redirect("/onboarding");
   }
 
-  // Resolve household context — partners use the owner's user_id for data queries.
-  const { effectiveOwnerId, isPartner, householdId } = await getHouseholdContext(user.id);
-
-  // Fetch children
-  const { data: childrenData } = await supabase
-    .from("children")
-    .select("*")
-    .eq("user_id", effectiveOwnerId)
-    .order("created_at", { ascending: true });
+  // Step B: Parallel — children + checklist + doctor items (all need effectiveOwnerId)
+  const [{ data: childrenData }, { data: rawItems }, { data: rawDoctorItems }] = await Promise.all([
+    supabase
+      .from("children")
+      .select("*")
+      .eq("user_id", effectiveOwnerId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("checklist_items")
+      .select("*, checklist_item_children(child_id)")
+      .eq("user_id", effectiveOwnerId)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("doctor_discussion_items")
+      .select("*, doctor_item_children(child_id)")
+      .eq("user_id", effectiveOwnerId)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   const enrichedChildren = (childrenData ?? []).map((child) =>
     enrichChildWithAge(child)
@@ -73,14 +82,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     ? enrichedChildren.find((c) => c.id === params.child) ?? enrichedChildren[0]
     : enrichedChildren[0];
 
-  // Fetch ALL checklist items (using effectiveOwnerId so partners see owner's items)
-  const { data: rawItems } = await supabase
-    .from("checklist_items")
-    .select("*, checklist_item_children(child_id)")
-    .eq("user_id", effectiveOwnerId)
-    .order("sort_order", { ascending: true });
-
-  // Normalize: extract child_ids from the junction table join
+  // Normalize checklist items
   const checklistItems: ChecklistItem[] = (rawItems ?? []).map((row: any) => {
     const junctionRows = row.checklist_item_children ?? [];
     const childIds = junctionRows.map((j: { child_id: string }) => j.child_id);
@@ -88,13 +90,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     return { ...item, child_ids: childIds } as ChecklistItem;
   });
 
-  // Fetch doctor discussion items (using effectiveOwnerId so partners see owner's items)
-  const { data: rawDoctorItems } = await supabase
-    .from("doctor_discussion_items")
-    .select("*, doctor_item_children(child_id)")
-    .eq("user_id", effectiveOwnerId)
-    .order("sort_order", { ascending: true });
-
+  // Normalize doctor discussion items
   const doctorItems: DoctorDiscussionItem[] = (rawDoctorItems ?? []).map((row: any) => {
     const junctionRows = row.doctor_item_children ?? [];
     const childIds = junctionRows.map((j: { child_id: string }) => j.child_id);
@@ -102,10 +98,9 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     return { ...item, child_ids: childIds } as DoctorDiscussionItem;
   });
 
-  // Fetch household members if user is on family plan (works for both owners and partners)
+  // Conditional: Fetch household members (family tier only)
   let householdMembers: HouseholdMember[] = [];
   if (profile?.subscription_tier === "family") {
-    // For partners, householdId is known directly; for owners, look up by owner_user_id.
     let resolvedHouseholdId: string | null = householdId;
 
     if (!resolvedHouseholdId) {

@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { BookOpen, Clock, CheckCircle2, XCircle, Archive } from "lucide-react";

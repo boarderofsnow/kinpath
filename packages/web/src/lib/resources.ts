@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "./supabase/server";
+import { createServerSupabaseClient, type ServerSupabaseClient } from "./supabase/server";
 import type { ResourceWithMeta, UserPreferences } from "@kinpath/shared";
 import { rankResources } from "@kinpath/shared";
 
@@ -34,9 +34,10 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 export async function getPersonalizedFeed(
   userId: string,
   ageInWeeks: number,
-  limit = 20
+  limit = 20,
+  existingClient?: ServerSupabaseClient
 ): Promise<{ resources: ResourceWithMeta[]; preferences: UserPreferences }> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = existingClient ?? await createServerSupabaseClient();
 
   // Fetch user preferences for scoring
   const { data: prefs } = await supabase

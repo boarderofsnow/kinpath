@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -14,9 +12,8 @@ export default async function ReviewResourcePage({ params }: ReviewResourcePageP
   const { slug } = await params;
   const supabase = await createServerSupabaseClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) redirect("/auth/login");
 
   // Get reviewer record
