@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useTransition } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -42,6 +42,7 @@ export function PlanClient({
   const [addingMilestone, setAddingMilestone] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"checklist" | "doctor">(initialTab);
   const [filterChildId, setFilterChildId] = useState<string | "all">(activeChildId);
+  const [, startTransition] = useTransition();
 
   const activeChild = childProfiles.find((c) => c.id === activeChildId) ?? childProfiles[0];
   const filterChild = filterChildId === "all" ? null : childProfiles.find((c) => c.id === filterChildId) ?? activeChild;
@@ -226,7 +227,7 @@ export function PlanClient({
       {/* Page tabs: Checklist / Doctor */}
       <div className="mt-4 flex gap-1 rounded-xl bg-stone-100 p-1">
         <button
-          onClick={() => setActiveTab("checklist")}
+          onClick={() => startTransition(() => setActiveTab("checklist"))}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "checklist"
               ? "bg-white text-stone-900 shadow-sm"
@@ -237,7 +238,7 @@ export function PlanClient({
           Checklist
         </button>
         <button
-          onClick={() => setActiveTab("doctor")}
+          onClick={() => startTransition(() => setActiveTab("doctor"))}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "doctor"
               ? "bg-white text-stone-900 shadow-sm"
@@ -253,7 +254,7 @@ export function PlanClient({
       {childProfiles.length > 1 && (
         <div className="mt-4 flex gap-2">
           <button
-            onClick={() => setFilterChildId("all")}
+            onClick={() => startTransition(() => setFilterChildId("all"))}
             className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
               filterChildId === "all"
                 ? "bg-brand-500 text-white"
@@ -265,7 +266,7 @@ export function PlanClient({
           {childProfiles.map((child) => (
             <button
               key={child.id}
-              onClick={() => setFilterChildId(child.id)}
+              onClick={() => startTransition(() => setFilterChildId(child.id))}
               className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
                 filterChildId === child.id
                   ? "bg-brand-500 text-white"

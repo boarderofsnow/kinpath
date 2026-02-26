@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, memo, useTransition } from "react";
 import Link from "next/link";
 import { ChildWithAge } from "@kinpath/shared";
 import { createClient } from "@/lib/supabase/client";
@@ -33,6 +33,96 @@ interface Message {
   is_saved?: boolean;
 }
 
+interface ChatMessageProps {
+  msg: Message;
+  idx: number;
+  onSave: (msg: Message, idx: number) => void;
+  onAddToDoctor: (msg: Message, idx: number) => void;
+  savingId: string | null;
+  addedToDoctorList: Set<number>;
+}
+
+const ChatMessage = memo(function ChatMessage({
+  msg,
+  idx,
+  onSave,
+  onAddToDoctor,
+  savingId,
+  addedToDoctorList,
+}: ChatMessageProps) {
+  return (
+    <div
+      className={`flex ${
+        msg.role === "user" ? "justify-end" : "justify-start"
+      }`}
+    >
+      <div
+        className={`max-w-lg ${
+          msg.role === "user"
+            ? "rounded-2xl rounded-br-md bg-brand-500 px-4 py-3 text-white"
+            : "rounded-2xl rounded-bl-md border border-stone-200/60 bg-white px-4 py-3 shadow-card"
+        }`}
+      >
+        {msg.role === "user" ? (
+          <p className="text-sm leading-relaxed">{msg.content}</p>
+        ) : (
+          <div className="text-sm leading-relaxed">
+            <MarkdownBody content={msg.content} compact />
+          </div>
+        )}
+        {msg.role === "assistant" && (
+          <div className="mt-3 flex items-center justify-between gap-2">
+            {msg.cited_resources?.length ? (
+              <div className="flex flex-wrap gap-2">
+                {msg.cited_resources.map((resource) => (
+                  <a
+                    key={resource.id}
+                    href={`/resources?search=${encodeURIComponent(resource.title)}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700 hover:bg-brand-100"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {resource.title}
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div />
+            )}
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                onClick={() => onAddToDoctor(msg, idx)}
+                disabled={addedToDoctorList.has(idx)}
+                className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+                title={addedToDoctorList.has(idx) ? "Added to doctor list" : "Add to doctor list"}
+              >
+                {addedToDoctorList.has(idx) ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Stethoscope className="h-4 w-4" />
+                )}
+              </button>
+              {msg.conversation_id && (
+                <button
+                  onClick={() => onSave(msg, idx)}
+                  disabled={savingId === msg.conversation_id}
+                  className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+                  title={msg.is_saved ? "Unsave conversation" : "Save conversation"}
+                >
+                  {msg.is_saved ? (
+                    <BookmarkCheck className="h-4 w-4 text-brand-500" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
 export function ChatInterface({
   childProfiles,
   userId,
@@ -44,6 +134,7 @@ export function ChatInterface({
   const [selectedChildId, setSelectedChildId] = useState<string | null>(
     childProfiles.length > 0 ? childProfiles[0].id : null
   );
+  const [, startTransition] = useTransition();
   const [inputValue, setInputValue] = useState("");
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(
     null
@@ -81,21 +172,22 @@ export function ChatInterface({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, subscriptionTier]);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom on new messages (instant to avoid blocking main thread)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
   }, [messages]);
 
-  // Auto-grow textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      const scrollHeight = Math.min(textareaRef.current.scrollHeight, 96); // Max 4 rows (~24px each)
-      textareaRef.current.style.height = `${scrollHeight}px`;
-    }
-  }, [inputValue]);
+  // Inline textarea auto-resize using rAF instead of useEffect
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+    const textarea = e.target;
+    requestAnimationFrame(() => {
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 96)}px`;
+    });
+  }, []);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!inputValue.trim() || loading) return;
 
     // Check free tier limit
@@ -160,9 +252,9 @@ export function ChatInterface({
     } finally {
       setLoading(false);
     }
-  };
+  }, [inputValue, loading, subscriptionTier, remainingQuestions, selectedChildId]);
 
-  const handleSaveConversation = async (msg: Message, msgIdx: number) => {
+  const handleSaveConversation = useCallback(async (msg: Message, msgIdx: number) => {
     if (!msg.conversation_id || savingId) return;
 
     setSavingId(msg.conversation_id);
@@ -183,9 +275,9 @@ export function ChatInterface({
     } finally {
       setSavingId(null);
     }
-  };
+  }, [savingId]);
 
-  const handleAddToDoctorList = async (msg: Message, msgIdx: number) => {
+  const handleAddToDoctorList = useCallback(async (msg: Message, msgIdx: number) => {
     if (addedToDoctorList.has(msgIdx)) return;
 
     // Find the preceding user message to use as title
@@ -220,14 +312,14 @@ export function ChatInterface({
       }
       setAddedToDoctorList((prev) => new Set(prev).add(msgIdx));
     }
-  };
+  }, [addedToDoctorList, messages, selectedChildId, childProfiles, supabase, userId]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
-  };
+  }, [handleSendMessage]);
 
   const isEmpty = messages.length === 0;
   const charCount = inputValue.length;
@@ -241,7 +333,7 @@ export function ChatInterface({
           <div className="flex items-center justify-between">
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setSelectedChildId(null)}
+                onClick={() => startTransition(() => setSelectedChildId(null))}
                 className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   selectedChildId === null
                     ? "bg-brand-500 text-white shadow-sm"
@@ -253,7 +345,7 @@ export function ChatInterface({
               {childProfiles.map((child) => (
                 <button
                   key={child.id}
-                  onClick={() => setSelectedChildId(child.id)}
+                  onClick={() => startTransition(() => setSelectedChildId(child.id))}
                   className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     selectedChildId === child.id
                       ? "bg-brand-500 text-white shadow-sm"
@@ -317,78 +409,15 @@ export function ChatInterface({
         ) : (
           <div className="space-y-4">
             {messages.map((msg, idx) => (
-              <div
+              <ChatMessage
                 key={idx}
-                className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`max-w-lg ${
-                    msg.role === "user"
-                      ? "rounded-2xl rounded-br-md bg-brand-500 px-4 py-3 text-white"
-                      : "rounded-2xl rounded-bl-md border border-stone-200/60 bg-white px-4 py-3 shadow-card"
-                  }`}
-                >
-                  {msg.role === "user" ? (
-                    <p className="text-sm leading-relaxed">{msg.content}</p>
-                  ) : (
-                    <div className="text-sm leading-relaxed">
-                      <MarkdownBody content={msg.content} compact />
-                    </div>
-                  )}
-                  {msg.role === "assistant" && (
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      {msg.cited_resources?.length ? (
-                        <div className="flex flex-wrap gap-2">
-                          {msg.cited_resources.map((resource) => (
-                            <a
-                              key={resource.id}
-                              href={`/resources?search=${encodeURIComponent(
-                                resource.title
-                              )}`}
-                              className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700 hover:bg-brand-100"
-                            >
-                              <Sparkles className="h-3 w-3" />
-                              {resource.title}
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <div />
-                      )}
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          onClick={() => handleAddToDoctorList(msg, idx)}
-                          disabled={addedToDoctorList.has(idx)}
-                          className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                          title={addedToDoctorList.has(idx) ? "Added to doctor list" : "Add to doctor list"}
-                        >
-                          {addedToDoctorList.has(idx) ? (
-                            <Check className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Stethoscope className="h-4 w-4" />
-                          )}
-                        </button>
-                        {msg.conversation_id && (
-                          <button
-                            onClick={() => handleSaveConversation(msg, idx)}
-                            disabled={savingId === msg.conversation_id}
-                            className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                            title={msg.is_saved ? "Unsave conversation" : "Save conversation"}
-                          >
-                            {msg.is_saved ? (
-                              <BookmarkCheck className="h-4 w-4 text-brand-500" />
-                            ) : (
-                              <Bookmark className="h-4 w-4" />
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                msg={msg}
+                idx={idx}
+                onSave={handleSaveConversation}
+                onAddToDoctor={handleAddToDoctorList}
+                savingId={savingId}
+                addedToDoctorList={addedToDoctorList}
+              />
             ))}
             {loading && (
               <div className="flex justify-start">
@@ -425,7 +454,7 @@ export function ChatInterface({
             <textarea
               ref={textareaRef}
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask about parenting, sleep, nutrition..."
               disabled={loading}

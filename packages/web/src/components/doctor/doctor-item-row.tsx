@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import type { DoctorDiscussionItem, ChildWithAge } from "@kinpath/shared";
 import { X, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import { MarkdownBody } from "@/components/ui/markdown-body";
@@ -19,7 +19,7 @@ interface DoctorItemRowProps {
   onDelete: (id: string) => void;
 }
 
-export function DoctorItemRow({
+export const DoctorItemRow = memo(function DoctorItemRow({
   item,
   childProfiles,
   onToggleDiscussed,
@@ -156,4 +156,4 @@ export function DoctorItemRow({
       )}
     </div>
   );
-}
+});

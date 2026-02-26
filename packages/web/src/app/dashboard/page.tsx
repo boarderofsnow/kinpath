@@ -11,7 +11,7 @@ import { SearchBar } from "@/components/search/search-bar";
 import { getPersonalizedFeed } from "@/lib/resources";
 import { UpgradeBanner } from "@/components/ui/upgrade-banner";
 import { getHouseholdContext } from "@/lib/household";
-import { FadeInUp } from "@/components/ui/motion";
+import { FadeInUp } from "@/components/ui/css-animate";
 
 interface DashboardPageProps {
   searchParams: Promise<{ child?: string }>;

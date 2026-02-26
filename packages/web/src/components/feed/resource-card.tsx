@@ -1,3 +1,4 @@
+import { memo } from "react";
 import Link from "next/link";
 import type { ResourceWithMeta } from "@kinpath/shared";
 import { TOPICS, type TopicKey } from "@kinpath/shared";
@@ -19,7 +20,7 @@ const TYPE_LABELS: Record<string, string> = {
  * A card displaying a single resource in the feed.
  * Links to the full resource detail page on click.
  */
-export function ResourceCard({ resource }: ResourceCardProps) {
+export const ResourceCard = memo(function ResourceCard({ resource }: ResourceCardProps) {
   return (
     <Link
       href={`/resources/${resource.slug}`}
@@ -64,4 +65,4 @@ export function ResourceCard({ resource }: ResourceCardProps) {
       )}
     </Link>
   );
-}
+});

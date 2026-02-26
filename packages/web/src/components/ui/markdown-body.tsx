@@ -121,13 +121,15 @@ function processInline(text: string): string {
   );
 }
 
+import { memo, useMemo } from "react";
+
 interface MarkdownBodyProps {
   content: string;
   compact?: boolean;
 }
 
-export function MarkdownBody({ content, compact = false }: MarkdownBodyProps) {
-  const html = markdownToHtml(content, compact);
+export const MarkdownBody = memo(function MarkdownBody({ content, compact = false }: MarkdownBodyProps) {
+  const html = useMemo(() => markdownToHtml(content, compact), [content, compact]);
 
   return (
     <div
@@ -135,4 +137,4 @@ export function MarkdownBody({ content, compact = false }: MarkdownBodyProps) {
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
-}
+});

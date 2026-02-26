@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -9,9 +10,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
 
-  async function handleLogin(e: React.FormEvent) {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -27,13 +29,13 @@ export default function LoginPage() {
       return;
     }
 
-    // Use a full page navigation so the browser sends the newly-set
-    // auth cookies with the request — router.push() is client-side
-    // and can race with cookie propagation to the server.
-    window.location.href = "/dashboard";
-  }
+    // Client-side navigation — refresh ensures middleware re-validates
+    // with fresh auth cookies, then push navigates without full page reload
+    router.refresh();
+    router.push("/dashboard");
+  }, [email, password, supabase, router]);
 
-  async function handleOAuthLogin(provider: "google" | "apple") {
+  const handleOAuthLogin = useCallback(async (provider: "google" | "apple") => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -41,7 +43,7 @@ export default function LoginPage() {
       },
     });
     if (error) setError(error.message);
-  }
+  }, [supabase]);
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">

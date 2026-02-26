@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useTransition } from "react";
 import { BookOpen } from "lucide-react";
 import { ResourceCard } from "./resource-card";
 import { TOPICS, type TopicKey } from "@kinpath/shared";
@@ -18,28 +18,32 @@ interface ResourceFeedProps {
  */
 export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
-  // Gather unique topics from the fetched resources
-  const feedTopics = [...new Set(resources.flatMap((r) => r.topics))];
+  // Gather unique topics and sort: user's preferred first
+  const { sortedTopics, topicCounts } = useMemo(() => {
+    const feedTopics = [...new Set(resources.flatMap((r) => r.topics))];
+    const sorted = [
+      ...feedTopics.filter((t) => userTopics.includes(t)),
+      ...feedTopics.filter((t) => !userTopics.includes(t)),
+    ];
+    const counts = sorted.reduce<Record<string, number>>(
+      (acc, topic) => {
+        acc[topic] = resources.filter((r) => r.topics.includes(topic)).length;
+        return acc;
+      },
+      {}
+    );
+    return { sortedTopics: sorted, topicCounts: counts };
+  }, [resources, userTopics]);
 
-  // Show user's preferred topics first, then the rest
-  const sortedTopics = [
-    ...feedTopics.filter((t) => userTopics.includes(t)),
-    ...feedTopics.filter((t) => !userTopics.includes(t)),
-  ];
-
-  // Count resources per topic for the filter badges
-  const topicCounts = sortedTopics.reduce<Record<string, number>>(
-    (acc, topic) => {
-      acc[topic] = resources.filter((r) => r.topics.includes(topic)).length;
-      return acc;
-    },
-    {}
+  const filtered = useMemo(
+    () =>
+      activeFilter
+        ? resources.filter((r) => r.topics.includes(activeFilter))
+        : resources,
+    [resources, activeFilter]
   );
-
-  const filtered = activeFilter
-    ? resources.filter((r) => r.topics.includes(activeFilter))
-    : resources;
 
   return (
     <div>
@@ -47,7 +51,7 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
       {sortedTopics.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           <button
-            onClick={() => setActiveFilter(null)}
+            onClick={() => startTransition(() => setActiveFilter(null))}
             className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
               !activeFilter
                 ? "bg-brand-500 text-white shadow-sm"
@@ -65,7 +69,7 @@ export function ResourceFeed({ resources, userTopics }: ResourceFeedProps) {
               <button
                 key={topicKey}
                 onClick={() =>
-                  setActiveFilter(isActive ? null : topicKey)
+                  startTransition(() => setActiveFilter(isActive ? null : topicKey))
                 }
                 className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors shadow-sm ${
                   isActive

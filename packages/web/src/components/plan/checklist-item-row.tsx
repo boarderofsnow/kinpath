@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import type { ChecklistItem, ChildWithAge, HouseholdMember } from "@kinpath/shared";
 import { X, Calendar, User } from "lucide-react";
 
@@ -15,7 +15,7 @@ interface ChecklistItemRowProps {
   readOnly?: boolean;
 }
 
-export function ChecklistItemRow({
+export const ChecklistItemRow = memo(function ChecklistItemRow({
   item,
   childProfiles,
   householdMembers,
@@ -149,4 +149,4 @@ export function ChecklistItemRow({
       )}
     </div>
   );
-}
+});
