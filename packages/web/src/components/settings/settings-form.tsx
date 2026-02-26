@@ -17,6 +17,7 @@ import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, X } from "luci
 import Link from "next/link";
 import { HouseholdSection } from "@/components/settings/household-section";
 import type { HouseholdMember } from "@kinpath/shared";
+import { api } from "@/lib/api";
 
 interface User {
   id: string;
@@ -338,10 +339,9 @@ export function SettingsForm({
 
     setDeleteLoading(true);
     try {
-      const res = await fetch("/api/account/delete", { method: "POST" });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to delete account");
+      const { error: apiError } = await api.account.delete();
+      if (apiError) {
+        throw new Error(apiError);
       }
       await supabase.auth.signOut();
       router.push("/");
@@ -356,13 +356,10 @@ export function SettingsForm({
   async function handleManageSubscription() {
     setPortalLoading(true);
     try {
-      const res = await fetch("/api/stripe/portal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) throw new Error("Failed to open billing portal");
-      const data = await res.json();
-      if (data.url) window.location.href = data.url;
+      const { data, error: apiError } = await api.stripe.portal();
+      if (apiError) throw new Error(apiError);
+      const portalData = data as { url?: string } | null;
+      if (portalData?.url) window.location.href = portalData.url;
     } catch (error) {
       console.error("Portal error:", error);
       setPortalLoading(false);

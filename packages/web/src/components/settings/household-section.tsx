@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Users, Mail, X, Clock, CheckCircle2, UserPlus } from "lucide-react";
 import type { HouseholdMember } from "@kinpath/shared";
+import { api } from "@/lib/api";
 
 interface HouseholdSectionProps {
   initialMembers: HouseholdMember[];
@@ -46,25 +47,21 @@ export function HouseholdSection({ initialMembers }: HouseholdSectionProps) {
 
     startTransition(async () => {
       try {
-        const res = await fetch("/api/household/invite", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: email.trim(),
-            display_name: displayName.trim() || null,
-          }),
+        const { data, error: apiError } = await api.household.invite({
+          email: email.trim(),
+          display_name: displayName.trim() || null,
         });
 
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error ?? "Failed to send invite.");
+        if (apiError) {
+          setError(apiError);
           return;
         }
 
+        const responseData = data as { member_id?: string } | null;
+
         // Optimistically add the new member to the list
         const newMember: HouseholdMember = {
-          id: data.member_id,
+          id: responseData?.member_id ?? "",
           household_id: "",
           user_id: null,
           invited_email: email.trim().toLowerCase(),
@@ -89,15 +86,12 @@ export function HouseholdSection({ initialMembers }: HouseholdSectionProps) {
     setRemovingId(memberId);
     startTransition(async () => {
       try {
-        const res = await fetch("/api/household/invite", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ member_id: memberId }),
+        const { error: apiError } = await api.household.remove({
+          member_id: memberId,
         });
 
-        if (!res.ok) {
-          const data = await res.json();
-          setError(data.error ?? "Failed to remove invite.");
+        if (apiError) {
+          setError(apiError);
           setRemovingId(null);
           return;
         }

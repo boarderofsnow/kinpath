@@ -17,6 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import { MarkdownBody } from "@/components/ui/markdown-body";
+import { api } from "@/lib/api";
 
 interface ChatInterfaceProps {
   childProfiles: ChildWithAge[];
@@ -112,38 +113,36 @@ export function ChatInterface({
     setLoading(true);
 
     try {
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMessage,
-          child_id: selectedChildId,
-        }),
+      const { data, error: apiError, status } = await api.ai.chat({
+        message: userMessage,
+        child_id: selectedChildId,
       });
 
-      if (response.status === 429) {
+      if (status === 429) {
         setError("Rate limited. Please upgrade to ask more questions.");
-        setMessages((prev) =>
-          prev.slice(0, -1) // Remove the user message we just added
-        );
+        setMessages((prev) => prev.slice(0, -1));
         return;
       }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to send message");
+      if (apiError || !data) {
+        throw new Error(apiError || "Failed to send message");
       }
 
-      const data = await response.json();
+      const responseData = data as {
+        message: string;
+        content?: string;
+        conversation_id: string | null;
+        cited_resources?: Array<{ id: string; title: string }>;
+      };
 
       // Add AI message with cited resources and conversation_id
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.content || data.message,
-          conversation_id: data.conversation_id,
-          cited_resources: data.cited_resources,
+          content: responseData.content || responseData.message,
+          conversation_id: responseData.conversation_id,
+          cited_resources: responseData.cited_resources,
           is_saved: false,
         },
       ]);
@@ -169,22 +168,12 @@ export function ChatInterface({
     setSavingId(msg.conversation_id);
     try {
       if (msg.is_saved) {
-        // Unsave
-        await fetch("/api/chat/save", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversation_id: msg.conversation_id }),
-        });
+        await api.chat.unsave({ conversation_id: msg.conversation_id });
         setMessages((prev) =>
           prev.map((m, i) => (i === msgIdx ? { ...m, is_saved: false } : m))
         );
       } else {
-        // Save
-        await fetch("/api/chat/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversation_id: msg.conversation_id }),
-        });
+        await api.chat.save({ conversation_id: msg.conversation_id });
         setMessages((prev) =>
           prev.map((m, i) => (i === msgIdx ? { ...m, is_saved: true } : m))
         );
