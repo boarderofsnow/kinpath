@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { CheckCircle2, XCircle } from "lucide-react";
 

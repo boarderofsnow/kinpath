@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -17,29 +15,30 @@ interface BrowsePageProps {
 export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) redirect("/auth/login");
-
-  // Fetch subscription tier
-  const { data: profile } = await supabase
-    .from("users")
-    .select("subscription_tier")
-    .eq("id", user.id)
-    .single();
-
-  const tier = profile?.subscription_tier ?? "free";
-  const isFree = tier === "free";
 
   const query = params.q ?? "";
   const activeTopic = params.topic ?? "";
 
-  const { resources, total } = await searchResources({
-    query: query || undefined,
-    topic: activeTopic || undefined,
-  });
+  // Parallel — profile + search
+  const [{ data: profile }, { resources, total }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("subscription_tier")
+      .eq("id", user.id)
+      .single(),
+    searchResources({
+      query: query || undefined,
+      topic: activeTopic || undefined,
+      existingClient: supabase,
+    }),
+  ]);
+
+  const tier = profile?.subscription_tier ?? "free";
+  const isFree = tier === "free";
 
   return (
     <>

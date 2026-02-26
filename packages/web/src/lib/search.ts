@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "./supabase/server";
+import { createServerSupabaseClient, type ServerSupabaseClient } from "./supabase/server";
 import type { ResourceWithMeta } from "@kinpath/shared";
 
 /**
@@ -16,13 +16,15 @@ export async function searchResources({
   topic,
   limit = 40,
   offset = 0,
+  existingClient,
 }: {
   query?: string;
   topic?: string;
   limit?: number;
   offset?: number;
+  existingClient?: ServerSupabaseClient;
 }): Promise<{ resources: ResourceWithMeta[]; total: number }> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = existingClient ?? await createServerSupabaseClient();
 
   // Build the base query
   let dbQuery = supabase

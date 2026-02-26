@@ -25,7 +25,8 @@ export default function PricingPage() {
     const fetchUser = async () => {
       try {
         const supabase = createClient();
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const authUser = session?.user;
 
         if (authUser) {
           const { data, error } = await supabase

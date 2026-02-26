@@ -1,4 +1,4 @@
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient, type ServerSupabaseClient } from "@/lib/supabase/server";
 
 export interface HouseholdContext {
   /** The user_id to use for data queries — the owner's id for partners, own id for owners. */
@@ -13,8 +13,11 @@ export interface HouseholdContext {
  * - For household owners: returns their own user_id.
  * - For accepted partners: returns the owner's user_id so they can read shared data.
  */
-export async function getHouseholdContext(userId: string): Promise<HouseholdContext> {
-  const supabase = await createServerSupabaseClient();
+export async function getHouseholdContext(
+  userId: string,
+  existingClient?: ServerSupabaseClient
+): Promise<HouseholdContext> {
+  const supabase = existingClient ?? await createServerSupabaseClient();
 
   const { data } = await supabase
     .from("household_members")

@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -22,21 +20,22 @@ interface DashboardPageProps {
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) redirect("/auth/login");
 
-  // Check if onboarding is complete
-  const { data: profile } = await supabase
-    .from("users")
-    .select("onboarding_complete, display_name, subscription_tier")
-    .eq("id", user.id)
-    .single();
+  // Step A: Parallel — profile + household context
+  const [{ data: profile }, { effectiveOwnerId }] = await Promise.all([
+    supabase
+      .from("users")
+      .select("onboarding_complete, display_name, subscription_tier")
+      .eq("id", user.id)
+      .single(),
+    getHouseholdContext(user.id, supabase),
+  ]);
 
   // If the profile query failed (null), don't mistakenly redirect to onboarding.
-  // This can happen during session refresh or transient DB issues.
   if (!profile) {
     redirect("/auth/login");
   }
@@ -45,10 +44,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/onboarding");
   }
 
-  // Resolve household context — partners use the owner's user_id for data queries.
-  const { effectiveOwnerId } = await getHouseholdContext(user.id);
-
-  // Fetch children
+  // Step B: Fetch children (needs effectiveOwnerId)
   const { data: children } = await supabase
     .from("children")
     .select("*")
@@ -64,20 +60,26 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     ? enrichedChildren.find((c) => c.id === params.child) ?? enrichedChildren[0]
     : enrichedChildren[0];
 
-  // Fetch personalized, age-filtered resources
-  const { resources, preferences } = activeChild
-    ? await getPersonalizedFeed(user.id, activeChild.age_in_weeks)
-    : { resources: [], preferences: null };
+  // Step C: Parallel — feed + checklist (both need activeChild)
+  const feedPromise = activeChild
+    ? getPersonalizedFeed(user.id, activeChild.age_in_weeks, 20, supabase)
+    : Promise.resolve({ resources: [] as any[], preferences: null });
 
-  // Fetch checklist items for the active child (for Coming Up tile on born children)
+  const checklistPromise = activeChild?.is_born
+    ? supabase
+        .from("checklist_items")
+        .select("*, checklist_item_children(child_id)")
+        .eq("user_id", effectiveOwnerId)
+        .order("sort_order", { ascending: true })
+    : Promise.resolve({ data: null });
+
+  const [{ resources, preferences }, { data: rawItems }] = await Promise.all([
+    feedPromise,
+    checklistPromise,
+  ]);
+
   let activeChildChecklist: ChecklistItem[] = [];
-  if (activeChild?.is_born) {
-    const { data: rawItems } = await supabase
-      .from("checklist_items")
-      .select("*, checklist_item_children(child_id)")
-      .eq("user_id", effectiveOwnerId)
-      .order("sort_order", { ascending: true });
-
+  if (activeChild?.is_born && rawItems) {
     activeChildChecklist = (rawItems ?? []).map((row: any) => {
       const junctionRows = row.checklist_item_children ?? [];
       const childIds = junctionRows.map((j: { child_id: string }) => j.child_id);
