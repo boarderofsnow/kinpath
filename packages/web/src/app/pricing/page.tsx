@@ -6,6 +6,7 @@ import { Check, X, Star, Users, Sparkles, Loader2 } from 'lucide-react';
 import { AppNav } from '@/components/nav/app-nav';
 import { createClient } from '@/lib/supabase/client';
 import { FadeInUp, ScrollReveal, StaggerContainer, StaggerItem } from '@/components/ui/motion';
+import { api } from '@/lib/api';
 
 interface User {
   id: string;
@@ -55,24 +56,18 @@ export default function PricingPage() {
 
     setCheckoutLoading(plan);
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          plan,
-          interval: billingInterval,
-        }),
+      const { data, error: apiError } = await api.stripe.checkout({
+        plan,
+        interval: billingInterval,
       });
 
-      if (!response.ok) {
-        throw new Error('Checkout failed');
+      if (apiError) {
+        throw new Error(apiError);
       }
 
-      const data = await response.json();
-      if (data.url) {
-        window.location.href = data.url;
+      const checkoutData = data as { url?: string } | null;
+      if (checkoutData?.url) {
+        window.location.href = checkoutData.url;
       }
     } catch (error) {
       console.error('Checkout error:', error);
@@ -84,13 +79,10 @@ export default function PricingPage() {
     if (!user) return;
     setCheckoutLoading('manage');
     try {
-      const response = await fetch('/api/stripe/portal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (!response.ok) throw new Error('Failed to open portal');
-      const data = await response.json();
-      if (data.url) window.location.href = data.url;
+      const { data, error: apiError } = await api.stripe.portal();
+      if (apiError) throw new Error(apiError);
+      const portalData = data as { url?: string } | null;
+      if (portalData?.url) window.location.href = portalData.url;
     } catch (error) {
       console.error('Portal error:', error);
       setCheckoutLoading(null);
