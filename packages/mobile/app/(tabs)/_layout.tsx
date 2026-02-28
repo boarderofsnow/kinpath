@@ -1,40 +1,19 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
-const COLORS = {
-  primary: "#10b89f",
-  secondary: "#5f8253",
-  accent: "#f59e0b",
-  background: "#f0eeec",
-  dark: "#1c1917",
-  stone200: "#e7e5e4",
-};
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: "#ffffff",
-    borderTopColor: COLORS.stone200,
-    borderTopWidth: 1,
-    paddingBottom: 8,
-    paddingTop: 8,
-    height: 60,
-  },
-  tabBarLabel: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-});
+import { colors, fonts, radii } from "../../lib/theme";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: COLORS.primary,
-        tabBarInactiveTintColor: "#999",
+        tabBarActiveTintColor: colors.brand[500],
+        tabBarInactiveTintColor: colors.stone[400],
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabBarLabel,
+        tabBarItemStyle: styles.tabBarItem,
+        tabBarBackground: () => <View style={styles.tabBarBg} />,
         headerShown: false,
       }}
     >
@@ -90,3 +69,41 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabBar: {
+    position: "absolute",
+    bottom: Platform.OS === "ios" ? 28 : 16,
+    left: 32,
+    right: 32,
+    height: 64,
+    borderRadius: radii.full,
+    backgroundColor: colors.white,
+    borderTopWidth: 0,
+    paddingBottom: 0,
+    ...(Platform.OS === "ios"
+      ? {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 16,
+        }
+      : { elevation: 12 }),
+  },
+  tabBarBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.white,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: `${colors.stone[200]}40`,
+  },
+  tabBarItem: {
+    paddingTop: 8,
+    paddingBottom: 8,
+  },
+  tabBarLabel: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 10,
+    marginTop: 2,
+  },
+});
