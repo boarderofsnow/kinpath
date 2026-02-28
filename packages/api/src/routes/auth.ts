@@ -71,14 +71,14 @@ authRouter.get("/callback", async (req: Request, res: Response) => {
           })
           .eq("id", householdMemberId);
 
-        // Copy the owner's subscription_tier. Do NOT set onboarding_complete —
-        // let them go through the onboarding flow for preferences.
+        // Copy the owner's subscription_tier and mark onboarding complete
+        // (partners share the owner's children/preferences, so they skip onboarding).
         const ownerTier =
           (memberRow as any)?.households?.users?.subscription_tier ?? "free";
 
         await serviceClient
           .from("users")
-          .update({ subscription_tier: ownerTier })
+          .update({ onboarding_complete: true, subscription_tier: ownerTier })
           .eq("id", user.id);
       } catch (linkError) {
         console.error(
@@ -88,8 +88,8 @@ authRouter.get("/callback", async (req: Request, res: Response) => {
         // Non-fatal — continue
       }
 
-      // Send invited partners to onboarding (not dashboard)
-      res.redirect(`${appUrl}/onboarding`);
+      // Send invited partners to complete their profile (name + password)
+      res.redirect(`${appUrl}/auth/complete-profile`);
       return;
     }
 

@@ -21,15 +21,18 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     redirect("/auth/login");
   }
 
-  // Parallel — all 5 queries depend only on user.id
+  // Get household context first — determines whose children/preferences to show
+  const { effectiveOwnerId, isPartner, householdId } =
+    await getHouseholdContext(user.id, supabase);
+
+  // Parallel queries — children and preferences use effectiveOwnerId (owner's data
+  // for partners), while profile and notification prefs are always the user's own.
   const [
-    { isPartner, householdId },
     { data: userProfile },
     { data: children },
     { data: preferences },
     { data: notificationPrefs },
   ] = await Promise.all([
-    getHouseholdContext(user.id, supabase),
     supabase
       .from("users")
       .select("id, display_name, email, subscription_tier, stripe_customer_id")
@@ -38,14 +41,14 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     supabase
       .from("children")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", effectiveOwnerId)
       .order("created_at", { ascending: true }),
     supabase
       .from("user_preferences")
       .select(
         "birth_preference, feeding_preference, vaccine_stance, religion, dietary_preference, parenting_style, topics_of_interest"
       )
-      .eq("user_id", user.id)
+      .eq("user_id", effectiveOwnerId)
       .single(),
     supabase
       .from("notification_preferences")

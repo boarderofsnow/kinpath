@@ -73,23 +73,22 @@ export async function GET(request: Request) {
           })
           .eq("id", householdMemberId);
 
-        // 3. Copy the owner's subscription_tier so the partner's Settings
-        //    page shows the correct plan. Do NOT set onboarding_complete —
-        //    let them go through the onboarding flow for preferences.
+        // 3. Copy the owner's subscription_tier and mark onboarding complete
+        //    (partners share the owner's children/preferences, so they skip onboarding).
         const ownerTier =
           (memberRow as any)?.households?.users?.subscription_tier ?? "free";
 
         await serviceClient
           .from("users")
-          .update({ subscription_tier: ownerTier })
+          .update({ onboarding_complete: true, subscription_tier: ownerTier })
           .eq("id", user.id);
       } catch (linkError) {
         // Non-fatal — log and continue.
         console.error("Failed to link household member on invite accept:", linkError);
       }
 
-      // Send invited partners to onboarding (not dashboard)
-      return NextResponse.redirect(`${origin}/onboarding`);
+      // Send invited partners to complete their profile (name + password)
+      return NextResponse.redirect(`${origin}/auth/complete-profile`);
     }
 
     return NextResponse.redirect(`${origin}${next}`);

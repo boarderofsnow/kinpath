@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { AppNav } from "@/components/nav/app-nav";
 import { SavedChatsList } from "@/components/chat/saved-chats-list";
+import { getHouseholdContext } from "@/lib/household";
 
 export default async function SavedChatsPage() {
   const supabase = await createServerSupabaseClient();
@@ -10,6 +11,8 @@ export default async function SavedChatsPage() {
   const user = session?.user;
 
   if (!user) redirect("/auth/login");
+
+  const { effectiveOwnerId } = await getHouseholdContext(user.id, supabase);
 
   // Fetch saved conversations with their messages
   const { data: savedConversations } = await supabase
@@ -20,11 +23,11 @@ export default async function SavedChatsPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  // Fetch children for name resolution
+  // Fetch children for name resolution (use owner's children for partners)
   const { data: children } = await supabase
     .from("children")
     .select("id, name")
-    .eq("user_id", user.id);
+    .eq("user_id", effectiveOwnerId);
 
   const childMap = Object.fromEntries(
     (children ?? []).map((c) => [c.id, c.name])

@@ -35,13 +35,7 @@ export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
-  const [isPartner, setIsPartner] = useState(false);
   const supabase = createClient();
-
-  // Partners skip the child creation step (they share the owner's children)
-  const steps = isPartner
-    ? STEPS.filter((s) => s !== "child")
-    : STEPS;
 
   // Guard: redirect already-onboarded users back to dashboard
   useEffect(() => {
@@ -61,19 +55,6 @@ export default function OnboardingPage() {
         window.location.href = "/dashboard";
         return;
       }
-
-      // Check if this user is an invited partner
-      const { data: membership } = await supabase
-        .from("household_members")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("status", "accepted")
-        .maybeSingle();
-
-      if (membership) {
-        setIsPartner(true);
-      }
-
       setReady(true);
     };
     checkOnboardingStatus();
@@ -95,11 +76,11 @@ export default function OnboardingPage() {
     topics_of_interest: [],
   });
 
-  const step = steps[currentStep];
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const step = STEPS[currentStep];
+  const progress = ((currentStep + 1) / STEPS.length) * 100;
 
   function nextStep() {
-    if (currentStep < steps.length - 1) {
+    if (currentStep < STEPS.length - 1) {
       setCurrentStep((s) => s + 1);
     } else {
       handleComplete();
@@ -116,16 +97,14 @@ export default function OnboardingPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Partners share the owner's children — skip child creation
-    if (!isPartner) {
-      await supabase.from("children").insert({
-        user_id: user.id,
-        name: childName,
-        is_born: isBorn ?? false,
-        dob: isBorn ? childDate : null,
-        due_date: !isBorn ? childDate : null,
-      });
-    }
+    // Create child profile
+    await supabase.from("children").insert({
+      user_id: user.id,
+      name: childName,
+      is_born: isBorn ?? false,
+      dob: isBorn ? childDate : null,
+      due_date: !isBorn ? childDate : null,
+    });
 
     // Save preferences (both owners and partners)
     await supabase.from("user_preferences").upsert({
@@ -157,7 +136,7 @@ export default function OnboardingPage() {
         {/* Progress bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs text-stone-500">
-            <span>Step {currentStep + 1} of {steps.length}</span>
+            <span>Step {currentStep + 1} of {STEPS.length}</span>
             <span>{Math.round(progress)}%</span>
           </div>
           <div className="h-2 rounded-full bg-stone-200">
@@ -461,7 +440,7 @@ export default function OnboardingPage() {
             >
               {loading
                 ? "Saving..."
-                : currentStep === steps.length - 1
+                : currentStep === STEPS.length - 1
                   ? "Finish Setup"
                   : "Continue"}
             </button>
