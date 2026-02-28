@@ -36,7 +36,7 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
       max-width: 600px;
       margin: 0 auto;
       padding: 20px;
-      background-color: #f9f9f9;
+      background-color: #f0eeec;
     }
     .container {
       background-color: #ffffff;
@@ -47,18 +47,12 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
     .header {
       background: linear-gradient(135deg, #10b89f 0%, #0d9b8c 100%);
       color: white;
-      padding: 40px 20px;
+      padding: 24px 20px;
       text-align: center;
     }
-    .header h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: 600;
-    }
-    .header p {
-      margin: 8px 0 0 0;
-      font-size: 14px;
-      opacity: 0.95;
+    .header img {
+      max-height: 48px;
+      width: auto;
     }
     .content {
       padding: 30px 20px;
@@ -110,13 +104,13 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
       margin: 4px 0 0 0;
     }
     .encouragement-box {
-      background-color: #fff3cd;
-      border: 1px solid #ffc107;
+      background-color: #f0fdfb;
+      border: 1px solid #97f8e1;
       padding: 12px;
       border-radius: 4px;
       margin-top: 12px;
       font-size: 14px;
-      color: #856404;
+      color: #0b776b;
       font-style: italic;
     }
     .maternal-section {
@@ -208,7 +202,7 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
       background-color: #0d9b8c;
     }
     .footer {
-      background-color: #f8f8f8;
+      background-color: #f0eeec;
       border-top: 1px solid #e0e0e0;
       padding: 20px;
       font-size: 12px;
@@ -238,8 +232,7 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
   <div class="container">
     <!-- Header -->
     <div class="header">
-      <h1>KinPath</h1>
-      <p>Your journey, our support</p>
+      <img src="https://kinpath.family/kinpath-logo.png" alt="KinPath" style="max-height: 48px; width: auto;" />
     </div>
 
     <!-- Content -->

@@ -12,4 +12,4 @@ export function getResend(): Resend {
   return _resend;
 }
 
-export const EMAIL_FROM = "KinPath <hello@kinpath.family>";
+export const EMAIL_FROM = "Kinpath Family <hello@kinpath.family>";
