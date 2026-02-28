@@ -308,10 +308,15 @@ export function SettingsForm({
 
     try {
       const { id: _id, created_at: _ca, updated_at: _ua, last_email_sent_at: _le, ...prefsToSave } = notificationPrefs;
-      await supabase.from("notification_preferences").upsert({
-        ...prefsToSave,
-        user_id: user!.id,
-      });
+      const { error } = await supabase.from("notification_preferences").upsert(
+        {
+          ...prefsToSave,
+          user_id: user!.id,
+        },
+        { onConflict: "user_id" }
+      );
+
+      if (error) throw error;
 
       setNotificationMessage("Saved!");
       setTimeout(() => setNotificationMessage(null), 2000);
