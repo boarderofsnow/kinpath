@@ -53,6 +53,7 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
     .header img {
       max-height: 48px;
       width: auto;
+      filter: brightness(0) invert(1);
     }
     .content {
       padding: 30px 20px;
@@ -232,7 +233,7 @@ export function buildWeeklyDigest(data: WeeklyDigestData): string {
   <div class="container">
     <!-- Header -->
     <div class="header">
-      <img src="https://kinpath.family/kinpath-logo.png" alt="KinPath" style="max-height: 48px; width: auto;" />
+      <img src="https://kinpath.family/kinpath-logo.png" alt="KinPath" style="max-height: 48px; width: auto; filter: brightness(0) invert(1);" />
     </div>
 
     <!-- Content -->
