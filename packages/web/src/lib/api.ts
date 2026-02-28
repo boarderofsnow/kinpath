@@ -125,6 +125,8 @@ export const api = {
         method: "DELETE",
         body: JSON.stringify(body),
       }),
+    acceptPending: () =>
+      request("/household/accept-pending", { method: "POST" }),
   },
 
   // Account

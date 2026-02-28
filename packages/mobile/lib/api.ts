@@ -117,11 +117,13 @@ export const api = {
   household: {
     invite: (body: { email: string }) =>
       request("/household/invite", { method: "POST", body: JSON.stringify(body) }),
-    remove: (body: { partner_id: string }) =>
-      request("/household/remove", {
-        method: "POST",
+    remove: (body: { member_id: string }) =>
+      request("/household/invite", {
+        method: "DELETE",
         body: JSON.stringify(body),
       }),
+    acceptPending: () =>
+      request("/household/accept-pending", { method: "POST" }),
   },
 
   // Account

@@ -68,7 +68,54 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     return;
   }
 
-  // Insert the household member invite row
+  // Check if partner already has an account (all users have a row in public.users)
+  const { data: existingPartner } = await serviceSupabase
+    .from("users")
+    .select("id")
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
+
+  if (existingPartner) {
+    // ── Partner already has an account → link directly ──────────────
+    const { data: member, error: memberError } = await serviceSupabase
+      .from("household_members")
+      .insert({
+        household_id: household.id,
+        invited_email: email.toLowerCase(),
+        display_name: display_name?.trim() || null,
+        role: "partner",
+        status: "accepted",
+        user_id: existingPartner.id,
+        accepted_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (memberError || !member) {
+      console.error("Failed to create household member:", memberError);
+      res.status(500).json({ error: "Failed to link partner." });
+      return;
+    }
+
+    // Copy owner's subscription_tier to the partner
+    const { data: ownerProfile } = await serviceSupabase
+      .from("users")
+      .select("subscription_tier")
+      .eq("id", userId)
+      .single();
+
+    if (ownerProfile?.subscription_tier) {
+      await serviceSupabase
+        .from("users")
+        .update({ subscription_tier: ownerProfile.subscription_tier })
+        .eq("id", existingPartner.id);
+    }
+
+    res.json({ success: true, member_id: member.id, linked: true });
+    return;
+  }
+
+  // ── Partner is new → create pending invite + send email ───────────
   const { data: member, error: memberError } = await serviceSupabase
     .from("household_members")
     .insert({
@@ -87,13 +134,13 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     return;
   }
 
-  // Send magic link invite via Supabase Auth
-  const appUrl = process.env.APP_URL ?? "";
+  // The redirect must go to the web app's auth callback (Next.js route)
+  const webUrl = process.env.APP_URL || "https://kinpath.family";
   const { error: inviteError } = await serviceSupabase.auth.admin.inviteUserByEmail(
     email.toLowerCase(),
     {
       data: { household_member_id: member.id, invited_by: userId },
-      redirectTo: `${appUrl}/auth/callback?next=/dashboard`,
+      redirectTo: `${webUrl}/api/auth/callback?next=/dashboard`,
     }
   );
 
@@ -106,6 +153,71 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
   }
 
   res.json({ success: true, member_id: member.id });
+});
+
+// POST /household/accept-pending
+// Called on login (especially mobile) to auto-accept any pending invite
+// matching the authenticated user's email.
+householdRouter.post("/accept-pending", requireAuth, async (req, res: Response) => {
+  const { userId, accessToken } = req as AuthenticatedRequest;
+  const supabase = createUserSupabaseClient(accessToken);
+  const serviceSupabase = createServiceRoleClient();
+
+  // Get the user's email
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) {
+    res.json({ accepted: false });
+    return;
+  }
+
+  // Check for a pending invite matching this email
+  const { data: pendingInvite } = await serviceSupabase
+    .from("household_members")
+    .select("id, household_id, households!inner(owner_user_id)")
+    .eq("invited_email", user.email.toLowerCase())
+    .is("user_id", null)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (!pendingInvite) {
+    res.json({ accepted: false });
+    return;
+  }
+
+  // Accept the invite
+  const { error: updateError } = await serviceSupabase
+    .from("household_members")
+    .update({
+      user_id: userId,
+      status: "accepted",
+      accepted_at: new Date().toISOString(),
+    })
+    .eq("id", pendingInvite.id);
+
+  if (updateError) {
+    console.error("Failed to accept pending invite:", updateError);
+    res.status(500).json({ error: "Failed to accept invite." });
+    return;
+  }
+
+  // Copy owner's subscription_tier to partner
+  const ownerUserId = (pendingInvite as any).households?.owner_user_id;
+  if (ownerUserId) {
+    const { data: ownerProfile } = await serviceSupabase
+      .from("users")
+      .select("subscription_tier")
+      .eq("id", ownerUserId)
+      .single();
+
+    if (ownerProfile?.subscription_tier) {
+      await serviceSupabase
+        .from("users")
+        .update({ subscription_tier: ownerProfile.subscription_tier })
+        .eq("id", userId);
+    }
+  }
+
+  res.json({ accepted: true, household_id: pendingInvite.household_id });
 });
 
 // DELETE /household/invite

@@ -100,7 +100,7 @@ export function FamilySharingSection({
     setRemovingId(memberId);
     try {
       const { error: apiError } = await api.household.remove({
-        partner_id: memberId,
+        member_id: memberId,
       });
 
       if (apiError) {

@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import * as authHelpers from "./auth";
+import { api } from "./api";
 import type { User } from "@supabase/supabase-js";
 
 type AuthResult = { data?: any; error?: authHelpers.AuthError };
@@ -22,6 +23,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const checkedPendingInvite = useRef(false);
+
+  // Check for and accept pending household invites on login
+  useEffect(() => {
+    if (!user || checkedPendingInvite.current) return;
+    checkedPendingInvite.current = true;
+    api.household.acceptPending().catch(() => {
+      // Non-fatal: silently ignore if the call fails
+    });
+  }, [user]);
 
   useEffect(() => {
     // Check current session on mount
