@@ -160,7 +160,7 @@ The auth callback (`/auth/callback`) currently redirects to the Vercel URL. Supa
    ```
 4. Also add your custom domain if you have one:
    ```
-   https://api.kinpath.com/auth/callback
+   https://api.kinpath.family/auth/callback
    ```
 5. Click **Save**.
 6. Under **Site URL**, leave this as your marketing site URL (the Vercel/web URL). This is used for email templates.
@@ -232,17 +232,17 @@ curl -X POST https://your-railway-url.up.railway.app/account/delete \
 
 ## Step 8 — Add a Custom Domain (Optional but Recommended)
 
-A cleaner URL (`api.kinpath.com`) is better than the Railway subdomain before you share it publicly.
+A cleaner URL (`api.kinpath.family`) is better than the Railway subdomain before you share it publicly.
 
 1. Go to Railway → **Settings** → **Networking** → **Custom Domain**.
-2. Click **Add Custom Domain** and enter `api.kinpath.com`.
-3. Railway will give you a CNAME record to add. Go to your DNS provider (wherever you manage `kinpath.com`) and add:
+2. Click **Add Custom Domain** and enter `api.kinpath.family`.
+3. Railway will give you a CNAME record to add. Go to your DNS provider (wherever you manage `kinpath.family`) and add:
    ```
-   CNAME api.kinpath.com → your-railway-url.up.railway.app
+   CNAME api.kinpath.family → your-railway-url.up.railway.app
    ```
 4. Wait for DNS to propagate (usually 5–15 minutes).
 5. Railway automatically provisions an SSL certificate via Let's Encrypt.
-6. Update `APP_URL` in Railway Variables to `https://api.kinpath.com` and redeploy.
+6. Update `APP_URL` in Railway Variables to `https://api.kinpath.family` and redeploy.
 
 ---
 
@@ -252,7 +252,7 @@ Once the Railway server is confirmed working, update the mobile app to use it.
 
 1. In `packages/mobile/`, create or update `.env`:
    ```bash
-   EXPO_PUBLIC_API_URL=https://api.kinpath.com
+   EXPO_PUBLIC_API_URL=https://api.kinpath.family
    # or your Railway subdomain during testing:
    EXPO_PUBLIC_API_URL=https://your-railway-url.up.railway.app
    ```
@@ -277,7 +277,7 @@ After deploying, check that response times match expectations.
 
 1. In Railway → **Metrics** tab, watch **Response Time** for your service. You should see p50 well under 200ms for most routes (vs. the 2.73s TTFB from Vercel cold starts).
 
-2. Use the Vercel Speed Insights on the web app (`kinpath-web.vercel.app`) to confirm that TTFB has dropped once the web app no longer makes DB calls during SSR.
+2. Use the Vercel Speed Insights on the web app (`kinpath.family`) to confirm that TTFB has dropped once the web app no longer makes DB calls during SSR.
 
 3. Check Railway logs for any errors:
    - Railway → **Deployments** → click active deployment → **View Logs**
@@ -295,7 +295,7 @@ After deploying, check that response times match expectations.
 - [ ] Supabase Auth redirect URL allowlist includes Railway URL
 - [ ] AI chat route returns a valid response
 - [ ] Expo `.env` updated with `EXPO_PUBLIC_API_URL`
-- [ ] Custom domain (`api.kinpath.com`) pointing to Railway — SSL active
+- [ ] Custom domain (`api.kinpath.family`) pointing to Railway — SSL active
 - [ ] Old Vercel webhook endpoint removed from Stripe after Vercel API routes are deleted
 
 ---

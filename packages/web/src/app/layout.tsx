@@ -15,7 +15,7 @@ const dmSerif = DM_Serif_Display({
 });
 
 export const metadata: Metadata = {
-  title: "KinPath — Evidence-Based Parenting Resources",
+  title: "KinPath | Evidence-Based Parenting Resources",
   description:
     "Personalized, evidence-based parenting resources from pregnancy through age 5. Adapted to your family's beliefs, lifestyle, and your child's age.",
   keywords: [

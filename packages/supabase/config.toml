@@ -14,7 +14,7 @@ major_version = 17
 [auth]
 enabled = true
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["kinpath://auth-callback"]
+additional_redirect_urls = ["kinpath://auth-callback", "https://kinpath.family/api/auth/callback"]
 jwt_expiry = 3600
 
 [auth.external.google]

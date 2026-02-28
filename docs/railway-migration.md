@@ -369,7 +369,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 RESEND_API_KEY=re_...
 
 # App
-APP_URL=https://kinpath.com   # or vercel URL during transition
+APP_URL=https://kinpath.family   # or vercel URL during transition
 
 # Node
 NODE_ENV=production
@@ -385,7 +385,7 @@ In Stripe Dashboard → Webhooks → Add endpoint:
 
 ### 4.4 — Custom domain (optional, post-launch)
 
-Railway supports custom domains. Point `api.kinpath.com` to Railway for a clean URL.
+Railway supports custom domains. Point `api.kinpath.family` to Railway for a clean URL.
 
 ---
 

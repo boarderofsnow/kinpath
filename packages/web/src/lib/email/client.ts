@@ -13,4 +13,4 @@ export function getResend(): Resend {
   return _resend;
 }
 
-export const EMAIL_FROM = "KinPath <hello@kinpath.com>";
+export const EMAIL_FROM = "KinPath <hello@kinpath.family>";

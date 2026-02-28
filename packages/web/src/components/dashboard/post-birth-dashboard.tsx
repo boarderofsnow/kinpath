@@ -43,11 +43,11 @@ const DOMAIN_COLORS: Record<string, string> = {
 
 function getAgeFunFact(ageInWeeks: number): string {
   if (ageInWeeks < 4) return "Newborns can recognize their mother's voice from birth!";
-  if (ageInWeeks < 8) return "Babies this age can see about 8-12 inches — just far enough to see your face while feeding.";
+  if (ageInWeeks < 8) return "Babies this age can see about 8-12 inches, just far enough to see your face while feeding.";
   if (ageInWeeks < 13) return "Smiling is one of the first ways babies communicate socially.";
-  if (ageInWeeks < 20) return "At this age, babies begin to discover cause and effect — shake a rattle, it makes noise!";
-  if (ageInWeeks < 30) return "Babies now understand object permanence — things still exist when hidden!";
-  if (ageInWeeks < 44) return "Crawling comes in many forms — scooting, rolling, army-crawling. They're all normal!";
+  if (ageInWeeks < 20) return "At this age, babies begin to discover cause and effect. Shake a rattle, it makes noise!";
+  if (ageInWeeks < 30) return "Babies now understand object permanence: things still exist when hidden!";
+  if (ageInWeeks < 44) return "Crawling comes in many forms: scooting, rolling, army-crawling. They're all normal!";
   if (ageInWeeks < 65) return "Toddlers learn about 1-2 new words every day, even if they can't say them all yet.";
   if (ageInWeeks < 105) return "Children this age are wired to explore. Every mess is a science experiment!";
   if (ageInWeeks < 157) return "Preschoolers ask an average of 300 questions a day. Curiosity is a superpower!";

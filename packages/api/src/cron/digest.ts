@@ -146,7 +146,7 @@ export async function runWeeklyDigest(): Promise<{
             summary: r.summary,
           }));
 
-          const appUrl = process.env.APP_URL || "https://kinpath.com";
+          const appUrl = process.env.APP_URL || "https://kinpath.family";
           const emailData: WeeklyDigestData = {
             displayName,
             childName: child.name,

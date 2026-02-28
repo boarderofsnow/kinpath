@@ -1,14 +1,9 @@
-// TODO: Once the official domain is purchased and the site transitions, update all
-// email addresses in this file from the placeholder domain to the real domain:
-//   support@kinpath.com  → support@<official-domain>
-//   legal@kinpath.com    → legal@<official-domain>
-//   privacy@kinpath.com  → privacy@<official-domain>
 
 import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — KinPath",
+  title: "Terms of Service | KinPath",
   description:
     "Read the Terms of Service governing your use of KinPath, the evidence-based parenting guidance platform.",
 };
@@ -133,7 +128,7 @@ export default function TermsOfServicePage() {
               </p>
               <p>
                 These Terms constitute a legally binding agreement between you
-                (&ldquo;User,&rdquo; &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and KinPath
+                (&ldquo;User,&rdquo; &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and Kinpath Family, LLC
                 (&ldquo;KinPath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). If
                 you are using the Service on behalf of an organization, you
                 represent that you have authority to bind that organization to
@@ -225,8 +220,8 @@ export default function TermsOfServicePage() {
                 maintaining the confidentiality of your login credentials and
                 for all activity that occurs under your account. You agree to
                 immediately notify us at{" "}
-                <a href="mailto:support@kinpath.com" className="text-brand-600 hover:underline">
-                  support@kinpath.com
+                <a href="mailto:support@kinpath.family" className="text-brand-600 hover:underline">
+                  support@kinpath.family
                 </a>{" "}
                 if you suspect unauthorized access to your account. KinPath
                 will not be liable for any loss or damage arising from your
@@ -303,8 +298,8 @@ export default function TermsOfServicePage() {
               <p>
                 You may cancel your subscription at any time from your Settings
                 page or by contacting{" "}
-                <a href="mailto:support@kinpath.com" className="text-brand-600 hover:underline">
-                  support@kinpath.com
+                <a href="mailto:support@kinpath.family" className="text-brand-600 hover:underline">
+                  support@kinpath.family
                 </a>
                 . Upon cancellation, you retain access to paid features until
                 the end of your current billing period, after which your account
@@ -400,10 +395,10 @@ export default function TermsOfServicePage() {
             <SubHeading>7.1 KinPath Content</SubHeading>
             <Prose>
               <p>
-                All content created, curated, or published by KinPath —
+                All content created, curated, or published by KinPath,
                 including but not limited to resource articles, summaries,
                 editorial curation, the AI chat system, user interface design,
-                software code, logos, trademarks, and the &ldquo;KinPath&rdquo; name —
+                software code, logos, trademarks, and the &ldquo;KinPath&rdquo; name,
                 is owned by or licensed to KinPath and is protected by
                 copyright, trademark, and other applicable intellectual property
                 laws.
@@ -473,9 +468,9 @@ export default function TermsOfServicePage() {
                 Not Medical Advice
               </p>
               <p className="mt-2 text-sm text-red-700 leading-relaxed">
-                The information provided through the KinPath Service — including
+                The information provided through the KinPath Service, including
                 all resources, articles, checklists, AI-generated responses,
-                and any other content — is for <strong>general informational and
+                and any other content, is for <strong>general informational and
                 educational purposes only</strong>. It does not constitute medical
                 advice, diagnosis, or treatment and is not a substitute for
                 professional medical care.
@@ -626,10 +621,10 @@ export default function TermsOfServicePage() {
               <p>
                 Upon termination, your license to use the Service immediately
                 ends. Sections of these Terms that by their nature should
-                survive termination — including Sections 7 (Content &amp;
+                survive termination, including Sections 7 (Content &amp;
                 Intellectual Property), 8 (Medical Disclaimer), 9 (AI
                 Disclaimer), 12 (Disclaimers), 13 (Limitation of Liability),
-                14 (Indemnification), and 15 (Dispute Resolution) — will
+                14 (Indemnification), and 15 (Dispute Resolution), will
                 continue to apply.
               </p>
             </Prose>
@@ -757,8 +752,8 @@ export default function TermsOfServicePage() {
               <p>
                 Before initiating formal proceedings, you agree to contact us
                 at{" "}
-                <a href="mailto:legal@kinpath.com" className="text-brand-600 hover:underline">
-                  legal@kinpath.com
+                <a href="mailto:legal@kinpath.family" className="text-brand-600 hover:underline">
+                  legal@kinpath.family
                 </a>{" "}
                 and give us 30 days to attempt to resolve your concern
                 informally. Most disputes can be resolved without litigation.
@@ -811,8 +806,8 @@ export default function TermsOfServicePage() {
               <p>
                 You may opt out of the arbitration agreement by sending written
                 notice to{" "}
-                <a href="mailto:legal@kinpath.com" className="text-brand-600 hover:underline">
-                  legal@kinpath.com
+                <a href="mailto:legal@kinpath.family" className="text-brand-600 hover:underline">
+                  legal@kinpath.family
                 </a>{" "}
                 within 30 days of first creating your KinPath account. Your
                 notice must include your name, email address, and a clear
@@ -868,8 +863,8 @@ export default function TermsOfServicePage() {
               </p>
               <p>
                 For material changes that reduce your rights or increase your
-                obligations, the new Terms will apply only prospectively —
-                disputes arising from actions taken before the effective date
+                obligations, the new Terms will apply only prospectively.
+                Disputes arising from actions taken before the effective date
                 will be governed by the Terms in effect at that time.
               </p>
             </Prose>
@@ -938,32 +933,32 @@ export default function TermsOfServicePage() {
               <p>
                 Legal inquiries:{" "}
                 <a
-                  href="mailto:legal@kinpath.com"
+                  href="mailto:legal@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  legal@kinpath.com
+                  legal@kinpath.family
                 </a>
               </p>
               <p>
                 General support:{" "}
                 <a
-                  href="mailto:support@kinpath.com"
+                  href="mailto:support@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  support@kinpath.com
+                  support@kinpath.family
                 </a>
               </p>
               <p>
                 Privacy matters:{" "}
                 <a
-                  href="mailto:privacy@kinpath.com"
+                  href="mailto:privacy@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  privacy@kinpath.com
+                  privacy@kinpath.family
                 </a>
               </p>
               <p className="pt-2 text-stone-500 text-xs">
-                Arbitration opt-out notices must be sent to legal@kinpath.com
+                Arbitration opt-out notices must be sent to legal@kinpath.family
                 within 30 days of account creation (see Section 15.4).
               </p>
             </div>
@@ -988,7 +983,7 @@ export default function TermsOfServicePage() {
 
       {/* Footer */}
       <footer className="border-t border-stone-200 bg-white px-6 py-8 text-center text-sm text-stone-500">
-        <p>&copy; {new Date().getFullYear()} KinPath. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Kinpath Family, LLC. All rights reserved.</p>
         <p className="mt-1">
           Not medical advice. Always consult your pediatrician for health decisions.
         </p>

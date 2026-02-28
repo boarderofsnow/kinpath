@@ -179,7 +179,7 @@ export default function OnboardingPage() {
                 <div className="flex gap-3">
                   {[
                     { label: "Yes, already born", value: true },
-                    { label: "Not yet — expecting!", value: false },
+                    { label: "Not yet, expecting!", value: false },
                   ].map((opt) => (
                     <button
                       key={String(opt.value)}

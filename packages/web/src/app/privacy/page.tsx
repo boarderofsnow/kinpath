@@ -1,13 +1,9 @@
-// TODO: Once the official domain is purchased and the site transitions, update all
-// email addresses in this file from the placeholder domain to the real domain:
-//   support@kinpath.com  → support@<official-domain>
-//   privacy@kinpath.com  → privacy@<official-domain>
 
 import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — KinPath",
+  title: "Privacy Policy | KinPath",
   description:
     "Learn how KinPath collects, uses, and protects your personal information and your family's data.",
 };
@@ -52,8 +48,8 @@ export default function PrivacyPolicyPage() {
           </p>
           <p className="mt-6 text-stone-600 leading-relaxed">
             KinPath is built for parents and parents-to-be. We understand that
-            the information you share with us — about your family, your child,
-            and your parenting journey — is deeply personal. This policy explains
+            the information you share with us about your family, your child,
+            and your parenting journey is deeply personal. This policy explains
             exactly what we collect, why, and how we protect it.
           </p>
         </div>
@@ -115,9 +111,9 @@ export default function PrivacyPolicyPage() {
             <SectionHeading number="1" title="Who We Are" />
             <Prose>
               <p>
-                KinPath (&ldquo;KinPath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the KinPath
+                Kinpath Family, LLC (&ldquo;KinPath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the KinPath
                 website and mobile-optimized web application located at{" "}
-                <span className="font-medium text-stone-800">kinpath.com</span>{" "}
+                <span className="font-medium text-stone-800">kinpath.family</span>{" "}
                 (the &ldquo;Service&rdquo;). KinPath provides evidence-based parenting
                 resources, personalized guidance, and family planning tools for
                 parents and parents-to-be from pregnancy through early childhood.
@@ -249,7 +245,7 @@ export default function PrivacyPolicyPage() {
               <ul>
                 <li>
                   <strong>Provide the Service.</strong> Create your account,
-                  authenticate you, and operate the features you use —
+                  authenticate you, and operate the features you use:
                   personalized resource recommendations, the checklist and
                   planning tool, the AI chat assistant, and household sharing.
                 </li>
@@ -262,7 +258,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Communicate with you.</strong> Send account-related
                   emails (email verification, password reset), transactional
                   notifications (subscription confirmations, household
-                  invitations), and — if you opt in — weekly content digests.
+                  invitations), and, if you opt in, weekly content digests.
                   You can unsubscribe from marketing emails at any time.
                 </li>
                 <li>
@@ -311,7 +307,7 @@ export default function PrivacyPolicyPage() {
                   <em>Supabase</em> (database and authentication),{" "}
                   <em>Stripe</em> (payment processing),{" "}
                   <em>Anthropic / OpenAI-compatible providers</em> (AI chat
-                  inference — messages are sent to generate a response and are
+                  inference; messages are sent to generate a response and are
                   not used to train models under our agreements), and{" "}
                   <em>transactional email providers</em> (account and
                   notification emails). Each vendor is contractually bound to
@@ -327,7 +323,7 @@ export default function PrivacyPolicyPage() {
                 <li>
                   <strong>Professional reviewers.</strong> Resources on KinPath
                   may be reviewed by licensed healthcare professionals. Reviewers
-                  see only resource content — never your personal information.
+                  see only resource content, never your personal information.
                 </li>
                 <li>
                   <strong>Legal requirements.</strong> We may disclose
@@ -448,10 +444,10 @@ export default function PrivacyPolicyPage() {
               <p>
                 To exercise any of these rights, email us at{" "}
                 <a
-                  href="mailto:privacy@kinpath.com"
+                  href="mailto:privacy@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  privacy@kinpath.com
+                  privacy@kinpath.family
                 </a>
                 . We will respond within 30 days. We may ask you to verify
                 your identity before processing your request.
@@ -481,10 +477,10 @@ export default function PrivacyPolicyPage() {
                 If you believe a child under 13 has provided us with personal
                 information, please contact us at{" "}
                 <a
-                  href="mailto:privacy@kinpath.com"
+                  href="mailto:privacy@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  privacy@kinpath.com
+                  privacy@kinpath.family
                 </a>{" "}
                 and we will promptly delete that information.
               </p>
@@ -695,19 +691,19 @@ export default function PrivacyPolicyPage() {
               <p>
                 Email:{" "}
                 <a
-                  href="mailto:privacy@kinpath.com"
+                  href="mailto:privacy@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  privacy@kinpath.com
+                  privacy@kinpath.family
                 </a>
               </p>
               <p>
                 General support:{" "}
                 <a
-                  href="mailto:support@kinpath.com"
+                  href="mailto:support@kinpath.family"
                   className="text-brand-600 hover:underline"
                 >
-                  support@kinpath.com
+                  support@kinpath.family
                 </a>
               </p>
               <p className="pt-2 text-stone-500 text-xs">
@@ -736,7 +732,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Footer */}
       <footer className="border-t border-stone-200 bg-white px-6 py-8 text-center text-sm text-stone-500">
-        <p>&copy; {new Date().getFullYear()} KinPath. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Kinpath Family, LLC. All rights reserved.</p>
         <p className="mt-1">
           Not medical advice. Always consult your pediatrician for health decisions.
         </p>

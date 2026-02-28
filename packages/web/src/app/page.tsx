@@ -69,7 +69,7 @@ export default function LandingPage() {
                 href="/auth/register"
                 className="rounded-xl bg-accent-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-accent-600 hover:shadow-xl transition-all"
               >
-                Start Your Journey — Free
+                Start Your Free Journey
               </Link>
               <Link
                 href="#features"
@@ -113,13 +113,13 @@ export default function LandingPage() {
               {
                 title: "Find Answers Fast",
                 description:
-                  "Our chat feature makes it effortless to find exactly what you need from our evidence-based resource library — no searching required.",
+                  "Our chat feature makes it effortless to find exactly what you need from our evidence-based resource library, no searching required.",
                 icon: MessageCircle,
               },
               {
                 title: "All-in-One",
                 description:
-                  "Nutrition, sleep, milestones, vaccines, emotional wellness — everything in one place.",
+                  "Nutrition, sleep, milestones, vaccines, and emotional wellness all in one place.",
                 icon: LayoutGrid,
               },
               {
@@ -183,7 +183,7 @@ export default function LandingPage() {
                 step: 3,
                 title: "Grow together",
                 description:
-                  "As your child reaches new stages, your feed adapts automatically — no setup needed.",
+                  "As your child reaches new stages, your feed adapts automatically. No setup needed.",
               },
             ].map((item, idx) => (
               <ScrollReveal key={item.step} delay={idx * 0.12}>
@@ -358,7 +358,7 @@ export default function LandingPage() {
               <ul className="mt-4 space-y-2 text-sm">
                 <li>
                   <a
-                    href="mailto:support@kinpath.com"
+                    href="mailto:support@kinpath.family"
                     className="text-stone-600 hover:text-brand-600 transition-colors"
                   >
                     Contact
@@ -388,7 +388,7 @@ export default function LandingPage() {
           <div className="mt-12 border-t border-stone-200 pt-8">
             <div className="text-center text-sm text-stone-600">
               <p>
-                &copy; {new Date().getFullYear()} KinPath. All rights reserved.
+                &copy; {new Date().getFullYear()} Kinpath Family, LLC. All rights reserved.
               </p>
               <p className="mt-2">
                 Not medical advice. Always consult your pediatrician for health

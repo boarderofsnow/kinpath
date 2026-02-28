@@ -30,7 +30,9 @@ app.use(
         process.env.APP_URL,
         "http://localhost:3000",
         "http://localhost:8081", // Expo dev server
-        "https://kinpath-web.vercel.app",
+        "https://kinpath-web.vercel.app", // Keep during transition
+        "https://kinpath.family",
+        "https://www.kinpath.family",
       ].filter(Boolean);
 
       // Allow requests with no origin (mobile apps, Postman, cURL)
