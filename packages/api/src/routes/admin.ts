@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { createUserSupabaseClient, createServiceRoleClient } from "../lib/supabase";
+import { runWeeklyDigest } from "../cron/digest";
 
 export const adminRouter = Router();
 
@@ -62,4 +63,29 @@ adminRouter.patch("/resources/:slug", requireAuth, async (req, res: Response) =>
   }
 
   res.json({ success: true });
+});
+
+// POST /admin/digest/trigger — manually fire the digest email
+adminRouter.post("/digest/trigger", requireAuth, async (req, res: Response) => {
+  const { userId, accessToken } = req as AuthenticatedRequest;
+  const supabase = createUserSupabaseClient(accessToken);
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("is_admin")
+    .eq("id", userId)
+    .single();
+
+  if (!profile?.is_admin) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  try {
+    const result = await runWeeklyDigest({ force: true });
+    res.json(result);
+  } catch (err) {
+    console.error("[admin] Digest trigger failed:", err);
+    res.status(500).json({ error: "Digest trigger failed" });
+  }
 });

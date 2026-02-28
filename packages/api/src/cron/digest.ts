@@ -60,7 +60,9 @@ function shouldSend(
   }
 }
 
-export async function runWeeklyDigest(): Promise<{
+export async function runWeeklyDigest(
+  options: { force?: boolean } = {}
+): Promise<{
   sentCount: number;
   errorCount: number;
   errors: string[];
@@ -89,7 +91,7 @@ export async function runWeeklyDigest(): Promise<{
 
   for (const pref of preferences) {
     try {
-      if (!shouldSend(pref, dayOfWeek, dayOfMonth)) continue;
+      if (!options.force && !shouldSend(pref, dayOfWeek, dayOfMonth)) continue;
 
       const user = pref.users;
       const userId = user.id;
