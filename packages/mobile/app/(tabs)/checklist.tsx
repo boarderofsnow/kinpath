@@ -8,27 +8,14 @@ import {
   SectionList,
   RefreshControl,
   Alert,
-  Animated,
-  PanResponder,
-  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../lib/auth-context';
 import { supabase } from '../../lib/supabase';
 import { ChecklistItem, Child } from '@kinpath/shared';
-
-const COLORS = {
-  primary: '#10b89f',
-  secondary: '#5f8253',
-  accent: '#f59e0b',
-  background: '#f0eeec',
-  dark: '#1c1917',
-  stone200: '#e7e5e4',
-  white: '#ffffff',
-};
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
+import { colors, fonts, typography, spacing, radii, shadows, cardBase } from '../../lib/theme';
+import { FadeInUp, StaggerItem, PressableScale } from '../../components/motion';
 
 interface ChecklistSection {
   title: string;
@@ -66,7 +53,7 @@ export default function ChecklistScreen() {
         .from('children')
         .select('*')
         .eq('user_id', user.id)
-        .order('date_of_birth', { ascending: true });
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       setChildren(data || []);
@@ -243,18 +230,17 @@ export default function ChecklistScreen() {
     const isCompleted = item.is_completed;
 
     return (
-      <TouchableOpacity
+      <PressableScale
         onLongPress={() => handleDeleteItem(item)}
-        activeOpacity={0.7}
         style={[
           styles.itemContainer,
           isCompleted && styles.itemContainerCompleted,
         ]}
       >
-        <TouchableOpacity
+        <PressableScale
           style={styles.checkboxContainer}
           onPress={() => toggleCompletion(item)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          scaleTo={0.9}
         >
           <View
             style={[
@@ -265,12 +251,12 @@ export default function ChecklistScreen() {
             {isCompleted && (
               <Ionicons
                 name="checkmark"
-                size={16}
-                color={COLORS.white}
+                size={14}
+                color={colors.white}
               />
             )}
           </View>
-        </TouchableOpacity>
+        </PressableScale>
 
         <View style={styles.itemContentContainer}>
           <Text
@@ -306,18 +292,17 @@ export default function ChecklistScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
+        <PressableScale
           onPress={() => handleDeleteItem(item)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          scaleTo={0.9}
         >
           <Ionicons
             name="trash-outline"
-            size={20}
-            color={isCompleted ? COLORS.stone200 : COLORS.dark}
-            style={{ opacity: 0.5 }}
+            size={18}
+            color={isCompleted ? colors.stone[300] : colors.stone[400]}
           />
-        </TouchableOpacity>
-      </TouchableOpacity>
+        </PressableScale>
+      </PressableScale>
     );
   };
 
@@ -326,7 +311,9 @@ export default function ChecklistScreen() {
     return (
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>{section.title}</Text>
-        <Text style={styles.sectionCount}>{section.data.length}</Text>
+        <View style={styles.sectionCountBadge}>
+          <Text style={styles.sectionCount}>{section.data.length}</Text>
+        </View>
       </View>
     );
   };
@@ -342,12 +329,14 @@ export default function ChecklistScreen() {
 
     return (
       <View style={styles.emptyStateContainer}>
-        <Ionicons
-          name="checkmark-circle-outline"
-          size={48}
-          color={COLORS.stone200}
-          style={{ marginBottom: 16 }}
-        />
+        <View style={styles.emptyStateIconCircle}>
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={40}
+            color={colors.brand[500]}
+          />
+        </View>
+        <Text style={styles.emptyStateHeading}>No items yet</Text>
         <Text style={styles.emptyStateText}>
           Your checklist is empty. Add items from chat or use the + button.
         </Text>
@@ -365,12 +354,13 @@ export default function ChecklistScreen() {
       {/* Child Pills */}
       {children.length > 0 && (
         <View style={styles.childPillsContainer}>
-          <TouchableOpacity
+          <PressableScale
             style={[
               styles.childPill,
               selectedChildId === null && styles.childPillActive,
             ]}
             onPress={() => setSelectedChildId(null)}
+            scaleTo={0.95}
           >
             <Text
               style={[
@@ -380,16 +370,17 @@ export default function ChecklistScreen() {
             >
               All
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           {children.map(child => (
-            <TouchableOpacity
+            <PressableScale
               key={child.id}
               style={[
                 styles.childPill,
                 selectedChildId === child.id && styles.childPillActive,
               ]}
               onPress={() => setSelectedChildId(child.id)}
+              scaleTo={0.95}
             >
               <Text
                 style={[
@@ -399,90 +390,96 @@ export default function ChecklistScreen() {
               >
                 {child.name}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           ))}
         </View>
       )}
 
       {/* Add Item Form */}
       {showAddForm && (
-        <View style={styles.addFormContainer}>
-          <TextInput
-            style={styles.addFormInput}
-            placeholder="What do you want to add?"
-            placeholderTextColor={COLORS.stone200}
-            value={newItemTitle}
-            onChangeText={setNewItemTitle}
-            returnKeyType="go"
-            onSubmitEditing={handleAddItem}
-          />
+        <FadeInUp duration={300}>
+          <View style={styles.addFormContainer}>
+            <TextInput
+              style={styles.addFormInput}
+              placeholder="What do you want to add?"
+              placeholderTextColor={colors.stone[400]}
+              value={newItemTitle}
+              onChangeText={setNewItemTitle}
+              returnKeyType="go"
+              onSubmitEditing={handleAddItem}
+            />
 
-          {children.length > 0 && (
-            <View style={styles.addFormChildSelector}>
-              <Text style={styles.addFormLabel}>For:</Text>
-              <TouchableOpacity
-                style={[
-                  styles.childSelectorPill,
-                  newItemChildId === null && styles.childSelectorPillActive,
-                ]}
-                onPress={() => setNewItemChildId(null)}
-              >
-                <Text
-                  style={[
-                    styles.childSelectorPillText,
-                    newItemChildId === null && styles.childSelectorPillTextActive,
-                  ]}
-                >
-                  All
-                </Text>
-              </TouchableOpacity>
-              {children.map(child => (
-                <TouchableOpacity
-                  key={child.id}
+            {children.length > 0 && (
+              <View style={styles.addFormChildSelector}>
+                <Text style={styles.addFormLabel}>For:</Text>
+                <PressableScale
                   style={[
                     styles.childSelectorPill,
-                    newItemChildId === child.id && styles.childSelectorPillActive,
+                    newItemChildId === null && styles.childSelectorPillActive,
                   ]}
-                  onPress={() => setNewItemChildId(child.id)}
+                  onPress={() => setNewItemChildId(null)}
+                  scaleTo={0.95}
                 >
                   <Text
                     style={[
                       styles.childSelectorPillText,
-                      newItemChildId === child.id &&
-                        styles.childSelectorPillTextActive,
+                      newItemChildId === null && styles.childSelectorPillTextActive,
                     ]}
                   >
-                    {child.name}
+                    All
                   </Text>
-                </TouchableOpacity>
-              ))}
+                </PressableScale>
+                {children.map(child => (
+                  <PressableScale
+                    key={child.id}
+                    style={[
+                      styles.childSelectorPill,
+                      newItemChildId === child.id && styles.childSelectorPillActive,
+                    ]}
+                    onPress={() => setNewItemChildId(child.id)}
+                    scaleTo={0.95}
+                  >
+                    <Text
+                      style={[
+                        styles.childSelectorPillText,
+                        newItemChildId === child.id &&
+                          styles.childSelectorPillTextActive,
+                      ]}
+                    >
+                      {child.name}
+                    </Text>
+                  </PressableScale>
+                ))}
+              </View>
+            )}
+
+            <View style={styles.addFormButtonContainer}>
+              <PressableScale
+                style={styles.addFormCancelButton}
+                onPress={() => {
+                  setShowAddForm(false);
+                  setNewItemTitle('');
+                  setNewItemChildId(null);
+                }}
+                scaleTo={0.95}
+              >
+                <Text style={styles.addFormCancelButtonText}>Cancel</Text>
+              </PressableScale>
+
+              <PressableScale
+                style={[
+                  styles.addFormSubmitButton,
+                  !newItemTitle.trim() && styles.addFormSubmitButtonDisabled,
+                ]}
+                onPress={handleAddItem}
+                disabled={!newItemTitle.trim()}
+                scaleTo={0.95}
+              >
+                <Text style={styles.addFormSubmitButtonText}>Add</Text>
+              </PressableScale>
             </View>
-          )}
-
-          <View style={styles.addFormButtonContainer}>
-            <TouchableOpacity
-              style={styles.addFormCancelButton}
-              onPress={() => {
-                setShowAddForm(false);
-                setNewItemTitle('');
-                setNewItemChildId(null);
-              }}
-            >
-              <Text style={styles.addFormCancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.addFormSubmitButton,
-                !newItemTitle.trim() && styles.addFormSubmitButtonDisabled,
-              ]}
-              onPress={handleAddItem}
-              disabled={!newItemTitle.trim()}
-            >
-              <Text style={styles.addFormSubmitButtonText}>Add</Text>
-            </TouchableOpacity>
           </View>
-        </View>
+        </FadeInUp>
       )}
 
       {/* Checklist */}
@@ -498,7 +495,7 @@ export default function ChecklistScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor={COLORS.primary}
+              tintColor={colors.brand[500]}
             />
           }
           contentContainerStyle={styles.listContent}
@@ -507,16 +504,17 @@ export default function ChecklistScreen() {
       )}
 
       {/* Floating Action Button */}
-      <TouchableOpacity
+      <PressableScale
         style={styles.fab}
         onPress={() => setShowAddForm(!showAddForm)}
+        scaleTo={0.92}
       >
         <Ionicons
           name={showAddForm ? 'close' : 'add'}
           size={28}
-          color={COLORS.white}
+          color={colors.white}
         />
-      </TouchableOpacity>
+      </PressableScale>
     </SafeAreaView>
   );
 }
@@ -524,198 +522,194 @@ export default function ChecklistScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.stone200,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.dark,
+    ...typography.displayMedium,
+    color: colors.foreground,
   },
   childPillsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.stone200,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   childPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: COLORS.white,
-    marginRight: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radii.full,
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: COLORS.stone200,
+    borderColor: colors.stone[200],
   },
   childPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.brand[500],
+    borderColor: colors.brand[500],
   },
   childPillText: {
+    fontFamily: fonts.sansSemiBold,
     fontSize: 14,
-    color: COLORS.dark,
-    fontWeight: '500',
+    color: colors.stone[700],
   },
   childPillTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
   addFormContainer: {
-    backgroundColor: COLORS.white,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.stone200,
-    padding: 16,
+    ...cardBase,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radii.md,
   },
   addFormInput: {
     borderWidth: 1,
-    borderColor: COLORS.stone200,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderColor: colors.stone[200],
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
     paddingVertical: 10,
+    fontFamily: fonts.sans,
     fontSize: 16,
-    color: COLORS.dark,
-    marginBottom: 12,
+    color: colors.foreground,
+    marginBottom: spacing.md,
+    backgroundColor: colors.stone[50],
   },
   addFormLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: COLORS.dark,
-    marginBottom: 8,
-    marginRight: 8,
+    ...typography.labelSmall,
+    fontFamily: fonts.sansSemiBold,
+    color: colors.stone[600],
+    marginRight: spacing.sm,
   },
   addFormChildSelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
     flexWrap: 'wrap',
+    gap: spacing.sm,
   },
   childSelectorPill: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 16,
-    backgroundColor: COLORS.background,
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: radii.full,
+    backgroundColor: colors.stone[50],
     borderWidth: 1,
-    borderColor: COLORS.stone200,
+    borderColor: colors.stone[200],
   },
   childSelectorPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.brand[500],
+    borderColor: colors.brand[500],
   },
   childSelectorPillText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    color: COLORS.dark,
-    fontWeight: '500',
+    color: colors.stone[700],
   },
   childSelectorPillTextActive: {
-    color: COLORS.white,
+    color: colors.white,
   },
   addFormButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
+    gap: spacing.sm,
   },
   addFormCancelButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
-    borderRadius: 6,
-    backgroundColor: COLORS.stone200,
+    borderRadius: radii.sm,
+    backgroundColor: colors.stone[100],
   },
   addFormCancelButtonText: {
+    fontFamily: fonts.sansSemiBold,
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.dark,
+    color: colors.stone[700],
   },
   addFormSubmitButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     paddingVertical: 10,
-    borderRadius: 6,
-    backgroundColor: COLORS.primary,
+    borderRadius: radii.sm,
+    backgroundColor: colors.brand[500],
   },
   addFormSubmitButtonDisabled: {
-    backgroundColor: COLORS.stone200,
+    backgroundColor: colors.stone[200],
   },
   addFormSubmitButtonText: {
+    fontFamily: fonts.sansSemiBold,
     fontSize: 14,
-    fontWeight: '600',
-    color: COLORS.white,
+    color: colors.white,
   },
   listContent: {
     flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: 80,
   },
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
-    marginTop: 16,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.lg,
+    gap: spacing.sm,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.dark,
+    ...typography.headingMedium,
+    color: colors.foreground,
+  },
+  sectionCountBadge: {
+    backgroundColor: colors.brand[50],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
   },
   sectionCount: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: COLORS.primary,
-    backgroundColor: COLORS.background,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 13,
+    color: colors.brand[600],
   },
   itemContainer: {
+    ...cardBase,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    marginBottom: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radii.md,
   },
   itemContainerCompleted: {
-    backgroundColor: COLORS.background,
-    borderLeftColor: COLORS.stone200,
+    backgroundColor: colors.stone[50],
+    borderColor: colors.stone[200],
+    ...shadows.soft,
   },
   checkboxContainer: {
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     borderWidth: 2,
-    borderColor: COLORS.primary,
+    borderColor: colors.brand[400],
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxChecked: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: colors.brand[500],
+    borderColor: colors.brand[500],
   },
   itemContentContainer: {
     flex: 1,
   },
   itemTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: COLORS.dark,
-    marginBottom: 6,
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    color: colors.foreground,
+    marginBottom: spacing.xs,
   },
   itemTitleCompleted: {
     textDecorationLine: 'line-through',
-    color: COLORS.stone200,
+    color: colors.stone[400],
   },
   itemMetaContainer: {
     flexDirection: 'row',
@@ -724,65 +718,74 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   childBadge: {
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: 8,
+    backgroundColor: colors.brand[50],
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: radii.full,
   },
   childBadgeText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 11,
-    fontWeight: '500',
-    color: COLORS.white,
+    color: colors.brand[600],
   },
   chatBadge: {
-    backgroundColor: COLORS.accent,
-    paddingHorizontal: 8,
+    backgroundColor: colors.accent[50],
+    paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: radii.full,
   },
   chatBadgeText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 11,
-    fontWeight: '500',
-    color: COLORS.white,
+    color: colors.accent[700],
   },
   dueDateText: {
+    fontFamily: fonts.sansMedium,
     fontSize: 12,
-    color: COLORS.secondary,
-    fontWeight: '400',
+    color: colors.stone[500],
   },
   dueDateTextCompleted: {
-    color: COLORS.stone200,
+    color: colors.stone[300],
   },
   emptyStateContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing['3xl'],
+  },
+  emptyStateIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: colors.brand[50],
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
+  },
+  emptyStateHeading: {
+    ...typography.displaySmall,
+    color: colors.foreground,
+    marginBottom: spacing.sm,
   },
   emptyStateText: {
-    fontSize: 16,
-    color: COLORS.dark,
+    ...typography.bodyMedium,
+    color: colors.stone[500],
     textAlign: 'center',
-    lineHeight: 24,
   },
   loadingText: {
-    fontSize: 16,
-    color: COLORS.dark,
+    ...typography.bodyLarge,
+    color: colors.stone[500],
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
-    right: 24,
+    bottom: 100,
+    right: spacing['2xl'],
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: COLORS.primary,
+    backgroundColor: colors.brand[500],
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    ...shadows.glow,
   },
 });
