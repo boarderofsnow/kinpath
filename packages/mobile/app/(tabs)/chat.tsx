@@ -32,7 +32,7 @@ interface Child {
 }
 
 interface MarkdownElement {
-  type: "text" | "bold" | "bullet" | "number" | "citation" | "paragraph";
+  type: "text" | "bold" | "bullet" | "number" | "citation" | "paragraph" | "h1" | "h2" | "h3";
   content: string;
   index?: number;
 }
@@ -98,13 +98,22 @@ const renderMarkdown = (text: string): React.ReactNode => {
   lines.forEach((line) => {
     if (line.trim() === "") return;
 
+    // Headings: # ## ###
+    const headingMatch = line.match(/^(#{1,3})\s+(.+)$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const hType = level === 1 ? "h1" : level === 2 ? "h2" : "h3";
+      elements.push({ type: hType as MarkdownElement["type"], content: headingMatch[2] });
+      return;
+    }
+
     const numberMatch = line.match(/^(\d+)\.\s+(.+)$/);
     if (numberMatch) {
       elements.push({ type: "number", content: numberMatch[2], index: parseInt(numberMatch[1]) });
       return;
     }
 
-    const bulletMatch = line.match(/^-\s+(.+)$/);
+    const bulletMatch = line.match(/^[-*]\s+(.+)$/);
     if (bulletMatch) {
       elements.push({ type: "bullet", content: bulletMatch[1] });
       return;
@@ -117,10 +126,28 @@ const renderMarkdown = (text: string): React.ReactNode => {
     <View style={markdownStyles.container}>
       {elements.map((el, idx) => {
         switch (el.type) {
+          case "h1":
+            return (
+              <Text key={idx} style={markdownStyles.h1}>
+                {renderInlineMarkdown(el.content, false)}
+              </Text>
+            );
+          case "h2":
+            return (
+              <Text key={idx} style={markdownStyles.h2}>
+                {renderInlineMarkdown(el.content, false)}
+              </Text>
+            );
+          case "h3":
+            return (
+              <Text key={idx} style={markdownStyles.h3}>
+                {renderInlineMarkdown(el.content, false)}
+              </Text>
+            );
           case "bullet":
             return (
               <View key={idx} style={markdownStyles.bulletRow}>
-                <Text style={markdownStyles.bulletDot}>•</Text>
+                <Text style={markdownStyles.bulletDot}>{"\u2022"}</Text>
                 <Text style={{ flex: 1 }}>{renderInlineMarkdown(el.content, false)}</Text>
               </View>
             );
@@ -146,6 +173,9 @@ const markdownStyles = StyleSheet.create({
   textUser: { fontFamily: fonts.sansMedium, fontSize: 14, lineHeight: 20, color: colors.white },
   textAssistant: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 20, color: colors.foreground },
   bold: { fontFamily: fonts.sansBold },
+  h1: { fontFamily: fonts.sansBold, fontSize: 18, lineHeight: 24, color: colors.foreground, marginTop: 4 },
+  h2: { fontFamily: fonts.sansSemiBold, fontSize: 16, lineHeight: 22, color: colors.foreground, marginTop: 4 },
+  h3: { fontFamily: fonts.sansSemiBold, fontSize: 14, lineHeight: 20, color: colors.stone[700], marginTop: 2 },
   bulletRow: { flexDirection: "row", alignItems: "flex-start", marginLeft: spacing.sm, marginVertical: 2 },
   bulletDot: { fontFamily: fonts.sans, fontSize: 14, marginRight: spacing.sm, marginTop: 2, color: colors.brand[500] },
   numberRow: { flexDirection: "row", alignItems: "flex-start", marginLeft: spacing.sm, marginVertical: 2 },

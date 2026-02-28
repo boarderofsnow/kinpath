@@ -119,16 +119,19 @@ export function PreferencesSection({
     try {
       const { data, error } = await supabase
         .from("user_preferences")
-        .upsert({
-          user_id: userId,
-          topics_of_interest: topics,
-          birth_preference: birthPref,
-          feeding_preference: feedingPref,
-          vaccine_stance: vaccinePref,
-          religion: faithPref,
-          dietary_preference: dietPref,
-          parenting_style: parentingPref,
-        })
+        .upsert(
+          {
+            user_id: userId,
+            topics_of_interest: topics,
+            birth_preference: birthPref,
+            feeding_preference: feedingPref,
+            vaccine_stance: vaccinePref,
+            religion: faithPref,
+            dietary_preference: dietPref,
+            parenting_style: parentingPref,
+          },
+          { onConflict: "user_id" }
+        )
         .select()
         .single();
 

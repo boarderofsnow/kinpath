@@ -136,6 +136,8 @@ const styles = StyleSheet.create({
   },
   featuresSection: {
     width: "100%",
+    maxWidth: 340,
+    alignSelf: "center",
     marginBottom: spacing["5xl"],
     gap: spacing.lg,
   },

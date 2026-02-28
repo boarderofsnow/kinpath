@@ -380,7 +380,7 @@ export function ChildrenSection({
                         style={styles.iconButton}
                         onPress={() => handleDelete(child.id)}
                       >
-                        <Ionicons name="trash-outline" size={18} color={colors.error} />
+                        <Ionicons name="close-circle-outline" size={18} color={colors.stone[400]} />
                       </PressableScale>
                     )}
                   </View>

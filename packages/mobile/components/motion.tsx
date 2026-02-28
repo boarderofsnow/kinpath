@@ -3,6 +3,7 @@ import {
   Animated,
   Easing,
   Pressable,
+  StyleSheet,
   type ViewStyle,
   type StyleProp,
 } from "react-native";
@@ -197,6 +198,12 @@ export function PressableScale({
     }).start();
   };
 
+  // Forward flex-layout properties to the outer Pressable so it participates
+  // correctly in flex row layouts (e.g. equal-width toggle buttons).
+  const flatStyle = StyleSheet.flatten(style);
+  const pressableStyle: ViewStyle | undefined =
+    flatStyle?.flex != null ? { flex: flatStyle.flex } : undefined;
+
   return (
     <Pressable
       onPress={onPress}
@@ -204,6 +211,7 @@ export function PressableScale({
       disabled={disabled}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      style={pressableStyle}
     >
       <Animated.View
         style={[{ transform: [{ scale }], opacity }, style]}

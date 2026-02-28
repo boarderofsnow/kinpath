@@ -9,6 +9,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
 import {
   calculateAgeInWeeks,
@@ -208,12 +209,46 @@ function PostBirthDashboard({
   child: EnrichedChild;
   checklistItems: ChecklistItem[];
 }) {
+  const router = useRouter();
+  const { user } = useAuth();
   const ageWeeks = child.age_in_weeks;
   const stage = getDevelopmentStage(ageWeeks);
   const currentMilestones = getMilestonesForAge(ageWeeks);
   const upcomingMilestones = getUpcomingMilestones(ageWeeks, 3);
   const tip = getPostnatalTip(ageWeeks);
   const childInitial = child.name.charAt(0).toUpperCase();
+
+  // Track milestones added to checklist
+  const [addedMilestones, setAddedMilestones] = useState<Set<string>>(new Set());
+  const [addingMilestone, setAddingMilestone] = useState<string | null>(null);
+
+  const addMilestoneToChecklist = async (
+    milestoneId: string,
+    title: string,
+    description: string
+  ) => {
+    if (!user?.id || addedMilestones.has(milestoneId)) return;
+    setAddingMilestone(milestoneId);
+    try {
+      const { error } = await supabase.from("checklist_items").insert({
+        user_id: user.id,
+        child_id: child.id,
+        title,
+        description,
+        item_type: "milestone",
+        milestone_key: milestoneId,
+        is_completed: false,
+        sort_order: 0,
+      });
+      if (!error) {
+        setAddedMilestones((prev) => new Set(prev).add(milestoneId));
+      }
+    } catch {
+      // silent
+    } finally {
+      setAddingMilestone(null);
+    }
+  };
 
   // Group milestones by domain
   const milestonesByDomain = currentMilestones.reduce<
@@ -314,15 +349,31 @@ function PostBirthDashboard({
                       </Text>
                     </View>
                     <View style={s.milestoneList}>
-                      {milestones.map((m) => (
-                        <View key={m.id} style={s.milestoneItem}>
-                          <View style={s.milestoneDot} />
-                          <View style={s.milestoneTextGroup}>
-                            <Text style={s.milestoneTitle}>{m.title}</Text>
-                            <Text style={s.milestoneDesc}>{m.description}</Text>
+                      {milestones.map((m) => {
+                        const isAdded = addedMilestones.has(m.id);
+                        const isAdding = addingMilestone === m.id;
+                        return (
+                          <View key={m.id} style={s.milestoneItem}>
+                            <View style={s.milestoneDot} />
+                            <View style={s.milestoneTextGroup}>
+                              <Text style={s.milestoneTitle}>{m.title}</Text>
+                              <Text style={s.milestoneDesc}>{m.description}</Text>
+                            </View>
+                            <PressableScale
+                              style={[s.addToChecklistBtn, isAdded && s.addToChecklistBtnAdded]}
+                              onPress={() => addMilestoneToChecklist(m.id, m.title, m.description)}
+                              disabled={isAdded || isAdding}
+                              scaleTo={0.9}
+                            >
+                              <Ionicons
+                                name={isAdded ? "checkmark" : "add"}
+                                size={14}
+                                color={isAdded ? colors.sage[700] : colors.brand[600]}
+                              />
+                            </PressableScale>
                           </View>
-                        </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   </View>
                 );
@@ -353,11 +404,11 @@ function PostBirthDashboard({
             <View style={s.sectionHeaderBetween}>
               <Text style={s.sectionTitle}>Coming Up</Text>
               <PressableScale
-                onPress={() => {}}
+                onPress={() => router.push("/(tabs)/checklist")}
                 style={s.viewAllLink}
               >
                 <Text style={s.viewAllText}>View all</Text>
-                <Ionicons name="arrow-forward" size={12} color={colors.brand[600]} />
+                <Ionicons name="arrow-forward" size={14} color={colors.brand[600]} />
               </PressableScale>
             </View>
             <View style={s.checklistList}>
@@ -706,7 +757,7 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.sansSemiBold,
-    fontSize: 15,
+    fontSize: 17,
     color: colors.foreground,
   },
   sectionSubtext: {
@@ -830,7 +881,7 @@ const s = StyleSheet.create({
   },
   viewAllText: {
     fontFamily: fonts.sansMedium,
-    fontSize: 12,
+    fontSize: 14,
     color: colors.brand[600],
   },
   checklistList: {
@@ -855,8 +906,8 @@ const s = StyleSheet.create({
   },
   checklistTitle: {
     fontFamily: fonts.sans,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.stone[800],
   },
   checklistDate: {
@@ -983,5 +1034,19 @@ const s = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 11,
     color: colors.stone[300],
+  },
+
+  // ── Add to Checklist Button ─────────────────
+  addToChecklistBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.brand[50],
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: spacing.sm,
+  },
+  addToChecklistBtnAdded: {
+    backgroundColor: colors.sage[100],
   },
 });
