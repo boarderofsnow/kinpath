@@ -140,7 +140,7 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     email.toLowerCase(),
     {
       data: { household_member_id: member.id, invited_by: userId },
-      redirectTo: `${webUrl}/api/auth/callback?next=/dashboard`,
+      redirectTo: `${webUrl}/api/auth/callback?next=/onboarding`,
     }
   );
 

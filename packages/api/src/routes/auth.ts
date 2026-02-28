@@ -71,20 +71,26 @@ authRouter.get("/callback", async (req: Request, res: Response) => {
           })
           .eq("id", householdMemberId);
 
+        // Copy the owner's subscription_tier. Do NOT set onboarding_complete —
+        // let them go through the onboarding flow for preferences.
         const ownerTier =
           (memberRow as any)?.households?.users?.subscription_tier ?? "free";
 
         await serviceClient
           .from("users")
-          .update({ onboarding_complete: true, subscription_tier: ownerTier })
+          .update({ subscription_tier: ownerTier })
           .eq("id", user.id);
       } catch (linkError) {
         console.error(
           "Failed to link household member on invite accept:",
           linkError
         );
-        // Non-fatal — continue to dashboard
+        // Non-fatal — continue
       }
+
+      // Send invited partners to onboarding (not dashboard)
+      res.redirect(`${appUrl}/onboarding`);
+      return;
     }
 
     res.redirect(`${appUrl}${next}`);
