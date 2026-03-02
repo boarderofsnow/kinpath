@@ -80,12 +80,24 @@ class PubMedAdapter(SourceAdapter):
 
     def fetch_articles(self, config: dict, since: datetime = None) -> List[dict]:
         """
-        Fetch all articles for configured journals.
+        Fetch articles for configured journals.
+
+        If `since` is provided (incremental mode), only fetch articles
+        published from that date onward. Otherwise fetch the full range
+        from config (backfill mode).
+
         config should contain: {"journals": {"AJOG": {"query": "...", "issn": "..."}}}
         """
         journals = config.get("journals", {})
         search_terms = config.get("search_terms", "(pregnancy OR prenatal OR pediatric OR neonatal)")
-        date_range = config.get("date_range", "1900/01/01:2026/12/31")
+
+        # Incremental: narrow the date range to only recent articles
+        if since is not None:
+            date_range = f"{since.strftime('%Y/%m/%d')}:3000/12/31"
+            logger.info(f"Incremental mode — fetching articles since {since.strftime('%Y-%m-%d')}")
+        else:
+            date_range = config.get("date_range", "1900/01/01:2026/12/31")
+            logger.info(f"Full/backfill mode — fetching entire date range: {date_range}")
 
         all_articles = []
         for journal_name, journal_config in journals.items():
