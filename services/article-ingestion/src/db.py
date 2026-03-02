@@ -40,13 +40,34 @@ def get_tag_map() -> dict:
 def upsert_article(article_data: dict, source_id: str) -> dict:
     """
     Insert or update an article. Upserts on DOI (unique constraint).
-    Returns the upserted record.
+    Returns the upserted record (including its current status).
+
+    New articles get status="pending".  Existing articles keep their
+    current status so we don't reset already-tagged/verified articles
+    back to pending on re-ingestion.  Metadata fields (title, abstract,
+    authors, etc.) are always refreshed.
     """
     client = get_client()
 
+    doi = article_data.get("doi")
+
+    # Check if article already exists (to preserve status)
+    existing_status = None
+    if doi:
+        try:
+            existing = (client.schema("articles").table("articles")
+                        .select("id, status")
+                        .eq("doi", doi)
+                        .limit(1)
+                        .execute())
+            if existing.data:
+                existing_status = existing.data[0].get("status")
+        except Exception:
+            pass  # If lookup fails, treat as new
+
     record = {
         "source_id": source_id,
-        "doi": article_data.get("doi"),
+        "doi": doi,
         "pii": article_data.get("pii"),
         "pmid": article_data.get("pmid"),
         "title": article_data["title"],
@@ -64,7 +85,8 @@ def upsert_article(article_data: dict, source_id: str) -> dict:
         "mesh_terms": article_data.get("mesh_terms", []),
         "article_type": article_data.get("article_type"),
         "raw_metadata": article_data.get("raw_metadata", {}),
-        "status": "pending",
+        # Preserve existing status; only set "pending" for truly new articles
+        "status": existing_status or "pending",
     }
 
     # Remove None values — Supabase doesn't like explicit nulls for some types
