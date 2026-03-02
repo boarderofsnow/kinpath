@@ -1,6 +1,5 @@
-# Supabase
-supabase>=2.0.0
-postgrest-py>=0.16.0
+# Supabase (postgrest client is pulled in automatically)
+supabase==2.28.0
 
 # API Clients
 requests>=2.28.0
