@@ -31,9 +31,9 @@ def get_source_id(slug: str) -> str:
 
 
 def get_tag_map() -> dict:
-    """Load all tags as {slug: {id, name, category}}."""
+    """Load all tags as {slug: {id, name, category, dimension}}."""
     client = get_client()
-    result = client.schema("articles").table("tags").select("id, name, slug, category").execute()
+    result = client.schema("articles").table("tags").select("id, name, slug, category, dimension").execute()
     return {t["slug"]: t for t in result.data}
 
 
