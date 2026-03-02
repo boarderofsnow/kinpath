@@ -42,3 +42,4 @@ coverage/
 
 # Sentry
 .sentryclirc
+supabase-deployment.env

@@ -1,0 +1,24 @@
+# Supabase
+supabase>=2.0.0
+postgrest-py>=0.16.0
+
+# API Clients
+requests>=2.28.0
+
+# Data processing
+pydantic>=2.5.0
+python-dateutil>=2.8.0
+
+# Scheduling
+apscheduler>=3.10.0
+
+# LLM (Layer 3 tagging)
+anthropic>=0.18.0
+
+# Encryption
+cryptography>=42.0.0
+
+# Utilities
+python-dotenv>=1.0.0
+structlog>=24.1.0
+tenacity>=8.2.0
