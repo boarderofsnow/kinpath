@@ -1,11 +1,16 @@
 """
 Main ingestion pipeline: fetch → upsert → tag → update job.
 Orchestrates the full flow from PubMed to Supabase.
+
+Incremental runs (the default 3 AM cron) look up the last successful
+job's start time and only fetch articles published since then, with
+a 7-day overlap to catch late-indexed papers.  Backfill runs fetch
+the entire configured date range.
 """
 
 import logging
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from src.db import (
     get_client, get_source_id, get_tag_map,
@@ -20,14 +25,57 @@ from src.config import TAGGING_MODE
 
 logger = logging.getLogger(__name__)
 
+# How many days of overlap to keep when running incrementally.
+# PubMed can be slow to index some articles, so a 7-day buffer
+# ensures we don't miss anything.  Duplicates are harmless thanks
+# to the DOI-based upsert.
+INCREMENTAL_OVERLAP_DAYS = 7
+
+
+def _get_last_successful_job_time(source_id: str):
+    """
+    Look up the started_at timestamp of the most recent completed
+    ingestion job for this source.  Returns a datetime or None.
+    """
+    try:
+        client = get_client()
+        result = (
+            client.schema("articles")
+            .table("ingestion_jobs")
+            .select("started_at")
+            .eq("source_id", source_id)
+            .eq("status", "completed")
+            .order("started_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        if result.data:
+            ts = result.data[0]["started_at"]
+            # Handle both ISO formats (with/without timezone)
+            for fmt in ("%Y-%m-%dT%H:%M:%S.%f%z", "%Y-%m-%dT%H:%M:%S%z",
+                        "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S"):
+                try:
+                    return datetime.strptime(ts.replace("+00:00", "").replace("Z", ""), fmt.replace("%z", ""))
+                except ValueError:
+                    continue
+            logger.warning(f"Could not parse last job timestamp: {ts}")
+    except Exception as e:
+        logger.warning(f"Could not look up last job time: {e}")
+    return None
+
 
 def run_ingestion(job_type: str = "incremental"):
     """
     Run a full ingestion cycle:
-    1. Fetch articles from PubMed
+    1. Fetch articles from PubMed (incrementally if possible)
     2. Upsert into Supabase
     3. Auto-tag (L1 + L2 + optional L3)
     4. Update job record
+
+    job_type:
+      "incremental" — fetch only articles since last successful run
+                      (minus a 7-day overlap for late indexing).
+      "backfill"    — fetch the full configured date range.
     """
     logger.info(f"Starting {job_type} ingestion run")
 
@@ -57,9 +105,21 @@ def run_ingestion(job_type: str = "incremental"):
         ).eq("id", source_id).single().execute()
         source_config = source_result.data.get("config", {})
 
+        # Determine the "since" date for incremental runs
+        since = None
+        if job_type == "incremental":
+            last_run = _get_last_successful_job_time(source_id)
+            if last_run:
+                since = last_run - timedelta(days=INCREMENTAL_OVERLAP_DAYS)
+                logger.info(f"Last successful run: {last_run.isoformat()}.  "
+                            f"Fetching since {since.strftime('%Y-%m-%d')} "
+                            f"({INCREMENTAL_OVERLAP_DAYS}-day overlap)")
+            else:
+                logger.info("No previous successful job found — running full backfill this time")
+
         # Fetch articles
         logger.info("Fetching articles from PubMed...")
-        articles = adapter.fetch_articles(source_config)
+        articles = adapter.fetch_articles(source_config, since=since)
         logger.info(f"Fetched {len(articles)} articles")
 
         update_ingestion_job(job_id, articles_found=len(articles))
@@ -67,7 +127,7 @@ def run_ingestion(job_type: str = "incremental"):
         # Upsert and tag
         tag_map = get_tag_map()
         new_count = 0
-        updated_count = 0
+        skipped_count = 0
         errors = []
 
         for i, article_data in enumerate(articles):
@@ -77,15 +137,23 @@ def run_ingestion(job_type: str = "incremental"):
                 if not article_id:
                     continue
 
-                # Was this a new insert or an update?
-                # (Supabase upsert doesn't distinguish, so we count all)
+                # Skip tagging if article is already tagged/verified/etc.
+                # Only tag articles that are still "pending" (newly inserted
+                # or never successfully tagged).  This avoids redundant L3
+                # API calls and DB writes for articles in the overlap window.
+                article_status = result.get("status", "pending")
+                if article_status != "pending":
+                    skipped_count += 1
+                    continue
+
                 new_count += 1
 
-                # Auto-tag
+                # Auto-tag (only pending articles reach here)
                 _tag_article(article_id, article_data, tag_map)
 
                 if (i + 1) % 100 == 0:
-                    logger.info(f"  Processed {i+1}/{len(articles)} articles")
+                    logger.info(f"  Processed {i+1}/{len(articles)} articles "
+                                f"({skipped_count} already tagged, skipped)")
 
             except Exception as e:
                 errors.append({"pmid": article_data.get("pmid"), "error": str(e)})
@@ -95,14 +163,18 @@ def run_ingestion(job_type: str = "incremental"):
         update_ingestion_job(
             job_id,
             status="completed",
+            articles_found=len(articles),
             articles_new=new_count,
-            articles_updated=updated_count,
+            articles_updated=skipped_count,
             errors=json.dumps(errors) if errors else "[]",
             completed_at=datetime.utcnow().isoformat(),
         )
 
-        logger.info(f"Ingestion complete: {new_count} articles processed, {len(errors)} errors")
-        return {"job_id": job_id, "articles": new_count, "errors": len(errors)}
+        logger.info(f"Ingestion complete: {len(articles)} fetched, "
+                     f"{new_count} new/tagged, {skipped_count} already tagged (skipped), "
+                     f"{len(errors)} errors")
+        return {"job_id": job_id, "articles": new_count,
+                "skipped": skipped_count, "errors": len(errors)}
 
     except Exception as e:
         logger.error(f"Ingestion failed: {e}")
