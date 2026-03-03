@@ -1,0 +1,43 @@
+<svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .kinpath-text {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 42px;
+        font-weight: 600;
+        fill: #ffffff;
+        letter-spacing: -0.5px;
+      }
+    </style>
+  </defs>
+
+  <!-- Icon: Parent and Child Silhouette (white) -->
+  <g id="parent-child-icon">
+    <!-- Parent circle (head) -->
+    <circle cx="28" cy="24" r="14" fill="#ffffff"/>
+
+    <!-- Parent body -->
+    <path d="M 20 38 L 18 65 L 32 65 L 36 38 Q 28 42 20 38" fill="#ffffff"/>
+
+    <!-- Parent arm (extended, guiding) -->
+    <path d="M 36 42 Q 50 38 52 45" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+    <!-- Child circle (head) -->
+    <circle cx="48" cy="32" r="10" fill="#ffffff"/>
+
+    <!-- Child body -->
+    <path d="M 42 42 L 41 62 L 52 62 L 54 42 Q 48 45 42 42" fill="#ffffff"/>
+
+    <!-- Connecting line -->
+    <line x1="52" y1="45" x2="48" y2="42" stroke="#ffffff" stroke-width="2.5" opacity="0.6"/>
+
+    <!-- Child arm reaching/holding -->
+    <path d="M 54 46 Q 62 44 64 50" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="90" y="55" class="kinpath-text">kinpath</text>
+
+  <!-- Subtle decorative line under icon -->
+  <line x1="10" y1="85" x2="70" y2="85" stroke="#ffffff" stroke-width="1.5" opacity="0.3"/>
+</svg>
