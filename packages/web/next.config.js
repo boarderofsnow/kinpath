@@ -4,6 +4,9 @@ const path = require("path");
 const nextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: ["@kinpath/shared"],
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@supabase/supabase-js"],
+  },
   images: {
     remotePatterns: [
       {

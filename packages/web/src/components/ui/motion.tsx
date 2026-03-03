@@ -1,7 +1,12 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
+import { useRef, useEffect, useState } from "react";
+
+/**
+ * Lightweight CSS-based animation replacements for framer-motion.
+ * These provide the same visual effects with zero bundle cost.
+ */
 
 interface MotionProps {
   children: ReactNode;
@@ -13,14 +18,12 @@ interface MotionProps {
 
 export function FadeIn({ children, delay = 0, className = "" }: MotionProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={className}
+    <div
+      className={`animate-fade-in ${className}`}
+      style={{ animationDelay: `${delay}s`, animationFillMode: "both" }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -32,14 +35,12 @@ export function FadeInUp({
   className = "",
 }: MotionProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={className}
+    <div
+      className={`animate-fade-in-up ${className}`}
+      style={{ animationDelay: `${delay}s`, animationFillMode: "both" }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -50,16 +51,35 @@ export function ScrollReveal({
   delay = 0,
   className = "",
 }: MotionProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { rootMargin: "-60px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.5, delay, ease: "easeOut" }}
-      className={className}
+    <div
+      ref={ref}
+      className={`${visible ? "animate-fade-in-up" : "opacity-0"} ${className}`}
+      style={visible ? { animationDelay: `${delay}s`, animationFillMode: "both" } : undefined}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -74,21 +94,32 @@ interface StaggerContainerProps {
 export function StaggerContainer({
   children,
   className = "",
-  staggerDelay = 0.1,
 }: StaggerContainerProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { rootMargin: "-60px" }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-60px" }}
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: staggerDelay } },
-      }}
-      className={className}
-    >
+    <div ref={ref} className={`${visible ? "stagger-visible" : "stagger-hidden"} ${className}`}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -97,19 +128,9 @@ export function StaggerItem({
   className = "",
 }: Omit<MotionProps, "delay">) {
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 16 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.4, ease: "easeOut" },
-        },
-      }}
-      className={className}
-    >
+    <div className={`stagger-item ${className}`}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -125,17 +146,8 @@ export function PageTransition({
   className = "",
 }: PageTransitionProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
-      className={className}
-    >
+    <div className={`animate-fade-in-up ${className}`} style={{ animationDuration: "0.3s" }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
-
-/* ── Re-export AnimatePresence for convenience ───────────── */
-
-export { AnimatePresence, motion };

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ChecklistItem, ChildWithAge, HouseholdMember } from "@kinpath/shared";
 import { X, Calendar, User } from "lucide-react";
+import { MarkdownBody } from "../ui/markdown-body";
 
 interface ChecklistItemRowProps {
   item: ChecklistItem;
@@ -81,9 +82,9 @@ export function ChecklistItemRow({
           )}
         </p>
         {item.description && (
-          <p className={`mt-0.5 text-xs ${item.is_completed ? "text-stone-300" : "text-stone-500"}`}>
-            {item.description}
-          </p>
+          <div className={`mt-0.5 text-xs ${item.is_completed ? "text-stone-300 line-through" : "text-stone-500"} line-clamp-3`}>
+            <MarkdownBody content={item.description} compact />
+          </div>
         )}
 
         <div className="mt-1 flex flex-wrap items-center gap-2">

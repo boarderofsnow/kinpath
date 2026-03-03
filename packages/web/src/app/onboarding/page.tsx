@@ -8,7 +8,7 @@ import {
   TAG_NAMESPACES,
   type UserPreferencesInput,
 } from "@kinpath/shared";
-import { AnimatePresence, motion } from "@/components/ui/motion";
+// Uses CSS animations instead of framer-motion
 
 type Step = "child" | "birth" | "feeding" | "vaccines" | "lifestyle" | "topics";
 
@@ -148,14 +148,9 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step content */}
-        <AnimatePresence mode="wait">
-        <motion.div
+        <div
           key={step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="rounded-2xl border border-stone-200/60 bg-white p-8 shadow-card"
+          className="animate-step-enter rounded-2xl border border-stone-200/60 bg-white p-8 shadow-card"
         >
           {step === "child" && (
             <div className="space-y-4">
@@ -412,8 +407,7 @@ export default function OnboardingPage() {
               </div>
             </div>
           )}
-        </motion.div>
-        </AnimatePresence>
+        </div>
 
         {/* Navigation buttons */}
         <div className="flex justify-between">

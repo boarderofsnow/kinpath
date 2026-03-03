@@ -26,7 +26,7 @@ export function AppNav({ currentPath }: AppNavProps) {
       <div className="hidden border-b border-stone-200/60 bg-white sm:block">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           {/* Logo */}
-          <Link href="/dashboard">
+          <Link href="/dashboard" prefetch={false}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kinpath-logo.png"
@@ -45,6 +45,7 @@ export function AppNav({ currentPath }: AppNavProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={false}
                   className={`relative flex items-center gap-2 text-sm font-medium transition-colors ${
                     isActive
                       ? "font-semibold text-brand-600"
@@ -75,6 +76,7 @@ export function AppNav({ currentPath }: AppNavProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 className={`flex flex-col items-center gap-0.5 rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
                   isActive
                     ? "text-brand-600"
@@ -93,7 +95,7 @@ export function AppNav({ currentPath }: AppNavProps) {
 
       {/* ── Mobile top bar with logo only (shown on mobile) ──── */}
       <div className="border-b border-stone-200/60 bg-white px-4 py-3 sm:hidden">
-        <Link href="/dashboard">
+        <Link href="/dashboard" prefetch={false}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/kinpath-logo.png"

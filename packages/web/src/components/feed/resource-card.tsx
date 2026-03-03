@@ -23,6 +23,7 @@ export function ResourceCard({ resource }: ResourceCardProps) {
   return (
     <Link
       href={`/resources/${resource.slug}`}
+      prefetch={false}
       className="block rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5 hover:border-brand-200 group"
     >
       {/* Header with type and vetting status */}

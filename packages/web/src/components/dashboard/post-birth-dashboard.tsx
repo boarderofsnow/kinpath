@@ -204,6 +204,7 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
             <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
             <Link
               href="/plan"
+              prefetch={false}
               className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
             >
               View all <ArrowRight className="h-3 w-3" />
