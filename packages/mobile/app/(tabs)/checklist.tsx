@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
-import { ChecklistItem, Child } from "@kinpath/shared";
+import { ChecklistItem, ChecklistCategory, Child } from "@kinpath/shared";
 import {
   colors,
   fonts,
@@ -51,6 +51,9 @@ export default function ChecklistScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState("");
+  const [newItemDescription, setNewItemDescription] = useState("");
+  const [newItemDueDate, setNewItemDueDate] = useState<Date | null>(null);
+  const [newItemCategory, setNewItemCategory] = useState<ChecklistCategory>("general");
   const [newItemChildId, setNewItemChildId] = useState<string | null>(null);
 
   // Completed section collapsed by default
@@ -132,8 +135,12 @@ export default function ChecklistScreen() {
         user_id: user.id,
         child_id: newItemChildId || null,
         title: newItemTitle.trim(),
-        description: null,
+        description: newItemDescription.trim() || null,
         item_type: "custom",
+        category: newItemCategory,
+        due_date: newItemDueDate
+          ? newItemDueDate.toISOString().split("T")[0]
+          : null,
         is_completed: false,
         sort_order: 0,
       });
@@ -141,6 +148,9 @@ export default function ChecklistScreen() {
       if (error) throw error;
 
       setNewItemTitle("");
+      setNewItemDescription("");
+      setNewItemDueDate(null);
+      setNewItemCategory("general");
       setNewItemChildId(null);
       setShowAddForm(false);
       await fetchChecklist();
@@ -271,8 +281,25 @@ export default function ChecklistScreen() {
   const activeItems = checklist.filter((i) => !i.is_completed);
   const completedItems = checklist.filter((i) => i.is_completed);
 
+  // Split active items by category
+  const generalItems = activeItems.filter(
+    (i) => !i.category || i.category === "general"
+  );
+  const providerItems = activeItems.filter((i) => i.category === "provider");
+
   const sections: ChecklistSection[] = [
-    { title: "Active Items", key: "active", data: activeItems },
+    ...(generalItems.length > 0
+      ? [{ title: "General Checklist", key: "general", data: generalItems }]
+      : []),
+    ...(providerItems.length > 0
+      ? [
+          {
+            title: "Discuss with Provider",
+            key: "provider",
+            data: providerItems,
+          },
+        ]
+      : []),
     ...(completedItems.length > 0
       ? [
           {
@@ -322,6 +349,16 @@ export default function ChecklistScreen() {
                 <Text style={styles.childBadgeText}>{childName}</Text>
               </View>
             )}
+            {item.category === "provider" && (
+              <View style={styles.providerBadge}>
+                <Ionicons
+                  name="medkit-outline"
+                  size={10}
+                  color={colors.accent[700]}
+                />
+                <Text style={styles.providerBadgeText}>Provider</Text>
+              </View>
+            )}
             {item.description && (
               <View style={styles.chatBadge}>
                 <Text style={styles.chatBadgeText}>has details</Text>
@@ -346,9 +383,9 @@ export default function ChecklistScreen() {
   const renderSectionHeader = ({ section }: { section: ChecklistSection }) => {
     const count =
       section.key === "completed" ? completedItems.length : section.data.length;
-    if (count === 0 && section.key === "active") return null;
 
     const isCompleted = section.key === "completed";
+    const isProvider = section.key === "provider";
 
     return (
       <PressableScale
@@ -360,9 +397,28 @@ export default function ChecklistScreen() {
         }
         disabled={!isCompleted}
       >
+        {isProvider && (
+          <Ionicons
+            name="medkit-outline"
+            size={16}
+            color={colors.accent[500]}
+          />
+        )}
         <Text style={styles.sectionTitle}>{section.title}</Text>
-        <View style={styles.sectionCountBadge}>
-          <Text style={styles.sectionCount}>{count}</Text>
+        <View
+          style={[
+            styles.sectionCountBadge,
+            isProvider && styles.sectionCountBadgeProvider,
+          ]}
+        >
+          <Text
+            style={[
+              styles.sectionCount,
+              isProvider && styles.sectionCountProvider,
+            ]}
+          >
+            {count}
+          </Text>
         </View>
         {isCompleted && (
           <Ionicons
@@ -454,16 +510,100 @@ export default function ChecklistScreen() {
       {showAddForm && (
         <FadeInUp duration={300}>
           <View style={styles.addForm}>
+            {/* Title */}
             <TextInput
               style={styles.addInput}
-              placeholder="What do you want to add?"
+              placeholder="Title"
               placeholderTextColor={colors.stone[400]}
               value={newItemTitle}
               onChangeText={setNewItemTitle}
-              returnKeyType="go"
-              onSubmitEditing={handleAddItem}
+              returnKeyType="next"
             />
 
+            {/* Description */}
+            <TextInput
+              style={[styles.addInput, styles.addDescriptionInput]}
+              placeholder="Description (optional)"
+              placeholderTextColor={colors.stone[400]}
+              value={newItemDescription}
+              onChangeText={setNewItemDescription}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            {/* Due Date */}
+            <DatePickerInput
+              label="Due Date (optional)"
+              value={newItemDueDate}
+              onChange={setNewItemDueDate}
+            />
+            {newItemDueDate && (
+              <PressableScale
+                style={styles.clearDateBtnInline}
+                onPress={() => setNewItemDueDate(null)}
+              >
+                <Ionicons
+                  name="close-circle"
+                  size={14}
+                  color={colors.stone[400]}
+                />
+                <Text style={styles.clearDateText}>Clear date</Text>
+              </PressableScale>
+            )}
+
+            {/* Category */}
+            <View style={styles.addChildRow}>
+              <Text style={styles.addChildLabel}>Category:</Text>
+              <PressableScale
+                style={[
+                  styles.addChildPill,
+                  newItemCategory === "general" && styles.addChildPillActive,
+                ]}
+                onPress={() => setNewItemCategory("general")}
+                scaleTo={0.95}
+              >
+                <Text
+                  style={[
+                    styles.addChildPillText,
+                    newItemCategory === "general" &&
+                      styles.addChildPillTextActive,
+                  ]}
+                >
+                  General
+                </Text>
+              </PressableScale>
+              <PressableScale
+                style={[
+                  styles.addChildPill,
+                  newItemCategory === "provider" &&
+                    styles.addCategoryProviderPill,
+                ]}
+                onPress={() => setNewItemCategory("provider")}
+                scaleTo={0.95}
+              >
+                <Ionicons
+                  name="medkit-outline"
+                  size={12}
+                  color={
+                    newItemCategory === "provider"
+                      ? colors.white
+                      : colors.stone[700]
+                  }
+                />
+                <Text
+                  style={[
+                    styles.addChildPillText,
+                    newItemCategory === "provider" &&
+                      styles.addChildPillTextActive,
+                  ]}
+                >
+                  Discuss with Provider
+                </Text>
+              </PressableScale>
+            </View>
+
+            {/* Child selector */}
             {children.length > 0 && (
               <View style={styles.addChildRow}>
                 <Text style={styles.addChildLabel}>For:</Text>
@@ -514,6 +654,9 @@ export default function ChecklistScreen() {
                 onPress={() => {
                   setShowAddForm(false);
                   setNewItemTitle("");
+                  setNewItemDescription("");
+                  setNewItemDueDate(null);
+                  setNewItemCategory("general");
                   setNewItemChildId(null);
                 }}
                 scaleTo={0.95}
@@ -752,6 +895,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     backgroundColor: colors.stone[50],
   },
+  addDescriptionInput: {
+    minHeight: 72,
+    paddingTop: 10,
+  },
+  clearDateBtnInline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
+  },
+  addCategoryProviderPill: {
+    backgroundColor: colors.accent[500],
+    borderColor: colors.accent[500],
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   addChildRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -846,6 +1007,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.brand[600],
   },
+  sectionCountBadgeProvider: {
+    backgroundColor: colors.accent[50],
+  },
+  sectionCountProvider: {
+    color: colors.accent[600],
+  },
 
   // ── Checklist Item Card ───────────────────────
   itemCard: {
@@ -908,8 +1075,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.brand[600],
   },
-  chatBadge: {
+  providerBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
     backgroundColor: colors.accent[50],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  providerBadgeText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    color: colors.accent[700],
+  },
+  chatBadge: {
+    backgroundColor: colors.sage[50],
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
     borderRadius: radii.full,
@@ -917,7 +1098,7 @@ const styles = StyleSheet.create({
   chatBadgeText: {
     fontFamily: fonts.sansMedium,
     fontSize: 11,
-    color: colors.accent[700],
+    color: colors.sage[700],
   },
   dueText: {
     fontFamily: fonts.sansMedium,

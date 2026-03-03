@@ -120,12 +120,14 @@ export function PageTransition({
 }
 
 // ── StaggerItem ─────────────────────────────────────────────
-// Use directly with an index-based delay for stagger effects
+// Use directly with an index-based delay for stagger effects.
+// Items beyond maxAnimated render instantly to avoid excessive animations.
 
 interface StaggerItemProps {
   children: ReactNode;
   index: number;
   staggerDelay?: number;
+  maxAnimated?: number;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -133,8 +135,12 @@ export function StaggerItem({
   children,
   index,
   staggerDelay = 100,
+  maxAnimated = 6,
   style,
 }: StaggerItemProps) {
+  if (index >= maxAnimated) {
+    return <Animated.View style={style}>{children}</Animated.View>;
+  }
   const delay = index * staggerDelay;
   return (
     <FadeInUp delay={delay} duration={400} style={style}>

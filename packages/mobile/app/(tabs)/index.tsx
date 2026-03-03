@@ -21,6 +21,7 @@ import type { Child, ChildWithAge, ChecklistItem, User } from "@kinpath/shared";
 import { colors, fonts, typography, spacing, radii, shadows, cardBase } from "../../lib/theme";
 import { FadeIn, FadeInUp, StaggerItem, PressableScale } from "../../components/motion";
 import { DashboardSkeleton } from "../../components/skeleton";
+import { queryCache } from "../../lib/cache";
 
 interface EnrichedChild extends ChildWithAge {
   age_in_weeks: number;
@@ -37,7 +38,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (bypassCache = false) => {
     if (!user?.id) {
       setLoading(false);
       setRefreshing(false);
@@ -45,34 +46,58 @@ export default function HomeScreen() {
     }
 
     try {
-      const { data: userRecord } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
+      // User profile (cached 5 min)
+      const userCacheKey = `user:${user.id}`;
+      let userRecord = bypassCache ? null : queryCache.get<User>(userCacheKey);
+      if (!userRecord) {
+        const { data } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        if (data) {
+          userRecord = data;
+          queryCache.set(userCacheKey, data, 5 * 60 * 1000);
+        }
+      }
       if (userRecord) setUserData(userRecord);
 
-      const { data: childrenData } = await supabase
-        .from("children")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      // Children (cached 5 min, shared with Browse)
+      const childrenCacheKey = `children:${user.id}`;
+      let enrichedChildren: EnrichedChild[] = bypassCache
+        ? []
+        : queryCache.get<EnrichedChild[]>(childrenCacheKey) ?? [];
 
-      if (childrenData) {
-        const enrichedChildren: EnrichedChild[] = childrenData.map((child: Child) => {
-          const ageInWeeks = calculateAgeInWeeks(child);
-          return {
-            ...child,
-            age_in_weeks: ageInWeeks,
-            age_label: formatAgeLabel(ageInWeeks),
-          };
-        });
+      if (enrichedChildren.length === 0) {
+        const { data: childrenData } = await supabase
+          .from("children")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
 
-        setChildren(enrichedChildren);
+        if (childrenData) {
+          enrichedChildren = childrenData.map((child: Child) => {
+            const ageInWeeks = calculateAgeInWeeks(child);
+            return {
+              ...child,
+              age_in_weeks: ageInWeeks,
+              age_label: formatAgeLabel(ageInWeeks),
+            };
+          });
+          queryCache.set(childrenCacheKey, enrichedChildren, 5 * 60 * 1000);
+        }
+      }
+      setChildren(enrichedChildren);
 
-        if (enrichedChildren.length > 0) {
-          const childIds = enrichedChildren.map((c) => c.id);
+      // Checklist items (cached 30 seconds — changes more frequently)
+      if (enrichedChildren.length > 0) {
+        const childIds = enrichedChildren.map((c) => c.id);
+        const checklistCacheKey = `checklist:${childIds.join(",")}`;
+        let groupedItems = bypassCache
+          ? null
+          : queryCache.get<Record<string, ChecklistItem[]>>(checklistCacheKey);
+
+        if (!groupedItems) {
           const { data: checklistData } = await supabase
             .from("checklist_items")
             .select("*")
@@ -82,15 +107,16 @@ export default function HomeScreen() {
             .limit(30);
 
           if (checklistData) {
-            const groupedItems: Record<string, ChecklistItem[]> = {};
+            groupedItems = {};
             childIds.forEach((id) => {
-              groupedItems[id] = (checklistData as ChecklistItem[])
+              groupedItems![id] = (checklistData as ChecklistItem[])
                 .filter((item) => item.child_id === id)
                 .slice(0, 3);
             });
-            setUpcomingItems(groupedItems);
+            queryCache.set(checklistCacheKey, groupedItems, 30 * 1000);
           }
         }
+        if (groupedItems) setUpcomingItems(groupedItems);
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -106,7 +132,7 @@ export default function HomeScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadData();
+    loadData(true); // bypass cache on pull-to-refresh
   };
 
   const calculateDaysUntilDue = (dueDate: string): number => {

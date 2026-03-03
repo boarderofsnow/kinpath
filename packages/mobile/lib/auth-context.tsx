@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from "r
 import { supabase } from "./supabase";
 import * as authHelpers from "./auth";
 import { api } from "./api";
+import { queryCache } from "./cache";
 import type { User } from "@supabase/supabase-js";
 
 type AuthResult = { data?: any; error?: authHelpers.AuthError };
@@ -74,6 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    queryCache.clear();
     return authHelpers.signOut();
   };
 

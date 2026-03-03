@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, memo } from "react";
 import {
   StyleSheet,
   View,
@@ -15,11 +15,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
-import { calculateAgeInWeeks } from "@kinpath/shared";
+import { calculateAgeInWeeks, formatAgeLabel } from "@kinpath/shared";
 import type { Child, ResourceWithMeta } from "@kinpath/shared";
 import { colors, fonts, typography, spacing, radii, shadows, cardBase } from "../../lib/theme";
-import { FadeIn, FadeInUp, StaggerItem, PressableScale } from "../../components/motion";
+import { FadeIn, FadeInUp, PressableScale } from "../../components/motion";
 import { ResourceCardSkeleton } from "../../components/skeleton";
+import { queryCache } from "../../lib/cache";
 
 const TOPICS = [
   { id: "prenatal", label: "Prenatal" },
@@ -58,32 +59,146 @@ interface EnrichedResource extends ResourceWithMeta {
   topics: string[];
 }
 
+interface EnrichedChild extends Child {
+  age_in_weeks: number;
+  age_label: string;
+}
+
+const getTopicLabel = (topicId: string): string => {
+  const topic = TOPICS.find((t) => t.id === topicId);
+  return topic?.label || topicId;
+};
+
+const getTopicColor = (topicId: string) => {
+  return TOPIC_COLORS[topicId] || { bg: colors.brand[50], text: colors.brand[600] };
+};
+
+/* ── Memoized Resource Card ────────────────────────────── */
+
+interface ResourceCardProps {
+  item: EnrichedResource;
+  onPress: (resource: EnrichedResource) => void;
+}
+
+const ResourceCardItem = memo(function ResourceCardItem({ item, onPress }: ResourceCardProps) {
+  return (
+    <PressableScale
+      style={styles.resourceCard}
+      onPress={() => onPress(item)}
+    >
+      {/* Type badge + vetted indicator */}
+      <View style={styles.cardHeaderRow}>
+        <View style={styles.typeBadge}>
+          <Text style={styles.typeBadgeText}>
+            {item.resource_type.toUpperCase()}
+          </Text>
+        </View>
+        {item.vetted_at && (
+          <View style={styles.vettedBadge}>
+            <Ionicons name="shield-checkmark" size={11} color={colors.sage[600]} />
+            <Text style={styles.vettedBadgeText}>Vetted</Text>
+          </View>
+        )}
+      </View>
+
+      <Text style={styles.resourceTitle} numberOfLines={2}>
+        {item.title}
+      </Text>
+      <Text style={styles.resourceSummary} numberOfLines={2}>
+        {item.summary}
+      </Text>
+
+      {/* Topic pills */}
+      {item.topics && item.topics.length > 0 && (
+        <View style={styles.topicsRow}>
+          {item.topics.slice(0, 3).map((topicId) => {
+            const topicColor = getTopicColor(topicId);
+            return (
+              <View
+                key={topicId}
+                style={[styles.topicPill, { backgroundColor: topicColor.bg }]}
+              >
+                <Text style={[styles.topicPillText, { color: topicColor.text }]}>
+                  {getTopicLabel(topicId)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </PressableScale>
+  );
+});
+
+/* ── Main Browse Screen ────────────────────────────────── */
+
 export default function BrowseScreen() {
   const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [enrichedChildren, setEnrichedChildren] = useState<EnrichedChild[]>([]);
   const [resources, setResources] = useState<EnrichedResource[]>([]);
   const [filteredResources, setFilteredResources] = useState<EnrichedResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [childAge, setChildAge] = useState<number>(0);
 
-  const loadData = useCallback(async () => {
+  const activeChild = selectedChildId
+    ? enrichedChildren.find((c) => c.id === selectedChildId) ?? null
+    : enrichedChildren.length > 0 ? enrichedChildren[0] : null;
+
+  const loadData = useCallback(async (bypassCache = false) => {
     if (!user?.id) return;
 
     try {
-      const { data: childrenData } = await supabase
-        .from("children")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1);
+      // Fetch all children (cached for 5 min)
+      const childrenCacheKey = `children:${user.id}`;
+      let children: EnrichedChild[] = bypassCache
+        ? []
+        : queryCache.get<EnrichedChild[]>(childrenCacheKey) ?? [];
 
-      let activeChildAge = 0;
-      if (childrenData && childrenData.length > 0) {
-        activeChildAge = calculateAgeInWeeks(childrenData[0] as Child);
-        setChildAge(activeChildAge);
+      if (children.length === 0) {
+        const { data: childrenData } = await supabase
+          .from("children")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: true });
+
+        if (childrenData && childrenData.length > 0) {
+          children = childrenData.map((child: Child) => ({
+            ...child,
+            age_in_weeks: calculateAgeInWeeks(child),
+            age_label: formatAgeLabel(calculateAgeInWeeks(child)),
+          }));
+          queryCache.set(childrenCacheKey, children, 5 * 60 * 1000);
+        }
+      }
+      setEnrichedChildren(children);
+
+      // Determine which child to filter by
+      const filterChild = selectedChildId
+        ? children.find((c) => c.id === selectedChildId) ?? children[0]
+        : children[0];
+
+      if (!filterChild) {
+        setResources([]);
+        setFilteredResources([]);
+        return;
+      }
+
+      const childAge = filterChild.age_in_weeks;
+
+      // Check resource cache (keyed by child)
+      const resourceCacheKey = `resources:${filterChild.id}`;
+      const cachedResources = bypassCache
+        ? null
+        : queryCache.get<EnrichedResource[]>(resourceCacheKey);
+
+      if (cachedResources) {
+        setResources(cachedResources);
+        setFilteredResources(cachedResources);
+        return;
       }
 
       const { data: resourcesData } = await supabase
@@ -97,8 +212,8 @@ export default function BrowseScreen() {
         `
         )
         .eq("status", "published")
-        .gte("age_end_weeks", activeChildAge)
-        .lte("age_start_weeks", activeChildAge);
+        .gte("age_end_weeks", childAge)
+        .lte("age_start_weeks", childAge);
 
       if (resourcesData) {
         const enrichedResources: EnrichedResource[] = resourcesData.map(
@@ -107,6 +222,7 @@ export default function BrowseScreen() {
             topics: (resource.resource_topics || []).map((rt: any) => rt.topic_id),
           })
         );
+        queryCache.set(resourceCacheKey, enrichedResources, 5 * 60 * 1000);
         setResources(enrichedResources);
         setFilteredResources(enrichedResources);
       }
@@ -117,12 +233,13 @@ export default function BrowseScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.id]);
+  }, [user?.id, selectedChildId]);
 
   useEffect(() => {
     loadData();
-  }, [user?.id, loadData]);
+  }, [user?.id, selectedChildId, loadData]);
 
+  // Client-side topic filtering
   useEffect(() => {
     if (selectedTopic === null) {
       setFilteredResources(resources);
@@ -135,73 +252,21 @@ export default function BrowseScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadData();
+    loadData(true); // bypass cache on pull-to-refresh
   };
 
-  const handleResourcePress = (resource: EnrichedResource) => {
+  const handleResourcePress = useCallback((resource: EnrichedResource) => {
     router.push({
       pathname: "/resource/[slug]",
       params: { slug: resource.slug },
     });
-  };
+  }, [router]);
 
-  const getTopicLabel = (topicId: string): string => {
-    const topic = TOPICS.find((t) => t.id === topicId);
-    return topic?.label || topicId;
-  };
-
-  const getTopicColor = (topicId: string) => {
-    return TOPIC_COLORS[topicId] || { bg: colors.brand[50], text: colors.brand[600] };
-  };
-
-  const renderResourceCard = ({ item, index }: { item: EnrichedResource; index: number }) => (
-    <StaggerItem index={index} staggerDelay={80}>
-      <PressableScale
-        style={styles.resourceCard}
-        onPress={() => handleResourcePress(item)}
-      >
-        {/* Type badge + vetted indicator */}
-        <View style={styles.cardHeaderRow}>
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeText}>
-              {item.resource_type.toUpperCase()}
-            </Text>
-          </View>
-          {item.vetted_at && (
-            <View style={styles.vettedBadge}>
-              <Ionicons name="shield-checkmark" size={11} color={colors.sage[600]} />
-              <Text style={styles.vettedBadgeText}>Vetted</Text>
-            </View>
-          )}
-        </View>
-
-        <Text style={styles.resourceTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.resourceSummary} numberOfLines={2}>
-          {item.summary}
-        </Text>
-
-        {/* Topic pills */}
-        {item.topics && item.topics.length > 0 && (
-          <View style={styles.topicsRow}>
-            {item.topics.slice(0, 3).map((topicId) => {
-              const topicColor = getTopicColor(topicId);
-              return (
-                <View
-                  key={topicId}
-                  style={[styles.topicPill, { backgroundColor: topicColor.bg }]}
-                >
-                  <Text style={[styles.topicPillText, { color: topicColor.text }]}>
-                    {getTopicLabel(topicId)}
-                  </Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-      </PressableScale>
-    </StaggerItem>
+  const renderResourceCard = useCallback(
+    ({ item }: { item: EnrichedResource }) => (
+      <ResourceCardItem item={item} onPress={handleResourcePress} />
+    ),
+    [handleResourcePress]
   );
 
   if (authLoading || loading) {
@@ -226,8 +291,50 @@ export default function BrowseScreen() {
         <FadeIn>
           <View style={styles.headerArea}>
             <Text style={styles.headerTitle}>Browse Resources</Text>
+            {activeChild && (
+              <Text style={styles.headerSubtitle}>
+                Personalized for {activeChild.name} — {activeChild.age_label}
+              </Text>
+            )}
           </View>
         </FadeIn>
+
+        {/* Child Selector Pills */}
+        {enrichedChildren.length > 1 && (
+          <View style={styles.childSelectorWrapper}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.childSelectorContent}
+            >
+              {enrichedChildren.map((child) => {
+                const isActive = activeChild?.id === child.id;
+                return (
+                  <Pressable
+                    key={child.id}
+                    style={[
+                      styles.childChip,
+                      isActive && styles.childChipActive,
+                    ]}
+                    onPress={() => {
+                      setSelectedChildId(child.id);
+                      setSelectedTopic(null);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.childChipText,
+                        isActive && styles.childChipTextActive,
+                      ]}
+                    >
+                      {child.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Topic Filter Chips */}
         <View style={styles.topicScrollWrapper}>
@@ -338,11 +445,47 @@ const styles = StyleSheet.create({
   headerArea: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
   },
   headerTitle: {
     ...typography.displayMedium,
     color: colors.foreground,
+  },
+  headerSubtitle: {
+    ...typography.bodyMedium,
+    color: colors.stone[500],
+    marginTop: 4,
+  },
+
+  // Child selector
+  childSelectorWrapper: {
+    paddingBottom: spacing.xs,
+  },
+  childSelectorContent: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  childChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: radii.full,
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.stone[200],
+    ...shadows.soft,
+  },
+  childChipActive: {
+    backgroundColor: colors.brand[500],
+    borderColor: colors.brand[500],
+  },
+  childChipText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 14,
+    color: colors.foreground,
+  },
+  childChipTextActive: {
+    color: colors.white,
   },
 
   // Topic filter
