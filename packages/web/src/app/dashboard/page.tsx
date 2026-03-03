@@ -6,10 +6,7 @@ import type { ChecklistItem } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
 import { PostBirthDashboard } from "@/components/dashboard/post-birth-dashboard";
-import { ResourceFeed } from "@/components/feed/resource-feed";
 import { SearchBar } from "@/components/search/search-bar";
-import { getPersonalizedFeed } from "@/lib/resources";
-import { UpgradeBanner } from "@/components/ui/upgrade-banner";
 import { getHouseholdContext } from "@/lib/household";
 import { FadeInUp } from "@/components/ui/motion";
 
@@ -29,7 +26,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const [{ data: profile }, { effectiveOwnerId }] = await Promise.all([
     supabase
       .from("users")
-      .select("onboarding_complete, display_name, subscription_tier")
+      .select("onboarding_complete, display_name")
       .eq("id", user.id)
       .single(),
     getHouseholdContext(user.id, supabase),
@@ -60,23 +57,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     ? enrichedChildren.find((c) => c.id === params.child) ?? enrichedChildren[0]
     : enrichedChildren[0];
 
-  // Step C: Parallel — feed + checklist (both need activeChild)
-  const feedPromise = activeChild
-    ? getPersonalizedFeed(user.id, activeChild.age_in_weeks, 20, supabase)
-    : Promise.resolve({ resources: [] as any[], preferences: null });
-
-  const checklistPromise = activeChild?.is_born
-    ? supabase
+  // Step C: Fetch checklist items (only for born children)
+  const { data: rawItems } = activeChild?.is_born
+    ? await supabase
         .from("checklist_items")
         .select("*, checklist_item_children(child_id)")
         .eq("user_id", effectiveOwnerId)
         .order("sort_order", { ascending: true })
-    : Promise.resolve({ data: null });
-
-  const [{ resources, preferences }, { data: rawItems }] = await Promise.all([
-    feedPromise,
-    checklistPromise,
-  ]);
+    : { data: null };
 
   let activeChildChecklist: ChecklistItem[] = [];
   if (activeChild?.is_born && rawItems) {
@@ -93,12 +81,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     });
   }
 
-  const userTopics = preferences?.topics_of_interest ?? [];
   const stage = activeChild ? getDevelopmentStage(activeChild.age_in_weeks) : null;
-  const tier = profile.subscription_tier ?? "free";
-  const isFree = tier === "free";
-  // Free users see a preview of 3 resources; paid users see all
-  const displayResources = isFree ? resources.slice(0, 3) : resources;
 
   return (
     <>
@@ -164,31 +147,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </section>
       )}
 
-      {/* Resource Feed */}
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-stone-900">Your Resources</h2>
-        <p className="mt-1 text-sm text-stone-500">
-          Personalized for {activeChild?.name ?? "your child"} &mdash;
-          showing age-appropriate content based on your interests.
+      {/* Browse Resources CTA */}
+      <section className="mt-8 rounded-2xl border border-brand-200/60 bg-brand-50 p-6 shadow-card">
+        <h3 className="font-semibold text-brand-800">
+          Explore Resources{activeChild ? ` for ${activeChild.name}` : ""}
+        </h3>
+        <p className="mt-1 text-sm text-brand-600">
+          Discover age-appropriate, evidence-based resources personalized for your child.
         </p>
-
-        <div className="mt-4">
-          {displayResources.length > 0 ? (
-            <ResourceFeed resources={displayResources} userTopics={userTopics} />
-          ) : (
-            <div className="rounded-xl bg-white p-8 text-center shadow-card">
-              <p className="text-stone-500">
-                No resources found for this age range yet. Check back soon!
-              </p>
-            </div>
-          )}
-        </div>
-
-        {isFree && resources.length > 3 && (
-          <div className="mt-4">
-            <UpgradeBanner feature="the full resource library" />
-          </div>
-        )}
+        <Link
+          href={activeChild ? `/resources?child=${activeChild.id}` : "/resources"}
+          prefetch={false}
+          className="mt-4 inline-block rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
+        >
+          Browse Resources
+        </Link>
       </section>
 
       {/* AI Assistant CTA */}
