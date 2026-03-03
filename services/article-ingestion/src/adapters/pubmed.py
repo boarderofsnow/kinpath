@@ -96,7 +96,7 @@ class PubMedAdapter(SourceAdapter):
             date_range = f"{since.strftime('%Y/%m/%d')}:3000/12/31"
             logger.info(f"Incremental mode — fetching articles since {since.strftime('%Y-%m-%d')}")
         else:
-            date_range = config.get("date_range", "1900/01/01:2026/12/31")
+            date_range = config.get("date_range", "1990/01/01:2030/12/31")
             logger.info(f"Full/backfill mode — fetching entire date range: {date_range}")
 
         all_articles = []
