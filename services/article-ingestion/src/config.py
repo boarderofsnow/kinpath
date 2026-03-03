@@ -44,4 +44,4 @@ JOURNALS = {
 }
 
 SEARCH_TERMS = "(pregnancy OR prenatal OR pediatric OR neonatal)"
-DATE_RANGE = "1900/01/01:2026/12/31"
+DATE_RANGE = "1990/01/01:2030/12/31"
