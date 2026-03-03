@@ -1,12 +1,7 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import { Inter, DM_Serif_Display } from "next/font/google";
+import { SpeedInsightsClient } from "@/components/analytics/speed-insights";
 import "./globals.css";
-
-const SpeedInsights = dynamic(
-  () => import("@vercel/speed-insights/next").then((mod) => mod.SpeedInsights),
-  { ssr: false }
-);
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,7 +38,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${dmSerif.variable}`}>
       <body className="min-h-screen antialiased">
         {children}
-        <SpeedInsights />
+        <SpeedInsightsClient />
       </body>
     </html>
   );
