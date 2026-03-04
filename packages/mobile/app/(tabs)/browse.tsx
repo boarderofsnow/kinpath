@@ -146,7 +146,7 @@ export default function BrowseScreen() {
 
   const activeChild = selectedChildId
     ? enrichedChildren.find((c) => c.id === selectedChildId) ?? null
-    : enrichedChildren.length > 0 ? enrichedChildren[0] : null;
+    : null;
 
   const loadData = useCallback(async (bypassCache = false) => {
     if (!user?.id) return;
@@ -176,21 +176,15 @@ export default function BrowseScreen() {
       }
       setEnrichedChildren(children);
 
-      // Determine which child to filter by
+      // Determine which child to filter by (null = show all)
       const filterChild = selectedChildId
-        ? children.find((c) => c.id === selectedChildId) ?? children[0]
-        : children[0];
+        ? children.find((c) => c.id === selectedChildId) ?? null
+        : null;
 
-      if (!filterChild) {
-        setResources([]);
-        setFilteredResources([]);
-        return;
-      }
-
-      const childAge = filterChild.age_in_weeks;
-
-      // Check resource cache (keyed by child)
-      const resourceCacheKey = `resources:${filterChild.id}`;
+      // Check resource cache (keyed by child or "all")
+      const resourceCacheKey = filterChild
+        ? `resources:${filterChild.id}`
+        : `resources:all:${user.id}`;
       const cachedResources = bypassCache
         ? null
         : queryCache.get<EnrichedResource[]>(resourceCacheKey);
@@ -201,7 +195,7 @@ export default function BrowseScreen() {
         return;
       }
 
-      const { data: resourcesData } = await supabase
+      let query = supabase
         .from("resources")
         .select(
           `
@@ -211,9 +205,17 @@ export default function BrowseScreen() {
           resource_topics ( topic_id )
         `
         )
-        .eq("status", "published")
-        .gte("age_end_weeks", childAge)
-        .lte("age_start_weeks", childAge);
+        .eq("status", "published");
+
+      // Apply age filter only when a specific child is selected
+      if (filterChild) {
+        const childAge = filterChild.age_in_weeks;
+        query = query
+          .gte("age_end_weeks", childAge)
+          .lte("age_start_weeks", childAge);
+      }
+
+      const { data: resourcesData } = await query;
 
       if (resourcesData) {
         const enrichedResources: EnrichedResource[] = resourcesData.map(
@@ -300,15 +302,34 @@ export default function BrowseScreen() {
         </FadeIn>
 
         {/* Child Selector Pills */}
-        {enrichedChildren.length > 1 && (
+        {enrichedChildren.length > 0 && (
           <View style={styles.childSelectorWrapper}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.childSelectorContent}
             >
+              <Pressable
+                style={[
+                  styles.childChip,
+                  selectedChildId === null && styles.childChipActive,
+                ]}
+                onPress={() => {
+                  setSelectedChildId(null);
+                  setSelectedTopic(null);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.childChipText,
+                    selectedChildId === null && styles.childChipTextActive,
+                  ]}
+                >
+                  All Resources
+                </Text>
+              </Pressable>
               {enrichedChildren.map((child) => {
-                const isActive = activeChild?.id === child.id;
+                const isActive = selectedChildId === child.id;
                 return (
                   <Pressable
                     key={child.id}
