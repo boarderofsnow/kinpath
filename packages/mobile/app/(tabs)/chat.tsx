@@ -553,7 +553,7 @@ export default function ChatScreen() {
             </PressableScale>
           </View>
           <Text style={styles.aiDisclaimer}>
-            Kinpath uses AI to provide guidance. Responses may not always be accurate. Always consult your healthcare provider for medical advice.
+            Kinpath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
           </Text>
         </View>
       </KeyboardAvoidingView>
@@ -794,7 +794,7 @@ const styles = StyleSheet.create({
   inputArea: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
-    paddingBottom: Platform.OS === "ios" ? 100 : 88,
+    paddingBottom: Platform.OS === "ios" ? 84 : 72,
     backgroundColor: colors.white,
     ...shadows.soft,
   },
