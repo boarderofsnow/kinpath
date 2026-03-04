@@ -74,8 +74,8 @@ const styles = StyleSheet.create({
   tabBar: {
     position: "absolute",
     bottom: Platform.OS === "ios" ? 28 : 16,
-    left: 32,
-    right: 32,
+    left: 40,
+    right: 40,
     height: 64,
     borderRadius: radii.full,
     backgroundColor: colors.white,
@@ -98,8 +98,8 @@ const styles = StyleSheet.create({
     borderColor: `${colors.stone[200]}40`,
   },
   tabBarItem: {
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   tabBarLabel: {
     fontFamily: fonts.sansMedium,

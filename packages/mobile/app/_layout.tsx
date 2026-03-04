@@ -21,18 +21,20 @@ function RootLayoutContent() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
-    const inProtectedGroup = segments[0] === "(tabs)";
+    const seg = segments as string[];
+    const inAuthGroup = seg[0] === "(auth)";
+    const inProtectedGroup = seg[0] === "(tabs)";
+    const onWelcomeScreen =
+      seg.length === 0 || seg[0] === "index" || seg[0] === undefined;
 
-    if (session && inAuthGroup) {
-      // Logged-in user on auth screen → send to dashboard
+    if (session && (inAuthGroup || onWelcomeScreen)) {
+      // Logged-in user on auth or welcome screen → send to dashboard
       router.replace("/(tabs)");
     } else if (!session && inProtectedGroup) {
       // Unauthenticated user on protected screen → send to welcome
       router.replace("/");
     }
     // Otherwise: let the user stay where they are
-    // (welcome screen, auth screens, etc.)
   }, [session, isLoading, segments]);
 
   if (isLoading) {

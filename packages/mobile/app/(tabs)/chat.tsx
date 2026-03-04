@@ -400,7 +400,7 @@ export default function ChatScreen() {
       </FadeInUp>
 
       <FadeInUp delay={200}>
-        <Text style={styles.emptyTitle}>Chat with KinPath</Text>
+        <Text style={styles.emptyTitle}>Chat with Kinpath</Text>
         <Text style={styles.emptySubtext}>
           Get personalized guidance and answers to your parenting questions.
         </Text>
@@ -488,6 +488,14 @@ export default function ChatScreen() {
                   </PressableScale>
                 );
               })}
+              <PressableScale
+                style={[styles.childPill, selectedChildId === null && styles.childPillActive]}
+                onPress={() => setSelectedChildId(null)}
+              >
+                <Text style={[styles.childPillText, selectedChildId === null && styles.childPillTextActive]}>
+                  Other
+                </Text>
+              </PressableScale>
             </ScrollView>
           </View>
         )}
@@ -544,6 +552,9 @@ export default function ChatScreen() {
               <Ionicons name="send" size={18} color={colors.white} />
             </PressableScale>
           </View>
+          <Text style={styles.aiDisclaimer}>
+            Kinpath uses AI to provide guidance. Responses may not always be accurate. Always consult your healthcare provider for medical advice.
+          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -815,5 +826,14 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: colors.stone[300],
     shadowOpacity: 0,
+  },
+  aiDisclaimer: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    lineHeight: 14,
+    color: colors.stone[400],
+    textAlign: "center",
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
 });

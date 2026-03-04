@@ -64,13 +64,16 @@ export default function ChecklistScreen() {
   const [newItemCategory, setNewItemCategory] = useState<AddCategory>("general");
   const [newItemChildId, setNewItemChildId] = useState<string | null>(null);
 
-  // Completed / discussed section collapsed by default
+  // Section collapse state
+  const [generalCollapsed, setGeneralCollapsed] = useState(false);
+  const [providerCollapsed, setProviderCollapsed] = useState(false);
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
 
-  // Item detail modal (checklist items only)
-  const [selectedItem, setSelectedItem] = useState<ChecklistItem | null>(null);
+  // Item detail modal (works for both checklist and doctor items)
+  const [selectedItem, setSelectedItem] = useState<UnifiedItem | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
+  const [editNotes, setEditNotes] = useState("");
   const [detailSaving, setDetailSaving] = useState(false);
 
   // ── Data Fetching ──────────────────────────────────────
@@ -325,12 +328,18 @@ export default function ChecklistScreen() {
     );
   };
 
-  // ── Item Detail Modal (checklist only) ─────────────────
+  // ── Item Detail Modal ─────────────────────────────────
 
-  const openItemDetail = (item: ChecklistItem) => {
+  const openItemDetail = (item: UnifiedItem) => {
     setSelectedItem(item);
     setEditTitle(item.title);
-    setEditDueDate(item.due_date ? new Date(item.due_date + "T00:00:00") : null);
+    if (item._source === "checklist") {
+      setEditDueDate(item.due_date ? new Date(item.due_date + "T00:00:00") : null);
+      setEditNotes("");
+    } else {
+      setEditDueDate(null);
+      setEditNotes(item.notes ?? "");
+    }
   };
 
   const handleSaveDetail = async () => {
@@ -338,19 +347,34 @@ export default function ChecklistScreen() {
     setDetailSaving(true);
 
     try {
-      const updates: Record<string, unknown> = {
-        title: editTitle.trim(),
-        due_date: editDueDate
-          ? editDueDate.toISOString().split("T")[0]
-          : null,
-      };
+      if (selectedItem._source === "checklist") {
+        const updates: Record<string, unknown> = {
+          title: editTitle.trim(),
+          due_date: editDueDate
+            ? editDueDate.toISOString().split("T")[0]
+            : null,
+        };
 
-      const { error } = await supabase
-        .from("checklist_items")
-        .update(updates)
-        .eq("id", selectedItem.id);
+        const { error } = await supabase
+          .from("checklist_items")
+          .update(updates)
+          .eq("id", selectedItem.id);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        const updates: Record<string, unknown> = {
+          title: editTitle.trim(),
+          notes: editNotes.trim() || null,
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabase
+          .from("doctor_discussion_items")
+          .update(updates)
+          .eq("id", selectedItem.id);
+
+        if (error) throw error;
+      }
 
       setSelectedItem(null);
       await fetchAllData();
@@ -415,14 +439,14 @@ export default function ChecklistScreen() {
 
   const sections: ChecklistSection[] = [
     ...(generalData.length > 0
-      ? [{ title: "General Checklist", key: "general", data: generalData }]
+      ? [{ title: "General Checklist", key: "general", data: generalCollapsed ? [] : generalData }]
       : []),
     ...(providerData.length > 0
       ? [
           {
             title: "Discuss with Provider",
             key: "provider",
-            data: providerData,
+            data: providerCollapsed ? [] : providerData,
           },
         ]
       : []),
@@ -510,9 +534,7 @@ export default function ChecklistScreen() {
 
     return (
       <PressableScale
-        onPress={() => {
-          /* Doctor items don't open detail modal for now */
-        }}
+        onPress={() => openItemDetail(item)}
         style={[styles.itemCard, done && styles.itemCardCompleted]}
       >
         <PressableScale
@@ -557,12 +579,7 @@ export default function ChecklistScreen() {
           </View>
         </View>
 
-        <PressableScale
-          onPress={() => handleDeleteUnified(item)}
-          scaleTo={0.9}
-        >
-          <Ionicons name="close-circle-outline" size={18} color={colors.stone[300]} />
-        </PressableScale>
+        <Ionicons name="chevron-forward" size={16} color={colors.stone[300]} />
       </PressableScale>
     );
   };
@@ -570,21 +587,31 @@ export default function ChecklistScreen() {
   // ── Render: Section Header ─────────────────────────────
 
   const renderSectionHeader = ({ section }: { section: ChecklistSection }) => {
+    // Get true count (not the collapsed data length)
     const count =
-      section.key === "completed" ? completedData.length : section.data.length;
+      section.key === "general"
+        ? generalData.length
+        : section.key === "provider"
+          ? providerData.length
+          : completedData.length;
 
     const isCompleted = section.key === "completed";
     const isProvider = section.key === "provider";
+    const isGeneral = section.key === "general";
+
+    const isCollapsed =
+      isGeneral ? generalCollapsed : isProvider ? providerCollapsed : completedCollapsed;
+
+    const toggleCollapse = () => {
+      if (isGeneral) setGeneralCollapsed((v) => !v);
+      else if (isProvider) setProviderCollapsed((v) => !v);
+      else setCompletedCollapsed((v) => !v);
+    };
 
     return (
       <PressableScale
         style={styles.sectionHeader}
-        onPress={
-          isCompleted
-            ? () => setCompletedCollapsed((v) => !v)
-            : undefined
-        }
-        disabled={!isCompleted}
+        onPress={toggleCollapse}
       >
         {isProvider && (
           <Ionicons
@@ -609,14 +636,12 @@ export default function ChecklistScreen() {
             {count}
           </Text>
         </View>
-        {isCompleted && (
-          <Ionicons
-            name={completedCollapsed ? "chevron-down" : "chevron-up"}
-            size={18}
-            color={colors.stone[400]}
-            style={{ marginLeft: "auto" }}
-          />
-        )}
+        <Ionicons
+          name={isCollapsed ? "chevron-down" : "chevron-up"}
+          size={18}
+          color={colors.stone[400]}
+          style={{ marginLeft: "auto" }}
+        />
       </PressableScale>
     );
   };
@@ -970,54 +995,95 @@ export default function ChecklistScreen() {
                     placeholderTextColor={colors.stone[400]}
                   />
 
-                  {selectedItem.description && (
+                  {/* Checklist-specific fields */}
+                  {selectedItem._source === "checklist" && (
                     <>
-                      <Text style={styles.modalLabel}>Details</Text>
-                      <View style={styles.modalDescriptionBox}>
-                        <SimpleMarkdown content={selectedItem.description} />
-                      </View>
+                      {(selectedItem as ChecklistItem).description && (
+                        <>
+                          <Text style={styles.modalLabel}>Details</Text>
+                          <View style={styles.modalDescriptionBox}>
+                            <SimpleMarkdown content={(selectedItem as ChecklistItem).description!} />
+                          </View>
+                        </>
+                      )}
+
+                      <DatePickerInput
+                        label="Due Date"
+                        value={editDueDate}
+                        onChange={setEditDueDate}
+                      />
+
+                      {editDueDate && (
+                        <PressableScale
+                          style={styles.clearDateBtn}
+                          onPress={() => setEditDueDate(null)}
+                        >
+                          <Ionicons
+                            name="close-circle"
+                            size={16}
+                            color={colors.stone[400]}
+                          />
+                          <Text style={styles.clearDateText}>Clear due date</Text>
+                        </PressableScale>
+                      )}
+
+                      {(selectedItem as ChecklistItem).child_id && (
+                        <View style={styles.modalMeta}>
+                          <Text style={styles.modalMetaLabel}>For:</Text>
+                          <View style={styles.childBadge}>
+                            <Text style={styles.childBadgeText}>
+                              {getChildName((selectedItem as ChecklistItem).child_id)}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
                     </>
                   )}
 
-                  <DatePickerInput
-                    label="Due Date"
-                    value={editDueDate}
-                    onChange={setEditDueDate}
-                  />
-
-                  {editDueDate && (
-                    <PressableScale
-                      style={styles.clearDateBtn}
-                      onPress={() => setEditDueDate(null)}
-                    >
-                      <Ionicons
-                        name="close-circle"
-                        size={16}
-                        color={colors.stone[400]}
+                  {/* Doctor/Provider-specific fields */}
+                  {selectedItem._source === "doctor" && (
+                    <>
+                      <Text style={styles.modalLabel}>Notes</Text>
+                      <TextInput
+                        style={[styles.modalTitleInput, { minHeight: 80 }]}
+                        value={editNotes}
+                        onChangeText={setEditNotes}
+                        multiline
+                        placeholder="Notes or context for your provider..."
+                        placeholderTextColor={colors.stone[400]}
+                        textAlignVertical="top"
                       />
-                      <Text style={styles.clearDateText}>Clear due date</Text>
-                    </PressableScale>
-                  )}
 
-                  {selectedItem.child_id && (
-                    <View style={styles.modalMeta}>
-                      <Text style={styles.modalMetaLabel}>For:</Text>
-                      <View style={styles.childBadge}>
-                        <Text style={styles.childBadgeText}>
-                          {getChildName(selectedItem.child_id)}
-                        </Text>
-                      </View>
-                    </View>
+                      {(selectedItem as DoctorDiscussionItem).doctor_response && (
+                        <>
+                          <Text style={styles.modalLabel}>Provider Response</Text>
+                          <View style={styles.modalDescriptionBox}>
+                            <Text style={styles.modalDescriptionText}>
+                              {(selectedItem as DoctorDiscussionItem).doctor_response}
+                            </Text>
+                          </View>
+                        </>
+                      )}
+
+                      {(selectedItem as DoctorDiscussionItem).child_ids &&
+                        (selectedItem as DoctorDiscussionItem).child_ids!.length > 0 && (
+                        <View style={styles.modalMeta}>
+                          <Text style={styles.modalMetaLabel}>For:</Text>
+                          {(selectedItem as DoctorDiscussionItem).child_ids!.map((cid) => (
+                            <View key={cid} style={styles.childBadge}>
+                              <Text style={styles.childBadgeText}>
+                                {getChildName(cid)}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </>
                   )}
 
                   <PressableScale
                     style={styles.deleteBtn}
-                    onPress={() =>
-                      handleDeleteUnified({
-                        ...selectedItem,
-                        _source: "checklist",
-                      })
-                    }
+                    onPress={() => handleDeleteUnified(selectedItem)}
                   >
                     <Ionicons
                       name="close-circle-outline"
@@ -1436,6 +1502,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.stone[200],
     padding: spacing.lg,
+  },
+  modalDescriptionText: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.foreground,
   },
   clearDateBtn: {
     flexDirection: "row",

@@ -3,12 +3,14 @@ import {
   StyleSheet,
   View,
   Text,
+  TextInput,
   ScrollView,
   FlatList,
   RefreshControl,
   SafeAreaView,
   Alert,
   Pressable,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -138,6 +140,7 @@ export default function BrowseScreen() {
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [enrichedChildren, setEnrichedChildren] = useState<EnrichedChild[]>([]);
   const [resources, setResources] = useState<EnrichedResource[]>([]);
   const [filteredResources, setFilteredResources] = useState<EnrichedResource[]>([]);
@@ -241,16 +244,25 @@ export default function BrowseScreen() {
     loadData();
   }, [user?.id, selectedChildId, loadData]);
 
-  // Client-side topic filtering
+  // Client-side topic + keyword filtering
   useEffect(() => {
-    if (selectedTopic === null) {
-      setFilteredResources(resources);
-    } else {
-      setFilteredResources(
-        resources.filter((resource) => resource.topics.includes(selectedTopic))
+    let result = resources;
+
+    if (selectedTopic !== null) {
+      result = result.filter((r) => r.topics.includes(selectedTopic));
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(
+        (r) =>
+          r.title.toLowerCase().includes(q) ||
+          (r.summary && r.summary.toLowerCase().includes(q))
       );
     }
-  }, [selectedTopic, resources]);
+
+    setFilteredResources(result);
+  }, [selectedTopic, searchQuery, resources]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -356,6 +368,28 @@ export default function BrowseScreen() {
             </ScrollView>
           </View>
         )}
+
+        {/* Search Box */}
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search-outline" size={18} color={colors.stone[400]} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search guides and articles..."
+              placeholderTextColor={colors.stone[400]}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              returnKeyType="search"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery("")}>
+                <Ionicons name="close-circle" size={18} color={colors.stone[400]} />
+              </Pressable>
+            )}
+          </View>
+        </View>
 
         {/* Topic Filter Chips */}
         <View style={styles.topicScrollWrapper}>
@@ -507,6 +541,30 @@ const styles = StyleSheet.create({
   },
   childChipTextActive: {
     color: colors.white,
+  },
+
+  // Search
+  searchWrapper: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+  },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.stone[200],
+    paddingHorizontal: spacing.md,
+    paddingVertical: Platform.OS === "ios" ? 10 : 6,
+    gap: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.foreground,
+    padding: 0,
   },
 
   // Topic filter
