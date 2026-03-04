@@ -576,8 +576,9 @@ export default function ChecklistScreen() {
               <PressableScale
                 style={[
                   styles.addChildPill,
+                  styles.addCategoryProviderPillBase,
                   newItemCategory === "provider" &&
-                    styles.addCategoryProviderPill,
+                    styles.addCategoryProviderPillActive,
                 ]}
                 onPress={() => setNewItemCategory("provider")}
                 scaleTo={0.95}
@@ -906,12 +907,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     marginTop: -spacing.sm,
   },
-  addCategoryProviderPill: {
-    backgroundColor: colors.accent[500],
-    borderColor: colors.accent[500],
+  addCategoryProviderPillBase: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+  },
+  addCategoryProviderPillActive: {
+    backgroundColor: colors.accent[500],
+    borderColor: colors.accent[500],
   },
   addChildRow: {
     flexDirection: "row",
