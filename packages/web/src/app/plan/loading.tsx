@@ -19,7 +19,7 @@ export default function PlanLoading() {
           <div className="h-8 w-20 rounded-full bg-stone-100" />
         </div>
 
-        {/* Checklist / Doctor tab switcher skeleton */}
+        {/* Checklist / Provider tab switcher skeleton */}
         <div className="mt-6 flex gap-1 rounded-lg bg-stone-100 p-1">
           <div className="h-9 flex-1 rounded-md bg-white shadow-sm" />
           <div className="h-9 flex-1 rounded-md bg-transparent" />

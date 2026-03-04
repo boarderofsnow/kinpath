@@ -1,5 +1,3 @@
-export type ChecklistCategory = "general" | "provider";
-
 export interface ChecklistItem {
   id: string;
   child_id: string | null;
@@ -7,7 +5,6 @@ export interface ChecklistItem {
   title: string;
   description: string | null;
   item_type: "milestone" | "custom";
-  category: ChecklistCategory; // "general" or "provider" (discuss with medical provider)
   milestone_key: string | null;
   suggested_date: string | null; // ISO date
   due_date: string | null; // ISO date, editable by parent

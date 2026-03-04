@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
-import { ChecklistItem, ChecklistCategory, Child } from "@kinpath/shared";
+import { ChecklistItem, DoctorDiscussionItem, Child } from "@kinpath/shared";
 import {
   colors,
   fonts,
@@ -32,10 +32,17 @@ import { DatePickerInput } from "../../components/settings/DatePickerInput";
 
 // ── Types ──────────────────────────────────────────────────
 
+type AddCategory = "general" | "provider";
+
+/** Unified item that can be rendered in the SectionList */
+type UnifiedItem =
+  | (ChecklistItem & { _source: "checklist" })
+  | (DoctorDiscussionItem & { _source: "doctor" });
+
 interface ChecklistSection {
   title: string;
   key: string;
-  data: ChecklistItem[];
+  data: UnifiedItem[];
 }
 
 // ════════════════════════════════════════════════════════════
@@ -47,19 +54,20 @@ export default function ChecklistScreen() {
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [doctorItems, setDoctorItems] = useState<DoctorDiscussionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState("");
   const [newItemDescription, setNewItemDescription] = useState("");
   const [newItemDueDate, setNewItemDueDate] = useState<Date | null>(null);
-  const [newItemCategory, setNewItemCategory] = useState<ChecklistCategory>("general");
+  const [newItemCategory, setNewItemCategory] = useState<AddCategory>("general");
   const [newItemChildId, setNewItemChildId] = useState<string | null>(null);
 
-  // Completed section collapsed by default
+  // Completed / discussed section collapsed by default
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
 
-  // Item detail modal
+  // Item detail modal (checklist items only)
   const [selectedItem, setSelectedItem] = useState<ChecklistItem | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
@@ -74,7 +82,7 @@ export default function ChecklistScreen() {
 
   useEffect(() => {
     if (!user) return;
-    fetchChecklist();
+    fetchAllData();
   }, [user, selectedChildId]);
 
   const fetchChildren = async () => {
@@ -93,27 +101,63 @@ export default function ChecklistScreen() {
     }
   };
 
-  const fetchChecklist = async () => {
+  const fetchAllData = async () => {
     if (!user) return;
     setLoading(true);
     try {
-      let query = supabase
+      // Fetch checklist items
+      let checklistQuery = supabase
         .from("checklist_items")
         .select("*")
         .eq("user_id", user.id);
 
       if (selectedChildId && selectedChildId !== "all") {
-        query = query.eq("child_id", selectedChildId);
+        checklistQuery = checklistQuery.eq("child_id", selectedChildId);
       }
 
-      const { data, error } = await query.order("sort_order", {
-        ascending: true,
+      // Fetch doctor discussion items
+      let doctorQuery = supabase
+        .from("doctor_discussion_items")
+        .select("*, doctor_item_children(child_id)")
+        .eq("user_id", user.id);
+
+      const [checklistResult, doctorResult] = await Promise.all([
+        checklistQuery.order("sort_order", { ascending: true }),
+        doctorQuery.order("sort_order", { ascending: true }),
+      ]);
+
+      if (checklistResult.error) throw checklistResult.error;
+      if (doctorResult.error) throw doctorResult.error;
+
+      setChecklist(checklistResult.data || []);
+
+      // Normalize doctor items with child_ids
+      const normalizedDoctorItems: DoctorDiscussionItem[] = (
+        doctorResult.data || []
+      ).map((row: any) => {
+        const junctionRows = row.doctor_item_children ?? [];
+        const childIds = junctionRows.map(
+          (j: { child_id: string }) => j.child_id
+        );
+        const { doctor_item_children: _, ...item } = row;
+        return { ...item, child_ids: childIds } as DoctorDiscussionItem;
       });
 
-      if (error) throw error;
-      setChecklist(data || []);
+      // Filter doctor items by selected child (they use a junction table)
+      if (selectedChildId && selectedChildId !== "all") {
+        setDoctorItems(
+          normalizedDoctorItems.filter(
+            (item) =>
+              !item.child_ids ||
+              item.child_ids.length === 0 ||
+              item.child_ids.includes(selectedChildId)
+          )
+        );
+      } else {
+        setDoctorItems(normalizedDoctorItems);
+      }
     } catch (error) {
-      console.error("Error fetching checklist:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -121,7 +165,7 @@ export default function ChecklistScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchChecklist();
+    await fetchAllData();
     setRefreshing(false);
   }, [user, selectedChildId]);
 
@@ -131,21 +175,47 @@ export default function ChecklistScreen() {
     if (!user || !newItemTitle.trim()) return;
 
     try {
-      const { error } = await supabase.from("checklist_items").insert({
-        user_id: user.id,
-        child_id: newItemChildId || null,
-        title: newItemTitle.trim(),
-        description: newItemDescription.trim() || null,
-        item_type: "custom",
-        category: newItemCategory,
-        due_date: newItemDueDate
-          ? newItemDueDate.toISOString().split("T")[0]
-          : null,
-        is_completed: false,
-        sort_order: 0,
-      });
+      if (newItemCategory === "provider") {
+        // Insert into doctor_discussion_items
+        const { data, error } = await supabase
+          .from("doctor_discussion_items")
+          .insert({
+            user_id: user.id,
+            title: newItemTitle.trim(),
+            notes: newItemDescription.trim() || null,
+            priority: "normal",
+            is_discussed: false,
+            sort_order: doctorItems.length,
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
+
+        // Add child association via junction table
+        if (data && newItemChildId) {
+          await supabase.from("doctor_item_children").insert({
+            doctor_item_id: data.id,
+            child_id: newItemChildId,
+          });
+        }
+      } else {
+        // Insert into checklist_items
+        const { error } = await supabase.from("checklist_items").insert({
+          user_id: user.id,
+          child_id: newItemChildId || null,
+          title: newItemTitle.trim(),
+          description: newItemDescription.trim() || null,
+          item_type: "custom",
+          due_date: newItemDueDate
+            ? newItemDueDate.toISOString().split("T")[0]
+            : null,
+          is_completed: false,
+          sort_order: 0,
+        });
+
+        if (error) throw error;
+      }
 
       setNewItemTitle("");
       setNewItemDescription("");
@@ -153,22 +223,21 @@ export default function ChecklistScreen() {
       setNewItemCategory("general");
       setNewItemChildId(null);
       setShowAddForm(false);
-      await fetchChecklist();
+      await fetchAllData();
     } catch (error) {
       console.error("Error adding item:", error);
       Alert.alert("Error", "Failed to add item");
     }
   };
 
-  // ── Toggle Completion ──────────────────────────────────
+  // ── Toggle Completion (checklist items) ────────────────
 
-  const toggleCompletion = async (item: ChecklistItem) => {
+  const toggleChecklistCompletion = async (item: ChecklistItem) => {
     if (!user) return;
 
     const newState = !item.is_completed;
     const completedAt = newState ? new Date().toISOString() : null;
 
-    // Optimistic update
     setChecklist((prev) =>
       prev.map((i) =>
         i.id === item.id
@@ -185,38 +254,78 @@ export default function ChecklistScreen() {
 
       if (error) throw error;
     } catch {
-      await fetchChecklist();
+      await fetchAllData();
+    }
+  };
+
+  // ── Toggle Discussed (doctor items) ────────────────────
+
+  const toggleDoctorDiscussed = async (item: DoctorDiscussionItem) => {
+    if (!user) return;
+
+    const newState = !item.is_discussed;
+    const now = new Date().toISOString();
+
+    setDoctorItems((prev) =>
+      prev.map((i) =>
+        i.id === item.id
+          ? { ...i, is_discussed: newState, discussed_at: newState ? now : null }
+          : i
+      )
+    );
+
+    try {
+      const { error } = await supabase
+        .from("doctor_discussion_items")
+        .update({
+          is_discussed: newState,
+          discussed_at: newState ? now : null,
+          updated_at: now,
+        })
+        .eq("id", item.id);
+
+      if (error) throw error;
+    } catch {
+      await fetchAllData();
     }
   };
 
   // ── Delete Item ────────────────────────────────────────
 
-  const handleDeleteItem = (item: ChecklistItem) => {
-    Alert.alert("Delete Item", `Are you sure you want to delete "${item.title}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            const { error } = await supabase
-              .from("checklist_items")
-              .delete()
-              .eq("id", item.id);
+  const handleDeleteUnified = (unified: UnifiedItem) => {
+    const table =
+      unified._source === "doctor"
+        ? "doctor_discussion_items"
+        : "checklist_items";
 
-            if (error) throw error;
-            // Close modal if this item was open
-            if (selectedItem?.id === item.id) setSelectedItem(null);
-            await fetchChecklist();
-          } catch {
-            Alert.alert("Error", "Failed to delete item");
-          }
+    Alert.alert(
+      "Delete Item",
+      `Are you sure you want to delete "${unified.title}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { error } = await supabase
+                .from(table)
+                .delete()
+                .eq("id", unified.id);
+
+              if (error) throw error;
+              if (selectedItem?.id === unified.id) setSelectedItem(null);
+              await fetchAllData();
+            } catch {
+              Alert.alert("Error", "Failed to delete item");
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
-  // ── Item Detail Modal ──────────────────────────────────
+  // ── Item Detail Modal (checklist only) ─────────────────
 
   const openItemDetail = (item: ChecklistItem) => {
     setSelectedItem(item);
@@ -244,7 +353,7 @@ export default function ChecklistScreen() {
       if (error) throw error;
 
       setSelectedItem(null);
-      await fetchChecklist();
+      await fetchAllData();
     } catch {
       Alert.alert("Error", "Failed to save changes");
     } finally {
@@ -278,42 +387,68 @@ export default function ChecklistScreen() {
 
   // ── Section Data ───────────────────────────────────────
 
-  const activeItems = checklist.filter((i) => !i.is_completed);
-  const completedItems = checklist.filter((i) => i.is_completed);
+  const activeChecklistItems = checklist.filter((i) => !i.is_completed);
+  const completedChecklistItems = checklist.filter((i) => i.is_completed);
 
-  // Split active items by category
-  const generalItems = activeItems.filter(
-    (i) => !i.category || i.category === "general"
-  );
-  const providerItems = activeItems.filter((i) => i.category === "provider");
+  const toDiscussDoctorItems = doctorItems.filter((i) => !i.is_discussed);
+  const discussedDoctorItems = doctorItems.filter((i) => i.is_discussed);
+
+  // Tag items with their source for unified rendering
+  const generalData: UnifiedItem[] = activeChecklistItems.map((i) => ({
+    ...i,
+    _source: "checklist" as const,
+  }));
+  const providerData: UnifiedItem[] = toDiscussDoctorItems.map((i) => ({
+    ...i,
+    _source: "doctor" as const,
+  }));
+  const completedData: UnifiedItem[] = [
+    ...completedChecklistItems.map((i) => ({
+      ...i,
+      _source: "checklist" as const,
+    })),
+    ...discussedDoctorItems.map((i) => ({
+      ...i,
+      _source: "doctor" as const,
+    })),
+  ];
 
   const sections: ChecklistSection[] = [
-    ...(generalItems.length > 0
-      ? [{ title: "General Checklist", key: "general", data: generalItems }]
+    ...(generalData.length > 0
+      ? [{ title: "General Checklist", key: "general", data: generalData }]
       : []),
-    ...(providerItems.length > 0
+    ...(providerData.length > 0
       ? [
           {
             title: "Discuss with Provider",
             key: "provider",
-            data: providerItems,
+            data: providerData,
           },
         ]
       : []),
-    ...(completedItems.length > 0
+    ...(completedData.length > 0
       ? [
           {
             title: "Completed",
             key: "completed",
-            data: completedCollapsed ? [] : completedItems,
+            data: completedCollapsed ? [] : completedData,
           },
         ]
       : []),
   ];
 
-  // ── Render: Checklist Item ─────────────────────────────
+  const totalItems = checklist.length + doctorItems.length;
 
-  const renderChecklistItem = ({ item }: { item: ChecklistItem }) => {
+  // ── Render: Unified Item ─────────────────────────────
+
+  const renderUnifiedItem = ({ item }: { item: UnifiedItem }) => {
+    if (item._source === "doctor") {
+      return renderDoctorItem(item as DoctorDiscussionItem & { _source: "doctor" });
+    }
+    return renderChecklistItem(item as ChecklistItem & { _source: "checklist" });
+  };
+
+  const renderChecklistItem = (item: ChecklistItem & { _source: "checklist" }) => {
     const childName = getChildName(item.child_id);
     const dueDate = formatDueDate(item.due_date);
     const done = item.is_completed;
@@ -323,10 +458,9 @@ export default function ChecklistScreen() {
         onPress={() => openItemDetail(item)}
         style={[styles.itemCard, done && styles.itemCardCompleted]}
       >
-        {/* Checkbox */}
         <PressableScale
           style={styles.checkboxArea}
-          onPress={() => toggleCompletion(item)}
+          onPress={() => toggleChecklistCompletion(item)}
           scaleTo={0.9}
         >
           <View style={[styles.checkbox, done && styles.checkboxChecked]}>
@@ -334,7 +468,6 @@ export default function ChecklistScreen() {
           </View>
         </PressableScale>
 
-        {/* Content */}
         <View style={styles.itemContent}>
           <Text
             style={[styles.itemTitle, done && styles.itemTitleDone]}
@@ -347,16 +480,6 @@ export default function ChecklistScreen() {
             {childName && (
               <View style={styles.childBadge}>
                 <Text style={styles.childBadgeText}>{childName}</Text>
-              </View>
-            )}
-            {item.category === "provider" && (
-              <View style={styles.providerBadge}>
-                <Ionicons
-                  name="medkit-outline"
-                  size={10}
-                  color={colors.accent[700]}
-                />
-                <Text style={styles.providerBadgeText}>Provider</Text>
               </View>
             )}
             {item.description && (
@@ -372,8 +495,74 @@ export default function ChecklistScreen() {
           </View>
         </View>
 
-        {/* Chevron */}
         <Ionicons name="chevron-forward" size={16} color={colors.stone[300]} />
+      </PressableScale>
+    );
+  };
+
+  const renderDoctorItem = (item: DoctorDiscussionItem & { _source: "doctor" }) => {
+    const done = item.is_discussed;
+
+    // Get child names from child_ids (junction table)
+    const childNames = (item.child_ids ?? [])
+      .map((cid) => getChildName(cid))
+      .filter(Boolean);
+
+    return (
+      <PressableScale
+        onPress={() => {
+          /* Doctor items don't open detail modal for now */
+        }}
+        style={[styles.itemCard, done && styles.itemCardCompleted]}
+      >
+        <PressableScale
+          style={styles.checkboxArea}
+          onPress={() => toggleDoctorDiscussed(item)}
+          scaleTo={0.9}
+        >
+          <View style={[styles.checkbox, done && styles.checkboxChecked]}>
+            {done && <Ionicons name="checkmark" size={14} color={colors.white} />}
+          </View>
+        </PressableScale>
+
+        <View style={styles.itemContent}>
+          <Text
+            style={[styles.itemTitle, done && styles.itemTitleDone]}
+            numberOfLines={2}
+          >
+            {item.title}
+          </Text>
+
+          <View style={styles.itemMeta}>
+            {childNames.length > 0 &&
+              childNames.map((name, idx) => (
+                <View key={idx} style={styles.childBadge}>
+                  <Text style={styles.childBadgeText}>{name}</Text>
+                </View>
+              ))}
+            <View style={styles.providerBadge}>
+              <Ionicons name="medkit-outline" size={10} color={colors.accent[700]} />
+              <Text style={styles.providerBadgeText}>Provider</Text>
+            </View>
+            {item.notes && (
+              <View style={styles.chatBadge}>
+                <Text style={styles.chatBadgeText}>has notes</Text>
+              </View>
+            )}
+            {item.priority === "high" && (
+              <View style={styles.priorityHighBadge}>
+                <Text style={styles.priorityHighText}>High</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <PressableScale
+          onPress={() => handleDeleteUnified(item)}
+          scaleTo={0.9}
+        >
+          <Ionicons name="close-circle-outline" size={18} color={colors.stone[300]} />
+        </PressableScale>
       </PressableScale>
     );
   };
@@ -382,7 +571,7 @@ export default function ChecklistScreen() {
 
   const renderSectionHeader = ({ section }: { section: ChecklistSection }) => {
     const count =
-      section.key === "completed" ? completedItems.length : section.data.length;
+      section.key === "completed" ? completedData.length : section.data.length;
 
     const isCompleted = section.key === "completed";
     const isProvider = section.key === "provider";
@@ -509,180 +698,197 @@ export default function ChecklistScreen() {
       {/* Add Item Form */}
       {showAddForm && (
         <FadeInUp duration={300}>
-          <View style={styles.addForm}>
-            {/* Title */}
-            <TextInput
-              style={styles.addInput}
-              placeholder="Title"
-              placeholderTextColor={colors.stone[400]}
-              value={newItemTitle}
-              onChangeText={setNewItemTitle}
-              returnKeyType="next"
-            />
-
-            {/* Description */}
-            <TextInput
-              style={[styles.addInput, styles.addDescriptionInput]}
-              placeholder="Description (optional)"
-              placeholderTextColor={colors.stone[400]}
-              value={newItemDescription}
-              onChangeText={setNewItemDescription}
-              multiline
-              numberOfLines={3}
-              textAlignVertical="top"
-            />
-
-            {/* Due Date */}
-            <DatePickerInput
-              label="Due Date (optional)"
-              value={newItemDueDate}
-              onChange={setNewItemDueDate}
-            />
-            {newItemDueDate && (
-              <PressableScale
-                style={styles.clearDateBtnInline}
-                onPress={() => setNewItemDueDate(null)}
-              >
-                <Ionicons
-                  name="close-circle"
-                  size={14}
-                  color={colors.stone[400]}
-                />
-                <Text style={styles.clearDateText}>Clear date</Text>
-              </PressableScale>
-            )}
-
-            {/* Category */}
-            <View style={styles.addChildRow}>
-              <Text style={styles.addChildLabel}>Category:</Text>
-              <PressableScale
-                style={[
-                  styles.addChildPill,
-                  newItemCategory === "general" && styles.addChildPillActive,
-                ]}
-                onPress={() => setNewItemCategory("general")}
-                scaleTo={0.95}
-              >
-                <Text
-                  style={[
-                    styles.addChildPillText,
-                    newItemCategory === "general" &&
-                      styles.addChildPillTextActive,
-                  ]}
-                >
-                  General
-                </Text>
-              </PressableScale>
-              <PressableScale
-                style={[
-                  styles.addChildPill,
-                  styles.addCategoryProviderPillBase,
-                  newItemCategory === "provider" &&
-                    styles.addCategoryProviderPillActive,
-                ]}
-                onPress={() => setNewItemCategory("provider")}
-                scaleTo={0.95}
-              >
-                <Ionicons
-                  name="medkit-outline"
-                  size={12}
-                  color={
-                    newItemCategory === "provider"
-                      ? colors.white
-                      : colors.stone[700]
-                  }
-                />
-                <Text
-                  style={[
-                    styles.addChildPillText,
-                    newItemCategory === "provider" &&
-                      styles.addChildPillTextActive,
-                  ]}
-                >
-                  Discuss with Provider
-                </Text>
-              </PressableScale>
-            </View>
-
-            {/* Child selector */}
-            {children.length > 0 && (
+          <ScrollView
+            style={styles.addFormScroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.addForm}>
+              {/* Category */}
               <View style={styles.addChildRow}>
-                <Text style={styles.addChildLabel}>For:</Text>
+                <Text style={styles.addChildLabel}>Category:</Text>
                 <PressableScale
                   style={[
                     styles.addChildPill,
-                    newItemChildId === null && styles.addChildPillActive,
+                    newItemCategory === "general" && styles.addChildPillActive,
                   ]}
-                  onPress={() => setNewItemChildId(null)}
+                  onPress={() => setNewItemCategory("general")}
                   scaleTo={0.95}
                 >
                   <Text
                     style={[
                       styles.addChildPillText,
-                      newItemChildId === null && styles.addChildPillTextActive,
+                      newItemCategory === "general" &&
+                        styles.addChildPillTextActive,
                     ]}
                   >
-                    All
+                    General
                   </Text>
                 </PressableScale>
-                {children.map((child) => (
+                <PressableScale
+                  style={[
+                    styles.addChildPill,
+                    styles.addCategoryProviderPillBase,
+                    newItemCategory === "provider" &&
+                      styles.addCategoryProviderPillActive,
+                  ]}
+                  onPress={() => setNewItemCategory("provider")}
+                  scaleTo={0.95}
+                >
+                  <Ionicons
+                    name="medkit-outline"
+                    size={12}
+                    color={
+                      newItemCategory === "provider"
+                        ? colors.white
+                        : colors.stone[700]
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.addChildPillText,
+                      newItemCategory === "provider" &&
+                        styles.addChildPillTextActive,
+                    ]}
+                  >
+                    Discuss with Provider
+                  </Text>
+                </PressableScale>
+              </View>
+
+              {/* Title */}
+              <TextInput
+                style={styles.addInput}
+                placeholder={
+                  newItemCategory === "provider"
+                    ? "What do you want to discuss?"
+                    : "Title"
+                }
+                placeholderTextColor={colors.stone[400]}
+                value={newItemTitle}
+                onChangeText={setNewItemTitle}
+                returnKeyType="next"
+              />
+
+              {/* Description / Notes */}
+              <TextInput
+                style={[styles.addInput, styles.addDescriptionInput]}
+                placeholder={
+                  newItemCategory === "provider"
+                    ? "Notes or context (optional)"
+                    : "Description (optional)"
+                }
+                placeholderTextColor={colors.stone[400]}
+                value={newItemDescription}
+                onChangeText={setNewItemDescription}
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+              />
+
+              {/* Due Date (checklist items only) */}
+              {newItemCategory === "general" && (
+                <>
+                  <DatePickerInput
+                    label="Due Date (optional)"
+                    value={newItemDueDate}
+                    onChange={setNewItemDueDate}
+                  />
+                  {newItemDueDate && (
+                    <PressableScale
+                      style={styles.clearDateBtnInline}
+                      onPress={() => setNewItemDueDate(null)}
+                    >
+                      <Ionicons
+                        name="close-circle"
+                        size={14}
+                        color={colors.stone[400]}
+                      />
+                      <Text style={styles.clearDateText}>Clear date</Text>
+                    </PressableScale>
+                  )}
+                </>
+              )}
+
+              {/* Child selector */}
+              {children.length > 0 && (
+                <View style={styles.addChildRow}>
+                  <Text style={styles.addChildLabel}>For:</Text>
                   <PressableScale
-                    key={child.id}
                     style={[
                       styles.addChildPill,
-                      newItemChildId === child.id && styles.addChildPillActive,
+                      newItemChildId === null && styles.addChildPillActive,
                     ]}
-                    onPress={() => setNewItemChildId(child.id)}
+                    onPress={() => setNewItemChildId(null)}
                     scaleTo={0.95}
                   >
                     <Text
                       style={[
                         styles.addChildPillText,
-                        newItemChildId === child.id &&
-                          styles.addChildPillTextActive,
+                        newItemChildId === null && styles.addChildPillTextActive,
                       ]}
                     >
-                      {child.name}
+                      All
                     </Text>
                   </PressableScale>
-                ))}
+                  {children.map((child) => (
+                    <PressableScale
+                      key={child.id}
+                      style={[
+                        styles.addChildPill,
+                        newItemChildId === child.id && styles.addChildPillActive,
+                      ]}
+                      onPress={() => setNewItemChildId(child.id)}
+                      scaleTo={0.95}
+                    >
+                      <Text
+                        style={[
+                          styles.addChildPillText,
+                          newItemChildId === child.id &&
+                            styles.addChildPillTextActive,
+                        ]}
+                      >
+                        {child.name}
+                      </Text>
+                    </PressableScale>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.addActions}>
+                <PressableScale
+                  style={styles.addCancelBtn}
+                  onPress={() => {
+                    setShowAddForm(false);
+                    setNewItemTitle("");
+                    setNewItemDescription("");
+                    setNewItemDueDate(null);
+                    setNewItemCategory("general");
+                    setNewItemChildId(null);
+                  }}
+                  scaleTo={0.95}
+                >
+                  <Text style={styles.addCancelText}>Cancel</Text>
+                </PressableScale>
+
+                <PressableScale
+                  style={[
+                    styles.addSubmitBtn,
+                    !newItemTitle.trim() && styles.addSubmitBtnDisabled,
+                  ]}
+                  onPress={handleAddItem}
+                  disabled={!newItemTitle.trim()}
+                  scaleTo={0.95}
+                >
+                  <Text style={styles.addSubmitText}>Add</Text>
+                </PressableScale>
               </View>
-            )}
-
-            <View style={styles.addActions}>
-              <PressableScale
-                style={styles.addCancelBtn}
-                onPress={() => {
-                  setShowAddForm(false);
-                  setNewItemTitle("");
-                  setNewItemDescription("");
-                  setNewItemDueDate(null);
-                  setNewItemCategory("general");
-                  setNewItemChildId(null);
-                }}
-                scaleTo={0.95}
-              >
-                <Text style={styles.addCancelText}>Cancel</Text>
-              </PressableScale>
-
-              <PressableScale
-                style={[
-                  styles.addSubmitBtn,
-                  !newItemTitle.trim() && styles.addSubmitBtnDisabled,
-                ]}
-                onPress={handleAddItem}
-                disabled={!newItemTitle.trim()}
-                scaleTo={0.95}
-              >
-                <Text style={styles.addSubmitText}>Add</Text>
-              </PressableScale>
             </View>
-          </View>
+          </ScrollView>
         </FadeInUp>
       )}
 
       {/* Checklist */}
-      {checklist.length === 0 ? (
+      {totalItems === 0 ? (
         renderEmptyState()
       ) : (
         <SectionList
@@ -690,7 +896,7 @@ export default function ChecklistScreen() {
             (s) => s.data.length > 0 || s.key === "completed"
           )}
           keyExtractor={(item) => item.id}
-          renderItem={renderChecklistItem}
+          renderItem={renderUnifiedItem}
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
           refreshControl={
@@ -717,7 +923,7 @@ export default function ChecklistScreen() {
         />
       </PressableScale>
 
-      {/* ── Item Detail Modal ───────────────────────── */}
+      {/* ── Item Detail Modal (checklist items only) ──── */}
       <Modal
         visible={!!selectedItem}
         animationType="slide"
@@ -725,7 +931,6 @@ export default function ChecklistScreen() {
         onRequestClose={() => setSelectedItem(null)}
       >
         <SafeAreaView style={styles.modalContainer} edges={["top"]}>
-          {/* Modal Header */}
           <View style={styles.modalHeader}>
             <PressableScale onPress={() => setSelectedItem(null)}>
               <Text style={styles.modalCancelText}>Cancel</Text>
@@ -754,7 +959,6 @@ export default function ChecklistScreen() {
             >
               {selectedItem && (
                 <>
-                  {/* Title (editable) */}
                   <Text style={styles.modalLabel}>Title</Text>
                   <TextInput
                     style={styles.modalTitleInput}
@@ -766,7 +970,6 @@ export default function ChecklistScreen() {
                     placeholderTextColor={colors.stone[400]}
                   />
 
-                  {/* Description (markdown rendered, read-only) */}
                   {selectedItem.description && (
                     <>
                       <Text style={styles.modalLabel}>Details</Text>
@@ -776,14 +979,12 @@ export default function ChecklistScreen() {
                     </>
                   )}
 
-                  {/* Due Date */}
                   <DatePickerInput
                     label="Due Date"
                     value={editDueDate}
                     onChange={setEditDueDate}
                   />
 
-                  {/* Clear due date */}
                   {editDueDate && (
                     <PressableScale
                       style={styles.clearDateBtn}
@@ -798,7 +999,6 @@ export default function ChecklistScreen() {
                     </PressableScale>
                   )}
 
-                  {/* Child Badge */}
                   {selectedItem.child_id && (
                     <View style={styles.modalMeta}>
                       <Text style={styles.modalMetaLabel}>For:</Text>
@@ -810,10 +1010,14 @@ export default function ChecklistScreen() {
                     </View>
                   )}
 
-                  {/* Delete */}
                   <PressableScale
                     style={styles.deleteBtn}
-                    onPress={() => handleDeleteItem(selectedItem)}
+                    onPress={() =>
+                      handleDeleteUnified({
+                        ...selectedItem,
+                        _source: "checklist",
+                      })
+                    }
                   >
                     <Ionicons
                       name="close-circle-outline"
@@ -877,10 +1081,13 @@ const styles = StyleSheet.create({
   },
 
   // ── Add Form ──────────────────────────────────
-  addForm: {
-    ...cardBase,
+  addFormScroll: {
+    maxHeight: 380,
     marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
+  },
+  addForm: {
+    ...cardBase,
     padding: spacing.lg,
     borderRadius: radii.md,
   },
@@ -1091,6 +1298,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansMedium,
     fontSize: 11,
     color: colors.accent[700],
+  },
+  priorityHighBadge: {
+    backgroundColor: "#fee2e2",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  priorityHighText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    color: "#dc2626",
   },
   chatBadge: {
     backgroundColor: colors.sage[50],

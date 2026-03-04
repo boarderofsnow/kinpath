@@ -245,7 +245,7 @@ export function PlanClient({
           }`}
         >
           <Stethoscope className="h-4 w-4" />
-          Doctor
+          Discuss with Provider
         </button>
       </div>
 

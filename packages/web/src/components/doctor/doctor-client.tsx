@@ -157,7 +157,7 @@ export function DoctorClient({
           <Stethoscope className="mx-auto mb-4 h-12 w-12 text-stone-300" />
           <p className="text-stone-500">No topics to discuss yet.</p>
           <p className="mt-1 text-sm text-stone-400">
-            Add questions or concerns for your next doctor&apos;s appointment.
+            Add questions or concerns for your next provider appointment.
           </p>
         </div>
       )}
@@ -179,7 +179,7 @@ export function DoctorClient({
             className="flex w-full items-center gap-2 rounded-xl border border-dashed border-stone-300 bg-white px-4 py-3 text-sm font-medium text-stone-600 transition-colors hover:border-brand-400 hover:text-brand-600"
           >
             <Plus className="h-4 w-4" />
-            Add topic to discuss
+            Add topic to discuss with provider
           </button>
         )}
       </div>

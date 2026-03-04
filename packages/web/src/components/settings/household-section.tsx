@@ -126,7 +126,7 @@ export function HouseholdSection({ initialMembers }: HouseholdSectionProps) {
 
       <p className="text-sm text-stone-500 mb-4">
         Invite your co-parent or partner to share your children&apos;s profiles,
-        checklist, and doctor discussion list.
+        checklist, and provider discussion list.
       </p>
 
       {/* Invite form */}

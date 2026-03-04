@@ -136,10 +136,10 @@ export function DoctorItemRow({
         </div>
       </div>
 
-      {/* Expanded: doctor response */}
+      {/* Expanded: provider response */}
       {expanded && (
         <div className="border-t border-stone-100 bg-stone-50/50 px-5 py-3 pl-12">
-          <label className="text-xs font-medium text-stone-500">Doctor&apos;s response / notes</label>
+          <label className="text-xs font-medium text-stone-500">Provider&apos;s response / notes</label>
           <textarea
             value={responseText}
             onChange={(e) => setResponseText(e.target.value)}
@@ -148,7 +148,7 @@ export function DoctorItemRow({
                 onUpdateResponse(item.id, responseText);
               }
             }}
-            placeholder="Record what the doctor said..."
+            placeholder="Record what the provider said..."
             rows={2}
             className="mt-1 w-full resize-none rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
           />

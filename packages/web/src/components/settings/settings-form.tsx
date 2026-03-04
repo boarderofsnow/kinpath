@@ -1077,7 +1077,7 @@ export function SettingsForm({
                 You&apos;re sharing a household
               </p>
               <p className="mt-1 text-sm text-stone-600">
-                You have access to your partner&apos;s children, checklist, and doctor discussion list.
+                You have access to your partner&apos;s children, checklist, and provider discussion list.
                 Visit the <strong>Plan</strong> or <strong>Dashboard</strong> pages to view shared data.
               </p>
             </div>

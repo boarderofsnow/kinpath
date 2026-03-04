@@ -362,7 +362,7 @@ export function ChatInterface({
                           onClick={() => handleAddToDoctorList(msg, idx)}
                           disabled={addedToDoctorList.has(idx)}
                           className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                          title={addedToDoctorList.has(idx) ? "Added to doctor list" : "Add to doctor list"}
+                          title={addedToDoctorList.has(idx) ? "Added to provider list" : "Add to provider list"}
                         >
                           {addedToDoctorList.has(idx) ? (
                             <Check className="h-4 w-4 text-green-500" />
