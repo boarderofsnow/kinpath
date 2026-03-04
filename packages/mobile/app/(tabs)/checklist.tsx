@@ -439,14 +439,14 @@ export default function ChecklistScreen() {
 
   const sections: ChecklistSection[] = [
     ...(generalData.length > 0
-      ? [{ title: "General Checklist", key: "general", data: generalCollapsed ? [] : generalData }]
+      ? [{ title: "General Checklist", key: "general", data: generalData }]
       : []),
     ...(providerData.length > 0
       ? [
           {
             title: "Discuss with Provider",
             key: "provider",
-            data: providerCollapsed ? [] : providerData,
+            data: providerData,
           },
         ]
       : []),
@@ -455,7 +455,7 @@ export default function ChecklistScreen() {
           {
             title: "Completed",
             key: "completed",
-            data: completedCollapsed ? [] : completedData,
+            data: completedData,
           },
         ]
       : []),
@@ -465,7 +465,12 @@ export default function ChecklistScreen() {
 
   // ── Render: Unified Item ─────────────────────────────
 
-  const renderUnifiedItem = ({ item }: { item: UnifiedItem }) => {
+  const renderUnifiedItem = ({ item, section }: { item: UnifiedItem; section: ChecklistSection }) => {
+    // Hide items when section is collapsed
+    if (section.key === "general" && generalCollapsed) return null;
+    if (section.key === "provider" && providerCollapsed) return null;
+    if (section.key === "completed" && completedCollapsed) return null;
+
     if (item._source === "doctor") {
       return renderDoctorItem(item as DoctorDiscussionItem & { _source: "doctor" });
     }
@@ -917,9 +922,7 @@ export default function ChecklistScreen() {
         renderEmptyState()
       ) : (
         <SectionList
-          sections={sections.filter(
-            (s) => s.data.length > 0 || s.key === "completed"
-          )}
+          sections={sections}
           keyExtractor={(item) => item.id}
           renderItem={renderUnifiedItem}
           renderSectionHeader={renderSectionHeader}

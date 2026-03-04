@@ -381,7 +381,6 @@ export default function BrowseScreen() {
               onChangeText={setSearchQuery}
               returnKeyType="search"
               autoCorrect={false}
-              clearButtonMode="while-editing"
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery("")}>
