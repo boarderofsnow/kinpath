@@ -21,9 +21,9 @@ interface SubscriptionSectionProps {
 }
 
 const TIER_DESCRIPTIONS: Record<SubscriptionTier, string> = {
-  free: "5 AI questions/month, 1 child profile, basic resources",
-  premium: "Unlimited AI, full library, bookmarks, email digests",
-  family: "Everything in Premium plus partner sharing",
+  free: "5 AI questions/month, 1 child profile, full resource library",
+  premium: "Unlimited AI, unlimited children, partner sharing",
+  family: "Everything in Premium plus up to 5 caregivers",
 };
 
 const TIER_BADGE_COLORS: Record<SubscriptionTier, string> = {
@@ -116,11 +116,19 @@ export function SubscriptionSection({
             enabled={true}
           />
           <FeatureRow
+            label={TIER_LIMITS[subscriptionTier].max_children === null ? "Unlimited child profiles" : `${TIER_LIMITS[subscriptionTier].max_children} child profile`}
+            enabled={true}
+          />
+          <FeatureRow
             label="Full resource library"
             enabled={TIER_LIMITS[subscriptionTier].full_library_access}
           />
           <FeatureRow
-            label="Bookmarks"
+            label="Child-specific filtering"
+            enabled={TIER_LIMITS[subscriptionTier].child_filter_enabled}
+          />
+          <FeatureRow
+            label="Bookmarks & checklists"
             enabled={TIER_LIMITS[subscriptionTier].bookmarks_enabled}
           />
           <FeatureRow
@@ -128,7 +136,7 @@ export function SubscriptionSection({
             enabled={TIER_LIMITS[subscriptionTier].email_digests_enabled}
           />
           <FeatureRow
-            label="Partner sharing"
+            label={subscriptionTier === "family" ? "Up to 5 caregivers" : "Partner sharing"}
             enabled={TIER_LIMITS[subscriptionTier].partner_invite_enabled}
           />
         </View>

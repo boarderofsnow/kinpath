@@ -41,8 +41,33 @@ accountRouter.post("/delete", requireAuth, async (req, res: Response) => {
       }
     }
 
-    // Delete auth user (cascades to all related DB rows via FK constraints)
+    // Reset household members' subscription tier before cascade deletes the household
     const serviceClient = createServiceRoleClient();
+
+    const { data: ownedHousehold } = await serviceClient
+      .from("households")
+      .select("id")
+      .eq("owner_user_id", userId)
+      .maybeSingle();
+
+    if (ownedHousehold) {
+      const { data: members } = await serviceClient
+        .from("household_members")
+        .select("user_id")
+        .eq("household_id", ownedHousehold.id)
+        .eq("status", "accepted");
+
+      for (const member of members ?? []) {
+        if (member.user_id) {
+          await serviceClient
+            .from("users")
+            .update({ subscription_tier: "free" })
+            .eq("id", member.user_id);
+        }
+      }
+    }
+
+    // Delete auth user (cascades to all related DB rows via FK constraints)
     const { error: deleteError } = await serviceClient.auth.admin.deleteUser(userId);
 
     if (deleteError) {

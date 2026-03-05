@@ -61,9 +61,9 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     enrichChildWithAge(child)
   );
 
-  // Fetch household members (family tier only, conditional)
+  // Fetch household members (premium and family tiers)
   let householdMembers: HouseholdMember[] = [];
-  if (userProfile?.subscription_tier === "family") {
+  if (userProfile?.subscription_tier === "premium" || userProfile?.subscription_tier === "family") {
     let resolvedHouseholdId: string | null = householdId;
 
     if (!resolvedHouseholdId) {

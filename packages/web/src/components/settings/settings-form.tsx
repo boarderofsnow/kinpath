@@ -8,10 +8,12 @@ import {
   TOPICS,
   TOPIC_KEYS,
   TAG_NAMESPACES,
+  TIER_LIMITS,
   type TopicKey,
   type ChildWithAge,
   type NotificationPreferences,
   type EmailFrequency,
+  type SubscriptionTier,
 } from "@kinpath/shared";
 import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
@@ -371,9 +373,11 @@ export function SettingsForm({
     }
   }
 
-  const tier = user?.subscription_tier ?? "free";
+  const tier = (user?.subscription_tier ?? "free") as SubscriptionTier;
   const isFree = tier === "free";
   const tierLabel = tier === "family" ? "Family" : tier === "premium" ? "Premium" : "Free";
+  const tierLimits = TIER_LIMITS[tier];
+  const canAddChild = tierLimits.max_children === null || children.length < tierLimits.max_children;
 
   return (
     <div className="space-y-8">
@@ -619,7 +623,7 @@ export function SettingsForm({
               </button>
             </div>
           </div>
-        ) : (
+        ) : canAddChild ? (
           <button
             onClick={handleShowAddChild}
             disabled={childrenLoading}
@@ -628,6 +632,20 @@ export function SettingsForm({
             <Plus className="h-4 w-4" />
             Add Another Child
           </button>
+        ) : (
+          <div className="flex items-center gap-3 rounded-lg border border-amber-200/60 bg-gradient-to-r from-amber-50 to-accent-50 px-3 py-2 shadow-sm">
+            <Crown className="h-4 w-4 flex-shrink-0 text-amber-600" />
+            <p className="flex-1 text-xs font-medium text-stone-900">
+              Upgrade to add more child profiles
+            </p>
+            <Link
+              href="/pricing"
+              className="flex-shrink-0 inline-flex items-center gap-1 rounded-md bg-accent-500 px-2 py-1 text-xs font-semibold text-stone-900 hover:bg-accent-600 transition-colors"
+            >
+              Upgrade
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
         )}
       </section>
 
@@ -1028,10 +1046,10 @@ export function SettingsForm({
               </div>
               <p className="mt-1 text-sm text-stone-600">
                 {isFree
-                  ? "5 AI questions/month, 1 child profile, basic resources"
+                  ? "5 AI questions/month, 1 child profile, full resource library"
                   : tier === "premium"
-                  ? "Unlimited AI, full library, bookmarks, email digests"
-                  : "Everything in Premium plus partner sharing"}
+                  ? "Unlimited AI, unlimited children, partner sharing"
+                  : "Everything in Premium plus up to 5 caregivers"}
               </p>
             </div>
           </div>
@@ -1063,14 +1081,16 @@ export function SettingsForm({
         </div>
       </section>
 
-      {/* E. Family Sharing Section — family tier only */}
-      {user?.subscription_tier === "family" && (
+      {/* E. Sharing Section — premium and family tiers */}
+      {(user?.subscription_tier === "premium" || user?.subscription_tier === "family") && (
         isPartner ? (
-          // Partners see a read-only view — they joined someone else's household.
+          // Partners/caregivers see a read-only view — they joined someone else's household.
           <section className="rounded-2xl border border-stone-200/60 bg-white shadow-card p-6">
             <div className="flex items-center gap-2 mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-stone-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <h2 className="text-lg font-semibold text-stone-900">Family Sharing</h2>
+              <h2 className="text-lg font-semibold text-stone-900">
+                {tier === "family" ? "Family Sharing" : "Partner Sharing"}
+              </h2>
             </div>
             <div className="rounded-xl border border-brand-100 bg-brand-50/40 p-4">
               <p className="text-sm font-medium text-brand-800">
@@ -1083,7 +1103,11 @@ export function SettingsForm({
             </div>
           </section>
         ) : (
-          <HouseholdSection initialMembers={householdMembers} />
+          <HouseholdSection
+            initialMembers={householdMembers}
+            subscriptionTier={tier}
+            maxMembers={tierLimits.max_household_members}
+          />
         )
       )}
 
