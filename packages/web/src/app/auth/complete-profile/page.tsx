@@ -79,12 +79,12 @@ export default function CompleteProfilePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kinpath-logo.png"
-              alt="KinPath"
+              alt="Kinpath"
               className="h-10 w-auto mx-auto"
             />
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-stone-900">
-            Welcome to KinPath
+            Welcome to Kinpath
           </h1>
           <p className="mt-1 text-sm text-stone-600">
             Your partner invited you to share their family profile. Set up your

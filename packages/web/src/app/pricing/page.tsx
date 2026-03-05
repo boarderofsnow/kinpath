@@ -101,8 +101,8 @@ export default function PricingPage() {
       features: [
         { name: '5 AI questions per month', included: true },
         { name: '1 child profile', included: true },
-        { name: 'Basic resource access', included: true },
-        { name: 'Full resource library', included: false },
+        { name: 'Full resource library', included: true },
+        { name: 'Child-specific filtering', included: false },
         { name: 'Bookmarks & checklists', included: false },
         { name: 'Email digests', included: false },
         { name: 'Partner sharing', included: false },
@@ -114,18 +114,17 @@ export default function PricingPage() {
     {
       name: 'Premium',
       icon: Star,
-      monthlyPrice: 9.99,
-      yearlyPrice: 79.99,
+      monthlyPrice: 12.99,
+      yearlyPrice: 99.99,
       badge: 'Most Popular',
       highlighted: true,
       features: [
         { name: 'Unlimited AI questions', included: true },
-        { name: 'Up to 5 child profiles', included: true },
-        { name: 'Full resource library', included: true },
+        { name: 'Unlimited child profiles', included: true },
+        { name: 'Full resource library with child filtering', included: true },
         { name: 'Bookmarks & checklists', included: true },
         { name: 'Weekly email digests', included: true },
-        { name: 'Partner sharing', included: false },
-        { name: 'Priority support', included: false },
+        { name: 'Partner sharing (1 partner)', included: true },
       ],
       buttonText: user?.subscription_tier === 'premium' ? 'Current Plan' : 'Get Premium',
       buttonAction: user?.subscription_tier === 'premium' ? 'manage' : 'checkout',
@@ -135,14 +134,14 @@ export default function PricingPage() {
     {
       name: 'Family',
       icon: Users,
-      monthlyPrice: 14.99,
-      yearlyPrice: 99.99,
+      monthlyPrice: 19.99,
+      yearlyPrice: 149.99,
       badge: null,
       highlighted: false,
       features: [
         { name: 'Everything in Premium', included: true },
-        { name: 'Partner/co-parent sharing', included: true },
-        { name: 'Priority support', included: true },
+        { name: 'Up to 5 additional caregivers', included: true },
+        { name: 'Invite grandparents, babysitters & more', included: true },
       ],
       buttonText: user?.subscription_tier === 'family' ? 'Current Plan' : 'Get Family',
       buttonAction: user?.subscription_tier === 'family' ? 'manage' : 'checkout',
@@ -337,7 +336,7 @@ export default function PricingPage() {
               <div>
                 <h3 className="mb-2 font-sans font-semibold text-stone-900">What&apos;s the difference between Premium and Family?</h3>
                 <p className="text-sm text-stone-600">
-                  Family plans include co-parent sharing and priority support, perfect for couples managing parenting together.
+                  Premium includes partner sharing for co-parents. Family plans let you add up to 5 caregivers &mdash; grandparents, babysitters, nannies, and more.
                 </p>
               </div>
             </div>

@@ -81,8 +81,8 @@ export default function SettingsScreen() {
       if (prefsRes.data) setPreferences(prefsRes.data as UserPreferences);
       if (notifRes.data) setNotificationPrefs(notifRes.data as NotificationPreferences);
 
-      // Household (conditional on family tier)
-      if (userRes.data?.subscription_tier === "family") {
+      // Household (conditional on premium + family tiers)
+      if (userRes.data?.subscription_tier === "premium" || userRes.data?.subscription_tier === "family") {
         // Check if user is a partner first
         const { data: partnerCheck } = await supabase
           .from("household_members")
@@ -303,28 +303,33 @@ export default function SettingsScreen() {
           </CollapsibleSection>
         </FadeInUp>
 
-        {/* ── 5. Family Sharing (family tier) ───── */}
-        {tier === "family" && (
+        {/* ── 5. Partner/Family Sharing (premium + family) ── */}
+        {(tier === "premium" || tier === "family") && (
           <FadeInUp delay={400}>
-            <CollapsibleSection title="Family Sharing" icon="people-circle-outline">
+            <CollapsibleSection
+              title={tier === "family" ? "Family Sharing" : "Partner Sharing"}
+              icon="people-circle-outline"
+            >
               <FamilySharingSection
                 householdMembers={householdMembers}
                 isPartner={isPartner}
                 onMembersChange={setHouseholdMembers}
+                subscriptionTier={tier as any}
+                maxMembers={tier === "family" ? 5 : 1}
               />
             </CollapsibleSection>
           </FadeInUp>
         )}
 
         {/* ── 6. Account ────────────────────────── */}
-        <FadeInUp delay={tier === "family" ? 480 : 400}>
+        <FadeInUp delay={(tier === "premium" || tier === "family") ? 480 : 400}>
           <CollapsibleSection title="Account" icon="person-outline">
             <AccountSection onSignOut={signOut} />
           </CollapsibleSection>
         </FadeInUp>
 
         {/* ── Support Links ─────────────────────── */}
-        <FadeInUp delay={tier === "family" ? 560 : 480}>
+        <FadeInUp delay={(tier === "premium" || tier === "family") ? 560 : 480}>
           <View style={styles.supportSection}>
             <View style={styles.supportCard}>
               <PressableScale style={styles.supportRow}>

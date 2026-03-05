@@ -100,7 +100,9 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
       res.status(429).json({
         error: "Monthly AI question limit reached",
         limit: limits.ai_questions_per_month,
-        upgrade_url: "/settings#subscription",
+        used: count ?? 0,
+        upgrade_url: "/pricing",
+        show_upgrade_modal: true,
       });
       return;
     }

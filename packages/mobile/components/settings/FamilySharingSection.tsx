@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import type { HouseholdMember } from "@kinpath/shared";
+import type { HouseholdMember, SubscriptionTier } from "@kinpath/shared";
 import { colors, fonts, typography, spacing, radii } from "../../lib/theme";
 import { PressableScale } from "../motion";
 import { api } from "../../lib/api";
@@ -16,7 +16,15 @@ interface FamilySharingSectionProps {
   householdMembers: HouseholdMember[];
   isPartner: boolean;
   onMembersChange: (members: HouseholdMember[]) => void;
+  subscriptionTier?: SubscriptionTier;
+  maxMembers?: number;
 }
+
+const ROLE_LABELS: Record<string, string> = {
+  owner: "Owner",
+  partner: "Partner",
+  caregiver: "Caregiver",
+};
 
 const STATUS_CONFIG = {
   pending: { label: "Invite sent", icon: "time-outline" as const, bg: colors.accent[50], text: colors.accent[700] },
@@ -28,14 +36,21 @@ export function FamilySharingSection({
   householdMembers,
   isPartner,
   onMembersChange,
+  subscriptionTier = "family",
+  maxMembers = 5,
 }: FamilySharingSectionProps) {
   const [showForm, setShowForm] = useState(false);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [selectedRole, setSelectedRole] = useState<"partner" | "caregiver">("partner");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+
+  const isFamily = subscriptionTier === "family";
+  const activeMembers = householdMembers.filter((m) => m.status !== "declined");
+  const atLimit = activeMembers.length >= maxMembers;
 
   // ── Partner view ──────────────────────────────
   if (isPartner) {
@@ -44,7 +59,7 @@ export function FamilySharingSection({
         <Ionicons name="people-circle-outline" size={32} color={colors.brand[500]} />
         <Text style={styles.partnerTitle}>You're sharing a household</Text>
         <Text style={styles.partnerDesc}>
-          You have access to your partner's children, checklist, and doctor discussion list.
+          You have access to your partner's children, checklist, and provider discussion list.
         </Text>
       </View>
     );
@@ -63,6 +78,8 @@ export function FamilySharingSection({
     try {
       const { data, error: apiError } = await api.household.invite({
         email: email.trim(),
+        display_name: displayName.trim() || null,
+        ...(isFamily ? { role: selectedRole } : {}),
       });
 
       if (apiError) {
@@ -78,7 +95,7 @@ export function FamilySharingSection({
         user_id: null,
         invited_email: email.trim().toLowerCase(),
         display_name: displayName.trim() || null,
-        role: "partner",
+        role: isFamily ? selectedRole : "partner",
         status: "pending",
         invited_at: new Date().toISOString(),
         accepted_at: null,
@@ -86,6 +103,7 @@ export function FamilySharingSection({
       onMembersChange([...householdMembers, newMember]);
       setEmail("");
       setDisplayName("");
+      setSelectedRole("partner");
       setShowForm(false);
       setSuccess(`Invite sent to ${email.trim()}`);
       setTimeout(() => setSuccess(null), 3000);
@@ -120,12 +138,18 @@ export function FamilySharingSection({
   return (
     <View>
       <Text style={styles.description}>
-        Invite your co-parent or partner to share your children's profiles, checklist, and
-        doctor discussion list.
+        {isFamily
+          ? "Invite partners, grandparents, babysitters, or other caregivers to share your children\u2019s profiles, checklist, and provider discussion list."
+          : "Invite your co-parent or partner to share your children\u2019s profiles, checklist, and provider discussion list."}
+      </Text>
+
+      {/* Member count */}
+      <Text style={styles.memberCount}>
+        {activeMembers.length}/{maxMembers} {isFamily ? "members" : "partner"}
       </Text>
 
       {/* Invite button */}
-      {!showForm && (
+      {!showForm && !atLimit && (
         <PressableScale
           style={styles.inviteButton}
           onPress={() => {
@@ -134,15 +158,22 @@ export function FamilySharingSection({
           }}
         >
           <Ionicons name="person-add-outline" size={18} color={colors.brand[500]} />
-          <Text style={styles.inviteButtonText}>Invite Partner</Text>
+          <Text style={styles.inviteButtonText}>
+            {isFamily ? "Invite Member" : "Invite Partner"}
+          </Text>
         </PressableScale>
+      )}
+      {!showForm && atLimit && (
+        <Text style={styles.limitText}>
+          {isFamily ? "Member limit reached" : "Partner limit reached. Upgrade for more."}
+        </Text>
       )}
 
       {/* Invite form */}
       {showForm && (
         <View style={styles.formCard}>
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Partner's email</Text>
+            <Text style={styles.label}>Email address</Text>
             <TextInput
               style={styles.input}
               placeholder="partner@example.com"
@@ -169,6 +200,52 @@ export function FamilySharingSection({
               autoCapitalize="words"
             />
           </View>
+
+          {/* Role selector — family tier only */}
+          {isFamily && (
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Role</Text>
+              <View style={styles.roleRow}>
+                <PressableScale
+                  style={[
+                    styles.roleButton,
+                    selectedRole === "partner" && styles.roleButtonActive,
+                  ]}
+                  onPress={() => setSelectedRole("partner")}
+                >
+                  <Text
+                    style={[
+                      styles.roleButtonText,
+                      selectedRole === "partner" && styles.roleButtonTextActive,
+                    ]}
+                  >
+                    Partner
+                  </Text>
+                </PressableScale>
+                <PressableScale
+                  style={[
+                    styles.roleButton,
+                    selectedRole === "caregiver" && styles.roleButtonActive,
+                  ]}
+                  onPress={() => setSelectedRole("caregiver")}
+                >
+                  <Text
+                    style={[
+                      styles.roleButtonText,
+                      selectedRole === "caregiver" && styles.roleButtonTextActive,
+                    ]}
+                  >
+                    Caregiver
+                  </Text>
+                </PressableScale>
+              </View>
+              <Text style={styles.roleHint}>
+                {selectedRole === "partner"
+                  ? "Co-parent with full shared access"
+                  : "Grandparent, babysitter, nanny, or other caregiver"}
+              </Text>
+            </View>
+          )}
 
           {error && <Text style={styles.error}>{error}</Text>}
 
@@ -206,16 +283,25 @@ export function FamilySharingSection({
       )}
 
       {/* Members list */}
-      {householdMembers.length > 0 ? (
+      {activeMembers.length > 0 ? (
         <View style={styles.membersList}>
-          {householdMembers.map((member) => {
+          {activeMembers.map((member) => {
             const config = STATUS_CONFIG[member.status] || STATUS_CONFIG.pending;
             return (
               <View key={member.id} style={styles.memberRow}>
                 <View style={styles.memberInfo}>
-                  <Text style={styles.memberName} numberOfLines={1}>
-                    {member.display_name ?? member.invited_email}
-                  </Text>
+                  <View style={styles.memberNameRow}>
+                    <Text style={styles.memberName} numberOfLines={1}>
+                      {member.display_name ?? member.invited_email}
+                    </Text>
+                    {isFamily && (
+                      <View style={styles.roleBadge}>
+                        <Text style={styles.roleBadgeText}>
+                          {ROLE_LABELS[member.role] ?? member.role}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   {member.display_name && (
                     <Text style={styles.memberEmail} numberOfLines={1}>
                       {member.invited_email}
@@ -247,7 +333,9 @@ export function FamilySharingSection({
         </View>
       ) : (
         !showForm && (
-          <Text style={styles.emptyText}>No partners invited yet.</Text>
+          <Text style={styles.emptyText}>
+            {isFamily ? "No members invited yet." : "No partners invited yet."}
+          </Text>
         )
       )}
     </View>
@@ -389,6 +477,65 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     padding: 6,
+  },
+  memberCount: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 12,
+    color: colors.stone[400],
+    marginBottom: spacing.md,
+  },
+  limitText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 13,
+    color: colors.stone[400],
+    marginBottom: spacing.lg,
+  },
+  roleRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: 4,
+  },
+  roleButton: {
+    borderWidth: 1,
+    borderColor: colors.stone[200],
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
+    backgroundColor: colors.white,
+  },
+  roleButtonActive: {
+    backgroundColor: colors.brand[500],
+    borderColor: colors.brand[500],
+  },
+  roleButtonText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.stone[600],
+  },
+  roleButtonTextActive: {
+    color: colors.white,
+  },
+  roleHint: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.stone[400],
+    marginTop: 4,
+  },
+  memberNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  roleBadge: {
+    backgroundColor: colors.stone[200],
+    borderRadius: radii.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  roleBadgeText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 10,
+    color: colors.stone[600],
   },
   emptyText: {
     fontFamily: fonts.sans,

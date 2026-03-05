@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Login Link</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+</head>
+<!--
+  Forest sage palette (consistent across all Kinpath email templates):
+  Page bg:        #F4F0E8  warm linen
+  Card:           #FFFFFF
+  Header/Footer:  #2B4035  deep forest green
+  CTA button:     #3D7A5A  forest sage
+  Icon circle:    #EBF5EF  pale green tint
+  Heading:        #1A2E22  near-black forest
+  Body text:      #4A5E52  warm forest gray
+  Muted text:     #8FA898  sage gray
+  Info box:       #F3F8F5  barely-there green, #C9DED1 border
+-->
+<body style="margin:0;padding:0;background-color:#F4F0E8;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F4F0E8;">
+    <tr>
+      <td align="center" style="padding:48px 20px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background-color:#FFFFFF;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(27,48,35,0.08),0 8px 24px rgba(27,48,35,0.06);">
+
+          <!-- Header — deep forest -->
+          <tr>
+            <td style="background-color:#2B4035;padding:30px 40px;">
+              <a href="https://kinpath.family" style="text-decoration:none;display:inline-block;">
+                <img src="https://kinpath.family/kinpath-logo-white.png" alt="Kinpath" height="34" style="height:34px;width:auto;display:block;" />
+              </a>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:52px 48px 48px;">
+
+              <!-- Icon — pale green ring -->
+              <div style="text-align:center;margin-bottom:28px;">
+                <div style="display:inline-block;background-color:#EBF5EF;border-radius:50%;width:72px;height:72px;line-height:72px;text-align:center;">
+                  <span style="font-size:32px;">&#x2728;</span>
+                </div>
+              </div>
+
+              <!-- Heading — serif, deep forest near-black -->
+              <h1 style="margin:0 0 16px;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:700;color:#1A2E22;line-height:1.3;">
+                Your Login Link
+              </h1>
+
+              <!-- Divider — thin sage line under heading -->
+              <div style="text-align:center;margin-bottom:20px;">
+                <div style="display:inline-block;width:40px;height:2px;background-color:#5A9B78;border-radius:2px;"></div>
+              </div>
+
+              <!-- Body copy -->
+              <p style="margin:0 0 8px;text-align:center;font-size:15px;line-height:1.7;color:#4A5E52;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                Click below to securely log in to your Kinpath account. No password needed!
+              </p>
+              <p style="margin:0 0 40px;text-align:center;font-size:15px;line-height:1.7;color:#4A5E52;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                This link will expire in <strong style="color:#1A2E22;font-weight:600;">1 hour</strong> and can only be used once.
+              </p>
+
+              <!-- CTA — forest sage, 12px radius -->
+              <div style="text-align:center;margin-bottom:40px;">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=magiclink" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="12%" fillcolor="#3D7A5A" stroke="f">
+                  <w:anchorlock/>
+                  <center style="color:#ffffff;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px;font-weight:700;">Log In to Kinpath &rarr;</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-->
+                <a href="{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&type=magiclink" target="_blank" style="display:inline-block;background-color:#3D7A5A;color:#ffffff;font-size:15px;font-weight:700;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;text-decoration:none;padding:15px 52px;border-radius:12px;line-height:1.4;letter-spacing:0.01em;mso-hide:all;">
+                  Log In to Kinpath &rarr;
+                </a>
+                <!--<![endif]-->
+              </div>
+
+              <!-- Info note — barely-there green tint -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#F3F8F5;border:1px solid #C9DED1;border-radius:10px;padding:16px 20px;">
+                    <p style="margin:0;text-align:center;font-size:13px;line-height:1.6;color:#4A5E52;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                      Didn&rsquo;t request this login link? You can safely ignore this email &mdash; your account remains secure.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer — deep forest, matches header -->
+          <tr>
+            <td style="background-color:#2B4035;padding:24px 40px;">
+              <p style="margin:0 0 6px;text-align:center;font-size:12px;line-height:1.5;color:rgba(255,255,255,0.5);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                Automated message from Kinpath &bull; Please do not reply directly.
+              </p>
+              <p style="margin:0;text-align:center;font-size:12px;line-height:1.5;color:rgba(255,255,255,0.3);font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+                &copy; 2026 Kinpath Family, LLC &bull; All rights reserved
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Below-card fallback URL — constrained to same 560px as card -->
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+          <tr>
+            <td style="padding:20px 24px 0;">
+              <p style="margin:0;text-align:center;font-size:12px;color:#8FA898;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;word-break:break-all;">
+                If the button above doesn&rsquo;t work, copy and paste this link into your browser:<br>
+                <span style="color:#3D7A5A;">{{ .SiteURL }}/api/auth/callback?token_hash={{ .TokenHash }}&amp;type=magiclink</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,6 +1,7 @@
 import { Router, Response } from "express";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { createUserSupabaseClient, createServiceRoleClient } from "../lib/supabase";
+import { TIER_LIMITS, type SubscriptionTier } from "@kinpath/shared";
 
 export const householdRouter = Router();
 
@@ -16,14 +17,18 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     .eq("id", userId)
     .single();
 
-  if (profile?.subscription_tier !== "family") {
-    res.status(403).json({ error: "Partner sharing requires a Family plan." });
+  const tier = (profile?.subscription_tier ?? "free") as SubscriptionTier;
+  const limits = TIER_LIMITS[tier];
+
+  if (!limits.partner_invite_enabled || limits.max_household_members === 0) {
+    res.status(403).json({ error: "Sharing requires a Premium or Family plan." });
     return;
   }
 
-  const { email, display_name } = req.body as {
+  const { email, display_name, role: requestedRole } = req.body as {
     email?: string;
     display_name?: string;
+    role?: string;
   };
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -43,7 +48,7 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
   if (!household) {
     const { data: newHousehold, error: householdError } = await serviceSupabase
       .from("households")
-      .insert({ owner_user_id: userId })
+      .insert({ owner_user_id: userId, max_members: limits.max_household_members })
       .select("id")
       .single();
 
@@ -54,6 +59,26 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     }
     household = newHousehold;
   }
+
+  // Enforce member limit
+  const { count: memberCount } = await serviceSupabase
+    .from("household_members")
+    .select("*", { count: "exact", head: true })
+    .eq("household_id", household.id)
+    .neq("status", "declined");
+
+  if ((memberCount ?? 0) >= limits.max_household_members) {
+    const limitMsg =
+      limits.max_household_members === 1
+        ? "Premium plans allow 1 partner. Upgrade to Family for up to 5 members."
+        : `You've reached the maximum of ${limits.max_household_members} household members.`;
+    res.status(403).json({ error: limitMsg });
+    return;
+  }
+
+  // Determine member role — premium always uses "partner", family allows "caregiver"
+  const memberRole =
+    tier === "family" && requestedRole === "caregiver" ? "caregiver" : "partner";
 
   // Check if already invited
   const { data: existing } = await serviceSupabase
@@ -83,7 +108,7 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
         household_id: household.id,
         invited_email: email.toLowerCase(),
         display_name: display_name?.trim() || null,
-        role: "partner",
+        role: memberRole,
         status: "accepted",
         user_id: existingPartner.id,
         accepted_at: new Date().toISOString(),
@@ -115,14 +140,14 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     return;
   }
 
-  // ── Partner is new → create pending invite + send email ───────────
+  // ── New user → create pending invite + send email ───────────
   const { data: member, error: memberError } = await serviceSupabase
     .from("household_members")
     .insert({
       household_id: household.id,
       invited_email: email.toLowerCase(),
       display_name: display_name?.trim() || null,
-      role: "partner",
+      role: memberRole,
       status: "pending",
     })
     .select("id")

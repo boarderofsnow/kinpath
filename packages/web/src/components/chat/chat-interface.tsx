@@ -17,6 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import { MarkdownBody } from "@/components/ui/markdown-body";
+import { UpgradeModal } from "@/components/ui/upgrade-modal";
 import { api } from "@/lib/api";
 
 interface ChatInterfaceProps {
@@ -50,6 +51,7 @@ export function ChatInterface({
   );
   const [savingId, setSavingId] = useState<string | null>(null);
   const [addedToDoctorList, setAddedToDoctorList] = useState<Set<number>>(new Set());
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -100,7 +102,7 @@ export function ChatInterface({
 
     // Check free tier limit
     if (subscriptionTier === "free" && remainingQuestions === 0) {
-      setError("You have reached your monthly question limit. Upgrade to continue.");
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -119,7 +121,7 @@ export function ChatInterface({
       });
 
       if (status === 429) {
-        setError("Rate limited. Please upgrade to ask more questions.");
+        setShowUpgradeModal(true);
         setMessages((prev) => prev.slice(0, -1));
         return;
       }
@@ -445,6 +447,16 @@ export function ChatInterface({
             </button>
           </div>
 
+          {/* Last free question nudge */}
+          {subscriptionTier === "free" && remainingQuestions === 1 && (
+            <div className="rounded-lg border border-amber-200/60 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+              Last free question this month.{" "}
+              <Link href="/pricing" className="font-medium underline">
+                Upgrade for unlimited
+              </Link>
+            </div>
+          )}
+
           {/* Character count and free tier info */}
           <div className="flex items-center justify-between text-xs text-stone-500">
             {showCharCount ? (
@@ -463,10 +475,15 @@ export function ChatInterface({
 
           {/* AI disclaimer */}
           <p className="text-center text-[11px] leading-tight text-stone-400">
-            Kinpath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
+            KinPath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
           </p>
         </div>
       </div>
+
+      {/* Upgrade modal */}
+      {showUpgradeModal && (
+        <UpgradeModal onClose={() => setShowUpgradeModal(false)} />
+      )}
     </div>
   );
 }

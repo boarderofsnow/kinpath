@@ -46,7 +46,7 @@ export default function RegisterPage() {
         <div className="text-center">
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/kinpath-logo.png" alt="KinPath" className="h-10 w-auto mx-auto" />
+            <img src="/kinpath-logo.png" alt="Kinpath" className="h-10 w-auto mx-auto" />
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-stone-900">
             Create your account
@@ -121,7 +121,7 @@ export default function RegisterPage() {
           <Link href="/privacy" className="underline hover:text-stone-700">
             Privacy Policy
           </Link>
-          . KinPath is intended for users 18 and older.
+          . Kinpath is intended for users 18 and older.
         </p>
 
         <p className="text-center text-sm text-stone-600">

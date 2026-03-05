@@ -79,7 +79,8 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   const tier = profile?.subscription_tier ?? "free";
   const isFree = tier === "free";
-  const displayResources = isFree ? resources.slice(0, 6) : resources;
+  const canFilterByChild = !isFree;
+  const displayResources = resources;
 
   /** Build an href that preserves other active params when switching child/topic/search */
   function browseHref(overrides: { child?: string | null; topic?: string | null; q?: string | null }) {
@@ -119,8 +120,8 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
           </p>
         </div>
 
-        {/* Child selector pills */}
-        {enrichedChildren.length > 0 && (
+        {/* Child selector pills — premium+ only */}
+        {enrichedChildren.length > 0 && canFilterByChild && (
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href={browseHref({ child: null })}
@@ -147,6 +148,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 {child.name}
               </Link>
             ))}
+          </div>
+        )}
+        {enrichedChildren.length > 0 && !canFilterByChild && (
+          <div className="mt-6">
+            <UpgradeBanner feature="child-specific resource filtering" compact />
           </div>
         )}
 
@@ -212,18 +218,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
         {/* Results grid */}
         {displayResources.length > 0 ? (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {displayResources.map((resource) => (
-                <ResourceCard key={resource.id} resource={resource} />
-              ))}
-            </div>
-            {isFree && resources.length > 6 && (
-              <div className="mt-6">
-                <UpgradeBanner feature="the full resource library" />
-              </div>
-            )}
-          </>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {displayResources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
+          </div>
         ) : (
           <div className="mt-4 rounded-xl bg-white p-12 text-center shadow-card">
             <svg

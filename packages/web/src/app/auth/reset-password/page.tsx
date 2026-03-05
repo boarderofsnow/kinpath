@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
         <div className="text-center">
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/kinpath-logo.png" alt="KinPath" className="h-10 w-auto mx-auto" />
+            <img src="/kinpath-logo.png" alt="Kinpath" className="h-10 w-auto mx-auto" />
           </Link>
           <h1 className="mt-4 text-xl font-semibold text-stone-900">
             Choose a new password

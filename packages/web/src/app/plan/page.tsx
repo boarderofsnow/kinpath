@@ -98,9 +98,9 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     return { ...item, child_ids: childIds } as DoctorDiscussionItem;
   });
 
-  // Conditional: Fetch household members (family tier only)
+  // Conditional: Fetch household members (premium + family tiers)
   let householdMembers: HouseholdMember[] = [];
-  if (profile?.subscription_tier === "family") {
+  if (profile?.subscription_tier === "premium" || profile?.subscription_tier === "family") {
     let resolvedHouseholdId: string | null = householdId;
 
     if (!resolvedHouseholdId) {

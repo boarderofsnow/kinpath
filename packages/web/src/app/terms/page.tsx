@@ -263,15 +263,15 @@ export default function TermsOfServicePage() {
                 <tbody className="divide-y divide-stone-100">
                   <tr className="align-top">
                     <td className="px-4 py-3 font-medium text-stone-800">Free</td>
-                    <td className="px-4 py-3 text-stone-600">Up to 5 AI chat questions per month, 1 child profile, access to a curated subset of resources</td>
+                    <td className="px-4 py-3 text-stone-600">Up to 5 AI chat questions per month, 1 child profile, full resource library access</td>
                   </tr>
                   <tr className="align-top">
                     <td className="px-4 py-3 font-medium text-stone-800">Premium</td>
-                    <td className="px-4 py-3 text-stone-600">Unlimited AI chat, up to 5 child profiles, full resource library access, weekly content digest</td>
+                    <td className="px-4 py-3 text-stone-600">Unlimited AI chat, unlimited child profiles, full resource library with child-specific filtering, bookmarks, weekly content digest, partner sharing (1 partner)</td>
                   </tr>
                   <tr className="align-top">
                     <td className="px-4 py-3 font-medium text-stone-800">Family</td>
-                    <td className="px-4 py-3 text-stone-600">Everything in Premium, plus partner/household sharing, shared checklist with assignee tagging, priority support</td>
+                    <td className="px-4 py-3 text-stone-600">Everything in Premium, plus up to 5 additional caregivers (partners, grandparents, babysitters), shared checklist with assignee tagging</td>
                   </tr>
                 </tbody>
               </table>

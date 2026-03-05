@@ -4,7 +4,7 @@ export interface HouseholdMember {
   user_id: string | null;
   invited_email: string;
   display_name: string | null;
-  role: "owner" | "partner";
+  role: "owner" | "partner" | "caregiver";
   status: "pending" | "accepted" | "declined";
   invited_at: string;
   accepted_at: string | null;

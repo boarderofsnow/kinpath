@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createServiceRoleClient } from "@/lib/supabase/server";
+import { TIER_LIMITS, type SubscriptionTier } from "@kinpath/shared";
 
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
@@ -14,7 +15,7 @@ function getStripe() {
 /**
  * Resolve a Stripe Price ID to a KinPath subscription tier.
  */
-function resolveTier(priceId: string | undefined): string {
+function resolveTier(priceId: string | undefined): SubscriptionTier {
   if (
     priceId === process.env.STRIPE_FAMILY_PRICE_ID ||
     priceId === process.env.STRIPE_FAMILY_ANNUAL_PRICE_ID
@@ -22,6 +23,81 @@ function resolveTier(priceId: string | undefined): string {
     return "family";
   }
   return "premium";
+}
+
+/**
+ * Sync household max_members and handle excess members on tier change.
+ */
+async function syncHousehold(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  userId: string,
+  newTier: SubscriptionTier
+) {
+  const maxMembers = TIER_LIMITS[newTier].max_household_members;
+
+  const { data: household } = await supabase
+    .from("households")
+    .select("id")
+    .eq("owner_user_id", userId)
+    .maybeSingle();
+
+  if (!household) return;
+
+  // Update the max_members cap
+  await supabase
+    .from("households")
+    .update({ max_members: maxMembers })
+    .eq("id", household.id);
+
+  // If downgrading, handle excess members
+  if (maxMembers === 0) {
+    // Free tier: revoke all members
+    const { data: members } = await supabase
+      .from("household_members")
+      .select("id, user_id")
+      .eq("household_id", household.id)
+      .neq("status", "declined");
+
+    for (const member of members ?? []) {
+      await supabase
+        .from("household_members")
+        .update({ status: "declined" })
+        .eq("id", member.id);
+
+      if (member.user_id) {
+        await supabase
+          .from("users")
+          .update({ subscription_tier: "free" })
+          .eq("id", member.user_id);
+      }
+    }
+  } else {
+    // Check if current members exceed new limit
+    const { data: activeMembers } = await supabase
+      .from("household_members")
+      .select("id, user_id")
+      .eq("household_id", household.id)
+      .neq("status", "declined")
+      .order("invited_at", { ascending: true });
+
+    if (activeMembers && activeMembers.length > maxMembers) {
+      // Keep the oldest members up to the limit, decline the rest
+      const excessMembers = activeMembers.slice(maxMembers);
+      for (const member of excessMembers) {
+        await supabase
+          .from("household_members")
+          .update({ status: "declined" })
+          .eq("id", member.id);
+
+        if (member.user_id) {
+          await supabase
+            .from("users")
+            .update({ subscription_tier: "free" })
+            .eq("id", member.user_id);
+        }
+      }
+    }
+  }
 }
 
 export async function POST(request: Request) {
@@ -65,15 +141,23 @@ export async function POST(request: Request) {
             stripe_customer_id: customerId,
           })
           .eq("id", userId);
+
+        await syncHousehold(supabase, userId, tier);
       } else {
         // Fallback: match by stripe_customer_id (existing customers)
-        await supabase
+        const { data: user } = await supabase
           .from("users")
           .update({
             subscription_tier: tier,
             stripe_customer_id: customerId,
           })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_customer_id", customerId)
+          .select("id")
+          .single();
+
+        if (user) {
+          await syncHousehold(supabase, user.id, tier);
+        }
       }
 
       break;
@@ -87,10 +171,16 @@ export async function POST(request: Request) {
         const priceId = subscription.items.data[0]?.price.id;
         const tier = resolveTier(priceId);
 
-        await supabase
+        const { data: user } = await supabase
           .from("users")
           .update({ subscription_tier: tier })
-          .eq("stripe_customer_id", customerId);
+          .eq("stripe_customer_id", customerId)
+          .select("id")
+          .single();
+
+        if (user) {
+          await syncHousehold(supabase, user.id, tier);
+        }
       }
       break;
     }
@@ -99,10 +189,16 @@ export async function POST(request: Request) {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      await supabase
+      const { data: user } = await supabase
         .from("users")
         .update({ subscription_tier: "free" })
-        .eq("stripe_customer_id", customerId);
+        .eq("stripe_customer_id", customerId)
+        .select("id")
+        .single();
+
+      if (user) {
+        await syncHousehold(supabase, user.id, "free");
+      }
 
       break;
     }
