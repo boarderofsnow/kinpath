@@ -115,7 +115,7 @@ export const api = {
 
   // Household
   household: {
-    invite: (body: { email: string }) =>
+    invite: (body: { email: string; display_name?: string | null; role?: string }) =>
       request("/household/invite", { method: "POST", body: JSON.stringify(body) }),
     remove: (body: { member_id: string }) =>
       request("/household/invite", {
