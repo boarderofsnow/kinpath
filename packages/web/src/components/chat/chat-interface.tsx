@@ -475,7 +475,7 @@ export function ChatInterface({
 
           {/* AI disclaimer */}
           <p className="text-center text-[11px] leading-tight text-stone-400">
-            KinPath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
+            Kinpath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
           </p>
         </div>
       </div>

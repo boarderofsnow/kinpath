@@ -400,7 +400,7 @@ export default function ChatScreen() {
       </FadeInUp>
 
       <FadeInUp delay={200}>
-        <Text style={styles.emptyTitle}>Chat with KinPath</Text>
+        <Text style={styles.emptyTitle}>Chat with Kinpath</Text>
         <Text style={styles.emptySubtext}>
           Get personalized guidance and answers to your parenting questions.
         </Text>
@@ -553,7 +553,7 @@ export default function ChatScreen() {
             </PressableScale>
           </View>
           <Text style={styles.aiDisclaimer}>
-            KinPath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
+            Kinpath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
           </Text>
         </View>
       </KeyboardAvoidingView>
