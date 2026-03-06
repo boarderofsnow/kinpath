@@ -117,7 +117,7 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
       .single();
 
     if (memberError || !member) {
-      console.error("Failed to create household member:", memberError);
+      console.error("Failed to create household member:", memberError?.message, memberError?.code);
       res.status(500).json({ error: "Failed to link partner." });
       return;
     }
