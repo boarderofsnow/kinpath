@@ -38,6 +38,9 @@ app.use(
       // Allow requests with no origin (mobile apps, Postman, cURL)
       if (!origin || allowed.includes(origin)) {
         callback(null, true);
+      } else if (origin.endsWith(".vercel.app")) {
+        // Allow all Vercel preview deployments
+        callback(null, true);
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`));
       }
