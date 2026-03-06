@@ -100,47 +100,7 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     .eq("email", email.toLowerCase())
     .maybeSingle();
 
-  if (existingPartner) {
-    // ── Partner already has an account → link directly ──────────────
-    const { data: member, error: memberError } = await serviceSupabase
-      .from("household_members")
-      .insert({
-        household_id: household.id,
-        invited_email: email.toLowerCase(),
-        display_name: display_name?.trim() || null,
-        role: memberRole,
-        status: "accepted",
-        user_id: existingPartner.id,
-        accepted_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-
-    if (memberError || !member) {
-      console.error("Failed to create household member:", memberError?.message, memberError?.code);
-      res.status(500).json({ error: "Failed to link partner." });
-      return;
-    }
-
-    // Copy owner's subscription_tier to the partner
-    const { data: ownerProfile } = await serviceSupabase
-      .from("users")
-      .select("subscription_tier")
-      .eq("id", userId)
-      .single();
-
-    if (ownerProfile?.subscription_tier) {
-      await serviceSupabase
-        .from("users")
-        .update({ subscription_tier: ownerProfile.subscription_tier })
-        .eq("id", existingPartner.id);
-    }
-
-    res.json({ success: true, member_id: member.id, linked: true });
-    return;
-  }
-
-  // ── New user → create pending invite + send email ───────────
+  // ── Always create a pending invite ──────────────────────────
   const { data: member, error: memberError } = await serviceSupabase
     .from("household_members")
     .insert({
@@ -154,29 +114,32 @@ householdRouter.post("/invite", requireAuth, async (req, res: Response) => {
     .single();
 
   if (memberError || !member) {
-    console.error("Failed to create household member:", memberError);
+    console.error("Failed to create household member:", memberError?.message, memberError?.code);
     res.status(500).json({ error: "Failed to send invite." });
     return;
   }
 
-  // The redirect must go to the web app's auth callback (Next.js route)
-  const webUrl = process.env.APP_URL || "https://kinpath.family";
-  const { error: inviteError } = await serviceSupabase.auth.admin.inviteUserByEmail(
-    email.toLowerCase(),
-    {
-      data: { household_member_id: member.id, invited_by: userId },
-      redirectTo: `${webUrl}/api/auth/callback?next=/auth/complete-profile`,
-    }
-  );
+  // If invitee doesn't already have an account, send an auth invite email
+  if (!existingPartner) {
+    const webUrl = process.env.APP_URL || "https://kinpath.family";
+    const { error: inviteError } = await serviceSupabase.auth.admin.inviteUserByEmail(
+      email.toLowerCase(),
+      {
+        data: { household_member_id: member.id, invited_by: userId },
+        redirectTo: `${webUrl}/api/auth/callback?next=/auth/complete-profile`,
+      }
+    );
 
-  if (inviteError) {
-    // Roll back member row so the same email can be retried
-    await serviceSupabase.from("household_members").delete().eq("id", member.id);
-    console.error("Failed to send invite email:", inviteError.message);
-    res.status(500).json({ error: "Failed to send invite. Please try again." });
-    return;
+    if (inviteError) {
+      // Roll back member row so the same email can be retried
+      await serviceSupabase.from("household_members").delete().eq("id", member.id);
+      console.error("Failed to send invite email:", inviteError.message);
+      res.status(500).json({ error: "Failed to send invite. Please try again." });
+      return;
+    }
   }
 
+  // Existing users will auto-accept on next login via POST /household/accept-pending
   res.json({ success: true, member_id: member.id });
 });
 
@@ -200,7 +163,6 @@ householdRouter.post("/accept-pending", requireAuth, async (req, res: Response) 
     .from("household_members")
     .select("id, household_id, households!inner(owner_user_id)")
     .eq("invited_email", user.email.toLowerCase())
-    .is("user_id", null)
     .eq("status", "pending")
     .maybeSingle();
 
