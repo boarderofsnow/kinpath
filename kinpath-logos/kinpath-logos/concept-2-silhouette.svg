@@ -1,0 +1,49 @@
+<svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <!-- Define the warm teal brand color -->
+  <defs>
+    <style>
+      .kinpath-text {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 42px;
+        font-weight: 600;
+        fill: #1a1a1a;
+        letter-spacing: -0.5px;
+      }
+      .kinpath-accent {
+        fill: #10b89f;
+      }
+    </style>
+  </defs>
+
+  <!-- Icon: Parent and Child Silhouette -->
+  <g id="parent-child-icon">
+    <!-- Parent circle (head) -->
+    <circle cx="28" cy="24" r="14" class="kinpath-accent"/>
+
+    <!-- Parent body (simplified geometric shape) -->
+    <path d="M 20 38 L 18 65 L 32 65 L 36 38 Q 28 42 20 38" class="kinpath-accent"/>
+
+    <!-- Parent arm (extended, guiding) -->
+    <path d="M 36 42 Q 50 38 52 45" stroke="#10b89f" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+    <!-- Child circle (head) -->
+    <circle cx="48" cy="32" r="10" class="kinpath-accent"/>
+
+    <!-- Child body (smaller, following) -->
+    <path d="M 42 42 L 41 62 L 52 62 L 54 42 Q 48 45 42 42" class="kinpath-accent"/>
+
+    <!-- Connecting line (subtle guidance/connection) -->
+    <line x1="52" y1="45" x2="48" y2="42" stroke="#10b89f" stroke-width="2.5" opacity="0.6"/>
+
+    <!-- Child arm reaching/holding -->
+    <path d="M 54 46 Q 62 44 64 50" stroke="#10b89f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="90" y="72" class="kinpath-text">
+    <tspan>Kin</tspan><tspan class="kinpath-accent">Path</tspan>
+  </text>
+
+  <!-- Subtle decorative line under icon -->
+  <line x1="10" y1="85" x2="70" y2="85" stroke="#10b89f" stroke-width="1.5" opacity="0.3"/>
+</svg>

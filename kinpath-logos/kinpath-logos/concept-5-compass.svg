@@ -1,0 +1,42 @@
+<svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .wordmark { font-family: Arial, Helvetica, sans-serif; font-weight: 600; font-size: 48px; }
+      .wordmark-text { fill: #1a1a1a; }
+    </style>
+  </defs>
+
+  <!-- Icon: Abstract Compass/Guiding Star -->
+  <g id="compass-icon">
+    <!-- Outer circle - subtle guide ring -->
+    <circle cx="50" cy="60" r="42" fill="none" stroke="#10b89f" stroke-width="2" opacity="0.3"/>
+
+    <!-- Central star/compass point - pointing north -->
+    <path d="M 50 20 L 58 40 L 50 35 L 42 40 Z" fill="#10b89f"/>
+
+    <!-- East point (right) -->
+    <path d="M 80 60 L 60 68 L 65 60 L 60 52 Z" fill="#10b89f" opacity="0.8"/>
+
+    <!-- South point (down) -->
+    <path d="M 50 100 L 42 80 L 50 85 L 58 80 Z" fill="#10b89f" opacity="0.6"/>
+
+    <!-- West point (left) -->
+    <path d="M 20 60 L 40 52 L 35 60 L 40 68 Z" fill="#10b89f" opacity="0.8"/>
+
+    <!-- Central core circle - strongest element -->
+    <circle cx="50" cy="60" r="8" fill="#10b89f"/>
+
+    <!-- Subtle path/arrow element - curved line showing direction -->
+    <path d="M 50 28 Q 65 45 72 58" fill="none" stroke="#10b89f" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+
+    <!-- Subtle inner detail - small crosshairs suggesting navigation -->
+    <line x1="50" y1="52" x2="50" y2="68" stroke="#10b89f" stroke-width="1.5" opacity="0.4"/>
+    <line x1="42" y1="60" x2="58" y2="60" stroke="#10b89f" stroke-width="1.5" opacity="0.4"/>
+  </g>
+
+  <!-- Wordmark: KinPath -->
+  <text x="115" y="78" class="wordmark wordmark-text">KinPath</text>
+
+  <!-- Subtle accent line connecting icon to wordmark -->
+  <line x1="100" y1="60" x2="110" y2="60" stroke="#10b89f" stroke-width="2" opacity="0.4"/>
+</svg>
