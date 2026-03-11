@@ -89,23 +89,25 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
         <FadeInUp>
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-stone-900">
+        <header className="overflow-hidden rounded-2xl shadow-card">
+          <div className="bg-brand-700 px-6 py-6">
+            <h1 className="font-display text-2xl font-bold text-white">
               Welcome back
               {profile.display_name ? `, ${profile.display_name}` : ""}
             </h1>
-            {activeChild && (
-              <p className="mt-1 text-sm text-stone-600">
+          </div>
+          {activeChild && (
+            <div className="bg-white px-6 py-4">
+              <p className="text-sm text-brand-300">
                 {activeChild.name} &mdash; {activeChild.age_label}
                 {stage && (
-                  <span className="ml-2 inline-flex items-center rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
+                  <span className="ml-2 inline-flex items-center rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-medium text-brand-600">
                     {stage}
                   </span>
                 )}
               </p>
-            )}
-          </div>
+            </div>
+          )}
         </header>
         </FadeInUp>
 
@@ -121,10 +123,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <Link
               key={child.id}
               href={`/dashboard?child=${child.id}`}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
+              className={`rounded-xl px-4 py-1.5 text-sm font-semibold shadow-sm transition-colors ${
                 activeChild?.id === child.id
-                  ? "bg-brand-500 text-white"
-                  : "bg-white text-stone-700 hover:bg-brand-50"
+                  ? "bg-brand-700 text-white"
+                  : "bg-white text-[#4A5E52] border border-brand-200 hover:bg-brand-50"
               }`}
             >
               {child.name}
@@ -148,33 +150,39 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       )}
 
       {/* Browse Resources CTA */}
-      <section className="mt-8 rounded-2xl border border-brand-200/60 bg-brand-50 p-6 shadow-card">
-        <h3 className="font-semibold text-brand-800">
-          Explore Resources{activeChild ? ` for ${activeChild.name}` : ""}
-        </h3>
-        <p className="mt-1 text-sm text-brand-600">
-          Discover age-appropriate, evidence-based resources personalized for your child.
-        </p>
-        <Link
-          href={activeChild ? `/resources?child=${activeChild.id}` : "/resources"}
-          prefetch={false}
-          className="mt-4 inline-block rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-600 transition-colors"
-        >
-          Browse Resources
-        </Link>
+      <section className="mt-8 overflow-hidden rounded-2xl bg-white shadow-card">
+        <div className="p-6">
+          <h3 className="font-display text-lg font-semibold text-brand-900">
+            Explore Resources{activeChild ? ` for ${activeChild.name}` : ""}
+          </h3>
+          <div className="mt-2 mb-3 h-[2px] w-10 rounded-full bg-brand-400" />
+          <p className="text-sm leading-relaxed text-[#4A5E52]">
+            Discover age-appropriate, evidence-based resources personalized for your child.
+          </p>
+          <Link
+            href={activeChild ? `/resources?child=${activeChild.id}` : "/resources"}
+            prefetch={false}
+            className="mt-5 inline-block rounded-xl bg-brand-500 px-10 py-3 text-sm font-bold tracking-wide text-white hover:bg-brand-600 transition-colors"
+          >
+            Browse Resources &rarr;
+          </Link>
+        </div>
       </section>
 
       {/* AI Assistant CTA */}
-      <section className="mt-12 rounded-2xl border border-sage-200/60 bg-sage-50 p-6 shadow-card">
-        <h3 className="font-semibold text-sage-800">Have a question?</h3>
-        <p className="mt-1 text-sm text-sage-600">
-          Ask our AI assistant anything about parenting, nutrition, sleep, and
-          more. Answers are grounded in our evidence-based resource
-          library.
-        </p>
-        <Link href="/chat" prefetch={false} className="mt-4 inline-block rounded-xl bg-accent-500 px-4 py-2 text-sm font-semibold text-stone-900 hover:bg-accent-600 transition-colors">
-          Ask a Question
-        </Link>
+      <section className="mt-6 overflow-hidden rounded-2xl bg-white shadow-card">
+        <div className="p-6">
+          <h3 className="font-display text-lg font-semibold text-brand-900">Have a question?</h3>
+          <div className="mt-2 mb-3 h-[2px] w-10 rounded-full bg-brand-400" />
+          <p className="text-sm leading-relaxed text-[#4A5E52]">
+            Ask our AI assistant anything about parenting, nutrition, sleep, and
+            more. Answers are grounded in our evidence-based resource
+            library.
+          </p>
+          <Link href="/chat" prefetch={false} className="mt-5 inline-block rounded-xl bg-brand-500 px-10 py-3 text-sm font-bold tracking-wide text-white hover:bg-brand-600 transition-colors">
+            Ask a Question &rarr;
+          </Link>
+        </div>
       </section>
       </div>
     </>

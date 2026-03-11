@@ -82,34 +82,35 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
   return (
     <div className="space-y-6">
       {/* Hero: Age + Stage + Fun Fact */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 via-white to-sage-50 p-6 shadow-card">
-        <div className="flex flex-col items-center gap-6 sm:flex-row">
+      <div className="overflow-hidden rounded-2xl bg-white shadow-card">
+        <div className="flex flex-col items-center gap-6 p-6 sm:flex-row">
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-100">
-              <Baby className="h-12 w-12 text-brand-500" />
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-100">
+              <Baby className="h-10 w-10 text-brand-500" />
             </div>
-            <p className="mt-2 text-sm font-semibold text-stone-900">
+            <p className="mt-2 text-sm font-semibold text-brand-900">
               {child.name}
             </p>
-            <p className="text-xs text-stone-500">{child.age_label}</p>
+            <p className="text-xs text-brand-300">{child.age_label}</p>
           </div>
 
           <div className="flex-1 text-center sm:text-left">
-            <div className="text-xs font-medium uppercase tracking-wide text-brand-500">
+            <div className="text-xs font-semibold uppercase tracking-wider text-brand-400">
               {stage}
             </div>
-            <div className="mt-1 text-3xl font-bold text-stone-900">
+            <div className="mt-1 font-display text-3xl font-bold text-brand-900">
               {child.age_label}
             </div>
+            <div className="mt-2 h-[2px] w-10 rounded-full bg-brand-400" />
             <div className="mt-3 flex flex-wrap gap-2">
               {currentMilestones.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-medium text-sage-700">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-600">
                   <Brain className="h-3 w-3" />
                   {currentMilestones.length} active milestone{currentMilestones.length !== 1 ? "s" : ""}
                 </span>
               )}
               {upcomingChecklist.length > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2.5 py-1 text-xs font-medium text-brand-700">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-sage-50 px-2.5 py-1 text-xs font-medium text-sage-600">
                   <Calendar className="h-3 w-3" />
                   {upcomingChecklist.length} coming up
                 </span>
@@ -118,8 +119,9 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
           </div>
         </div>
 
-        <div className="mt-5 rounded-xl bg-white/70 p-4 text-center">
-          <p className="text-sm italic text-stone-700">
+        {/* Fun fact — info box style */}
+        <div className="mx-6 mb-6 rounded-xl border border-brand-200 bg-sage-50 p-4 text-center">
+          <p className="text-sm italic text-[#4A5E52]">
             &ldquo;{getAgeFunFact(ageWeeks)}&rdquo;
           </p>
         </div>
@@ -127,28 +129,30 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
 
       {/* This Week for You */}
       {tip && (
-        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
+        <div className="rounded-2xl bg-white p-6 shadow-card">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-brand-500" />
-            <h3 className="text-sm font-semibold text-stone-900">
+            <Sparkles className="h-4 w-4 text-brand-400" />
+            <h3 className="text-sm font-semibold text-brand-900">
               This Week for You
             </h3>
           </div>
-          <p className="mt-2 text-sm text-stone-700">{tip.body}</p>
-          <div className="mt-3 flex items-start gap-2 rounded-lg bg-sage-50 p-3">
-            <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-sage-500" />
-            <p className="text-xs text-sage-700">{tip.self_care}</p>
+          <div className="mt-1.5 h-[2px] w-8 rounded-full bg-brand-400" />
+          <p className="mt-3 text-sm leading-relaxed text-[#4A5E52]">{tip.body}</p>
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-brand-200 bg-sage-50 p-3">
+            <Heart className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-brand-400" />
+            <p className="text-xs text-[#4A5E52]">{tip.self_care}</p>
           </div>
         </div>
       )}
 
       {/* Developmental Milestones */}
       {currentMilestones.length > 0 && (
-        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
-          <h3 className="text-sm font-semibold text-stone-900">
+        <div className="rounded-2xl bg-white p-6 shadow-card">
+          <h3 className="text-sm font-semibold text-brand-900">
             Developmental Milestones
           </h3>
-          <p className="mt-1 text-xs text-stone-500">
+          <div className="mt-1.5 h-[2px] w-8 rounded-full bg-brand-400" />
+          <p className="mt-2 text-xs text-brand-300">
             These are typical milestones for {child.name}&apos;s age. Every child develops at their own pace.
           </p>
 
@@ -159,17 +163,17 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
                   <div className={`flex h-6 w-6 items-center justify-center rounded-full ${DOMAIN_COLORS[domain]}`}>
                     {DOMAIN_ICONS[domain]}
                   </div>
-                  <span className="text-xs font-semibold text-stone-700">
+                  <span className="text-xs font-semibold text-[#4A5E52]">
                     {DOMAIN_LABELS[domain as keyof typeof DOMAIN_LABELS]}
                   </span>
                 </div>
                 <div className="mt-2 ml-8 space-y-2">
                   {milestones.map((m) => (
                     <div key={m.id} className="flex items-start gap-2">
-                      <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300" />
+                      <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-300" />
                       <div>
-                        <p className="text-sm text-stone-800">{m.title}</p>
-                        <p className="text-xs text-stone-500">{m.description}</p>
+                        <p className="text-sm text-brand-900">{m.title}</p>
+                        <p className="text-xs text-brand-300">{m.description}</p>
                       </div>
                     </div>
                   ))}
@@ -180,13 +184,13 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
 
           {/* Upcoming milestones preview */}
           {upcomingMilestones.length > 0 && (
-            <div className="mt-4 border-t border-stone-100 pt-4">
-              <p className="text-xs font-medium text-stone-500">Coming next</p>
+            <div className="mt-4 border-t border-brand-200 pt-4">
+              <p className="text-xs font-medium text-brand-300">Coming next</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {upcomingMilestones.map((m) => (
                   <span
                     key={m.id}
-                    className="rounded-full bg-stone-100 px-2.5 py-1 text-xs text-stone-600"
+                    className="rounded-lg bg-brand-100 px-2.5 py-1 text-xs text-brand-600"
                   >
                     {m.title}
                   </span>
@@ -199,29 +203,30 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
 
       {/* Coming Up — next checklist items */}
       {upcomingChecklist.length > 0 && (
-        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
+        <div className="rounded-2xl bg-white p-6 shadow-card">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
+            <h3 className="text-sm font-semibold text-brand-900">Coming Up</h3>
             <Link
               href="/plan"
               prefetch={false}
-              className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+              className="flex items-center gap-1 text-xs font-semibold text-brand-500 hover:text-brand-600"
             >
               View all <ArrowRight className="h-3 w-3" />
             </Link>
           </div>
-          <div className="mt-3 space-y-3">
+          <div className="mt-1.5 h-[2px] w-8 rounded-full bg-brand-400" />
+          <div className="mt-4 space-y-3">
             {upcomingChecklist.map((item) => {
               const displayDate = item.due_date ?? item.suggested_date;
               return (
                 <div key={item.id} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                  <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-500">
                     <Calendar className="h-3.5 w-3.5" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm text-stone-800">{item.title}</p>
+                    <p className="text-sm text-brand-900">{item.title}</p>
                     {displayDate && (
-                      <p className="mt-0.5 text-xs text-stone-400">
+                      <p className="mt-0.5 text-xs text-brand-300">
                         {new Date(displayDate + "T00:00:00").toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",

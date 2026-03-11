@@ -4,8 +4,8 @@
 
 @layer base {
   :root {
-    --background: #f0eeec;
-    --foreground: #1c1917;
+    --background: #F4F0E8;
+    --foreground: #4A5E52;
   }
 
   h1,
@@ -37,8 +37,8 @@ button:not(:disabled):active {
 
 /* Modern selection color */
 ::selection {
-  background-color: #cbfcf0;
-  color: #114e48;
+  background-color: #C9DED1;
+  color: #1A2E22;
 }
 
 /* Noise texture overlay — apply with .bg-noise on a relative container */
