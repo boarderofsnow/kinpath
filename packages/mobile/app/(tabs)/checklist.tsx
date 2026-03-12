@@ -74,6 +74,7 @@ export default function ChecklistScreen() {
   const [editTitle, setEditTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
   const [editNotes, setEditNotes] = useState("");
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [detailSaving, setDetailSaving] = useState(false);
 
   // ── Data Fetching ──────────────────────────────────────
@@ -333,6 +334,7 @@ export default function ChecklistScreen() {
   const openItemDetail = (item: UnifiedItem) => {
     setSelectedItem(item);
     setEditTitle(item.title);
+    setIsEditingNotes(false);
     if (item._source === "checklist") {
       setEditDueDate(item.due_date ? new Date(item.due_date + "T00:00:00") : null);
       setEditNotes("");
@@ -1046,16 +1048,34 @@ export default function ChecklistScreen() {
                   {/* Doctor/Provider-specific fields */}
                   {selectedItem._source === "doctor" && (
                     <>
-                      <Text style={styles.modalLabel}>Notes</Text>
-                      <TextInput
-                        style={[styles.modalTitleInput, { minHeight: 80 }]}
-                        value={editNotes}
-                        onChangeText={setEditNotes}
-                        multiline
-                        placeholder="Notes or context for your provider..."
-                        placeholderTextColor={colors.stone[400]}
-                        textAlignVertical="top"
-                      />
+                      <View style={styles.modalLabelRow}>
+                        <Text style={styles.modalLabel}>Notes</Text>
+                        {editNotes.trim().length > 0 && (
+                          <PressableScale onPress={() => setIsEditingNotes((v) => !v)}>
+                            <Ionicons
+                              name={isEditingNotes ? "checkmark-outline" : "pencil-outline"}
+                              size={16}
+                              color={colors.stone[400]}
+                            />
+                          </PressableScale>
+                        )}
+                      </View>
+                      {editNotes.trim().length === 0 || isEditingNotes ? (
+                        <TextInput
+                          style={[styles.modalTitleInput, { minHeight: 80 }]}
+                          value={editNotes}
+                          onChangeText={setEditNotes}
+                          multiline
+                          placeholder="Notes or context for your provider..."
+                          placeholderTextColor={colors.stone[400]}
+                          textAlignVertical="top"
+                          autoFocus={isEditingNotes}
+                        />
+                      ) : (
+                        <View style={styles.modalDescriptionBox}>
+                          <SimpleMarkdown content={editNotes} baseStyle={styles.modalDescriptionText} />
+                        </View>
+                      )}
 
                       {(selectedItem as DoctorDiscussionItem).doctor_response && (
                         <>
@@ -1485,6 +1505,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansSemiBold,
     fontSize: 14,
     color: colors.foreground,
+    marginBottom: spacing.xs,
+  },
+  modalLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.xs,
   },
   modalTitleInput: {

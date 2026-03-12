@@ -22,6 +22,7 @@ import {
 } from "../../lib/theme";
 import { FadeIn, FadeInUp, PressableScale } from "../../components/motion";
 import { ResourceCardSkeleton } from "../../components/skeleton";
+import { SimpleMarkdown } from "../../components/SimpleMarkdown";
 
 // ── Topic color mapping ────────────────────────────────────
 const TOPIC_COLORS: Record<string, { bg: string; text: string }> = {
@@ -552,7 +553,7 @@ export default function ResourceDetailScreen() {
               <Text style={styles.contentCardHeaderText}>Content</Text>
             </View>
             <View style={styles.contentCardBody}>
-              <Text style={styles.bodyContent}>{resource.body}</Text>
+              <SimpleMarkdown content={resource.body} baseStyle={styles.bodyContent} />
             </View>
           </View>
         </FadeInUp>

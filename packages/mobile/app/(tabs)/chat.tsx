@@ -214,6 +214,8 @@ export default function ChatScreen() {
   const [isSaved, setIsSaved] = useState(false);
   const [addedMessageIds, setAddedMessageIds] = useState<Set<string>>(new Set());
   const [addingMessageId, setAddingMessageId] = useState<string | null>(null);
+  const [discussedMessageIds, setDiscussedMessageIds] = useState<Set<string>>(new Set());
+  const [discussingMessageId, setDiscussingMessageId] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -301,15 +303,33 @@ export default function ChatScreen() {
     } catch (err) { console.error("Error toggling save:", err); }
   };
 
+  const extractTitleAndBody = (content: string): { title: string; body: string } => {
+    const lines = content.split("\n");
+    const first = lines[0].trim();
+    // # / ## / ### heading
+    const headingMatch = first.match(/^#{1,3}\s+(.+)$/);
+    if (headingMatch) {
+      return { title: headingMatch[1].trim(), body: lines.slice(1).join("\n").trimStart() };
+    }
+    // **Bold title** on its own line
+    const boldMatch = first.match(/^\*\*(.+)\*\*$/);
+    if (boldMatch) {
+      return { title: boldMatch[1].trim(), body: lines.slice(1).join("\n").trimStart() };
+    }
+    // Fallback: truncate
+    return { title: content.slice(0, 60), body: content };
+  };
+
   const handleAddToChecklist = async (messageId: string, content: string) => {
     if (!user?.id || !selectedChildId || addedMessageIds.has(messageId)) return;
     setAddingMessageId(messageId);
+    const { title, body } = extractTitleAndBody(content);
     try {
       const { error } = await supabase.from("checklist_items").insert([{
         user_id: user.id,
         child_id: selectedChildId,
-        title: `Discuss: ${content.slice(0, 60)}`,
-        description: content,
+        title,
+        description: body,
         item_type: "custom",
         is_completed: false,
         sort_order: 0,
@@ -320,12 +340,45 @@ export default function ChatScreen() {
     } catch { setAddingMessageId(null); }
   };
 
+  const handleAddToProviderDiscussion = async (messageId: string, content: string) => {
+    if (!user?.id || discussedMessageIds.has(messageId)) return;
+    setDiscussingMessageId(messageId);
+    const { title, body } = extractTitleAndBody(content);
+    try {
+      const { data, error } = await supabase
+        .from("doctor_discussion_items")
+        .insert({
+          user_id: user.id,
+          title,
+          notes: body,
+          priority: "normal",
+          is_discussed: false,
+          sort_order: 0,
+        })
+        .select()
+        .single();
+
+      if (error) { setDiscussingMessageId(null); return; }
+
+      if (data && selectedChildId) {
+        await supabase.from("doctor_item_children").insert({
+          doctor_item_id: data.id,
+          child_id: selectedChildId,
+        });
+      }
+      setDiscussedMessageIds((prev) => new Set(prev).add(messageId));
+      setDiscussingMessageId(null);
+    } catch { setDiscussingMessageId(null); }
+  };
+
   const handleNewConversation = () => {
     setMessages([]);
     setConversationId(null);
     setIsSaved(false);
     setError(null);
     setAddedMessageIds(new Set());
+    setDiscussedMessageIds(new Set());
+    setDiscussingMessageId(null);
     setInputValue("");
   };
 
@@ -335,6 +388,8 @@ export default function ChatScreen() {
     const isUser = item.role === "user";
     const isAddingThis = addingMessageId === item.id;
     const isAddedAlready = addedMessageIds.has(item.id);
+    const isDiscussingThis = discussingMessageId === item.id;
+    const isDiscussedAlready = discussedMessageIds.has(item.id);
 
     return (
       <View style={[styles.messageRow, isUser ? styles.messageRowUser : styles.messageRowAssistant]}>
@@ -370,11 +425,6 @@ export default function ChatScreen() {
                 onPress={() => handleAddToChecklist(item.id, item.content)}
                 disabled={isAddedAlready}
               >
-                <Ionicons
-                  name="clipboard-outline"
-                  size={13}
-                  color={isAddingThis || isAddedAlready ? colors.sage[700] : colors.stone[500]}
-                />
                 <Text
                   style={[
                     styles.actionButtonText,
@@ -382,6 +432,23 @@ export default function ChatScreen() {
                   ]}
                 >
                   {isAddingThis ? "Adding..." : isAddedAlready ? "Added!" : "Add to checklist"}
+                </Text>
+              </PressableScale>
+              <PressableScale
+                style={[
+                  styles.actionButton,
+                  (isDiscussingThis || isDiscussedAlready) && styles.actionButtonAdded,
+                ]}
+                onPress={() => handleAddToProviderDiscussion(item.id, item.content)}
+                disabled={isDiscussedAlready}
+              >
+                <Text
+                  style={[
+                    styles.actionButtonText,
+                    (isDiscussingThis || isDiscussedAlready) && styles.actionButtonAddedText,
+                  ]}
+                >
+                  {isDiscussingThis ? "Adding..." : isDiscussedAlready ? "Added!" : "Discuss with Provider"}
                 </Text>
               </PressableScale>
             </View>
@@ -400,7 +467,7 @@ export default function ChatScreen() {
       </FadeInUp>
 
       <FadeInUp delay={200}>
-        <Text style={styles.emptyTitle}>Chat with KinPath</Text>
+        <Text style={styles.emptyTitle}>Chat with Kinpath</Text>
         <Text style={styles.emptySubtext}>
           Get personalized guidance and answers to your parenting questions.
         </Text>
@@ -553,7 +620,7 @@ export default function ChatScreen() {
             </PressableScale>
           </View>
           <Text style={styles.aiDisclaimer}>
-            KinPath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
+            Kinpath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
           </Text>
         </View>
       </KeyboardAvoidingView>
