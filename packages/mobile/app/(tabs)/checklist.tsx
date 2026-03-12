@@ -73,6 +73,8 @@ export default function ChecklistScreen() {
   const [selectedItem, setSelectedItem] = useState<UnifiedItem | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDueDate, setEditDueDate] = useState<Date | null>(null);
+  const [editDescription, setEditDescription] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [editNotes, setEditNotes] = useState("");
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [detailSaving, setDetailSaving] = useState(false);
@@ -335,11 +337,14 @@ export default function ChecklistScreen() {
     setSelectedItem(item);
     setEditTitle(item.title);
     setIsEditingNotes(false);
+    setIsEditingDescription(false);
     if (item._source === "checklist") {
       setEditDueDate(item.due_date ? new Date(item.due_date + "T00:00:00") : null);
+      setEditDescription(item.description ?? "");
       setEditNotes("");
     } else {
       setEditDueDate(null);
+      setEditDescription("");
       setEditNotes(item.notes ?? "");
     }
   };
@@ -352,6 +357,7 @@ export default function ChecklistScreen() {
       if (selectedItem._source === "checklist") {
         const updates: Record<string, unknown> = {
           title: editTitle.trim(),
+          description: editDescription.trim() || null,
           due_date: editDueDate
             ? editDueDate.toISOString().split("T")[0]
             : null,
@@ -1003,14 +1009,36 @@ export default function ChecklistScreen() {
                   {/* Checklist-specific fields */}
                   {selectedItem._source === "checklist" && (
                     <>
-                      {(selectedItem as ChecklistItem).description && (
-                        <>
+                      <>
+                        <View style={styles.modalLabelRow}>
                           <Text style={styles.modalLabel}>Details</Text>
+                          {editDescription.trim().length > 0 && (
+                            <PressableScale onPress={() => setIsEditingDescription((v) => !v)}>
+                              <Ionicons
+                                name={isEditingDescription ? "checkmark-outline" : "pencil-outline"}
+                                size={16}
+                                color={colors.stone[400]}
+                              />
+                            </PressableScale>
+                          )}
+                        </View>
+                        {editDescription.trim().length === 0 || isEditingDescription ? (
+                          <TextInput
+                            style={[styles.modalTitleInput, { minHeight: 80 }]}
+                            value={editDescription}
+                            onChangeText={setEditDescription}
+                            multiline
+                            placeholder="Add details..."
+                            placeholderTextColor={colors.stone[400]}
+                            textAlignVertical="top"
+                            autoFocus={isEditingDescription}
+                          />
+                        ) : (
                           <View style={styles.modalDescriptionBox}>
-                            <SimpleMarkdown content={(selectedItem as ChecklistItem).description!} />
+                            <SimpleMarkdown content={editDescription} baseStyle={styles.modalDescriptionText} />
                           </View>
-                        </>
-                      )}
+                        )}
+                      </>
 
                       <DatePickerInput
                         label="Due Date"
