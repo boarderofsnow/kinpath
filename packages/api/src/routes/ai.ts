@@ -17,8 +17,11 @@ function getAnthropic(): Anthropic {
 const SYSTEM_PROMPT = `You are KinPath AI, a warm and supportive parenting assistant.
 
 RULES:
-- Always ground your answers in the provided resource excerpts when available
-- When referencing a resource, cite it using a bracketed number like [1], [2] matching the order of the RELEVANT RESOURCES provided below
+- CITATION IS MANDATORY: Every response that makes a factual claim MUST include at least one citation.
+  - If RELEVANT RESOURCES are provided below, cite them using a bracketed number like [1], [2] matching the order listed.
+  - For any claim not covered by provided resources, cite an authoritative external source inline using **[Source Name](URL)** format.
+  - Acceptable external sources: AAP — American Academy of Pediatrics (aap.org), CDC (cdc.gov), WHO (who.int), Evidence Based Birth (evidencebasedbirth.com), La Leche League International (llli.org), Mayo Clinic (mayoclinic.org).
+  - If you genuinely cannot find a reputable source for a claim, acknowledge the uncertainty explicitly — never state unsupported facts as certainties.
 - Never provide medical diagnoses or treatment plans
 - For urgent medical concerns, always recommend contacting a pediatrician or calling emergency services
 - Be warm, supportive, and non-judgmental regardless of parenting choices
@@ -73,7 +76,7 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
     return;
   }
 
-  const { message, child_id } = parsed.data;
+  const { message, child_id, conversation_id } = parsed.data;
 
   // Check subscription tier and enforce monthly usage limits
   const { data: profile } = await supabase
@@ -90,21 +93,46 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const { count } = await supabase
+    // Count individual user turns (messages) across all conversations this month
+    const { data: usageData } = await supabase
       .from("ai_conversations")
-      .select("*", { count: "exact", head: true })
+      .select("messages")
       .eq("user_id", userId)
       .gte("created_at", startOfMonth.toISOString());
 
-    if ((count ?? 0) >= limits.ai_questions_per_month) {
+    const totalTurns = (usageData ?? []).reduce((sum, row) => {
+      const msgs = row.messages as Array<{ role: string }>;
+      return sum + msgs.filter((m) => m.role === "user").length;
+    }, 0);
+
+    if (totalTurns >= limits.ai_questions_per_month) {
       res.status(429).json({
         error: "Monthly AI question limit reached",
         limit: limits.ai_questions_per_month,
-        used: count ?? 0,
+        used: totalTurns,
         upgrade_url: "/pricing",
         show_upgrade_modal: true,
       });
       return;
+    }
+  }
+
+  // ── Fetch prior conversation messages if continuing an existing chat ─────────
+  type ChatMessage = { role: "user" | "assistant"; content: string };
+  let priorMessages: ChatMessage[] = [];
+  let existingConversation: { id: string; cited_resource_ids: string[] } | null = null;
+
+  if (conversation_id) {
+    const { data: existing } = await supabase
+      .from("ai_conversations")
+      .select("id, messages, cited_resource_ids")
+      .eq("id", conversation_id)
+      .eq("user_id", userId)
+      .single();
+
+    if (existing) {
+      priorMessages = existing.messages as ChatMessage[];
+      existingConversation = existing;
     }
   }
 
@@ -223,33 +251,57 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
 
   try {
     const response = await getAnthropic().messages.create({
-      model: "claude-sonnet-4-5-20250929",
+      model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       system: `${SYSTEM_PROMPT}${childContext}${personalContext}\n\nRELEVANT RESOURCES:\n${resourceContext}`,
-      messages: [{ role: "user", content: message }],
+      messages: [
+        ...priorMessages,
+        { role: "user", content: message },
+      ],
     });
 
     const assistantMessage =
       response.content[0].type === "text" ? response.content[0].text : "";
 
-    const citedResourceIds = finalResources?.map((r) => r.id) ?? [];
-    const { data: savedConversation } = await supabase
-      .from("ai_conversations")
-      .insert({
-        user_id: userId,
-        child_id: child_id ?? null,
-        messages: [
-          { role: "user", content: message },
-          { role: "assistant", content: assistantMessage },
-        ],
-        cited_resource_ids: citedResourceIds,
-      })
-      .select("id")
-      .single();
+    const newMessages: ChatMessage[] = [
+      ...priorMessages,
+      { role: "user", content: message },
+      { role: "assistant", content: assistantMessage },
+    ];
+
+    const newCitedIds = finalResources?.map((r) => r.id) ?? [];
+    let savedConversationId: string | null = null;
+
+    if (existingConversation) {
+      // Append to the existing conversation row
+      await supabase
+        .from("ai_conversations")
+        .update({
+          messages: newMessages,
+          cited_resource_ids: [
+            ...new Set([...existingConversation.cited_resource_ids, ...newCitedIds]),
+          ],
+        })
+        .eq("id", existingConversation.id);
+      savedConversationId = existingConversation.id;
+    } else {
+      // Start a new conversation row
+      const { data: inserted } = await supabase
+        .from("ai_conversations")
+        .insert({
+          user_id: userId,
+          child_id: child_id ?? null,
+          messages: newMessages,
+          cited_resource_ids: newCitedIds,
+        })
+        .select("id")
+        .single();
+      savedConversationId = inserted?.id ?? null;
+    }
 
     res.json({
       message: assistantMessage,
-      conversation_id: savedConversation?.id ?? null,
+      conversation_id: savedConversationId,
       cited_resources: finalResources?.map((r) => ({ id: r.id, title: r.title })),
     });
   } catch (error) {

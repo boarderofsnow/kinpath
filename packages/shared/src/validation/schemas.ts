@@ -71,6 +71,7 @@ export const createResourceSchema = z.object({
 export const aiChatMessageSchema = z.object({
   message: z.string().min(1, "Message is required").max(2000),
   child_id: z.string().uuid().nullable().optional(),
+  conversation_id: z.string().uuid().optional(),
 });
 
 // ---- Review Schemas ----
