@@ -50,3 +50,9 @@ secret = "env(APPLE_CLIENT_SECRET)"
 [storage]
 enabled = true
 file_size_limit = "50MiB"
+
+# New publishable/secret keys (sb_publishable_... / sb_secret_...) are not JWTs,
+# so built-in JWT verification must be disabled. Manual apikey header auth is
+# implemented inside each function instead.
+[functions.ai-chat]
+verify_jwt = false
