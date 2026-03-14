@@ -6,22 +6,13 @@
     "orientation": "portrait",
     "icon": "./assets/icons/ios/icon.png",
     "scheme": "kinpath-family",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#fdf4f0"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "family.kinpath.app",
-      "icon": {
-        "source": "./assets/icons/ios/icon.png",
-        "dark": {
-          "source": "./assets/icons/ios/icon-dark.png"
-        },
-        "tinted": {
-          "source": "./assets/icons/ios/icon-tinted.png"
-        }
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -29,12 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/android/foreground.png",
-        "backgroundImage": "./assets/icons/android/background.png",
-        "monochromeImage": "./assets/icons/android/foreground.png",
-        "dark": {
-          "foregroundImage": "./assets/icons/android/foreground-dark.png",
-          "backgroundImage": "./assets/icons/android/background-dark.png"
-        }
+        "backgroundColor": "#fdf4f0"
       }
     },
     "web": {
