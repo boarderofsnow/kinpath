@@ -299,6 +299,7 @@ export default function SettingsScreen() {
               subscriptionTier={tier as any}
               stripeCustomerId={userData?.stripe_customer_id ?? null}
               rcCustomerId={userData?.rc_customer_id ?? null}
+              onSubscriptionChange={loadData}
             />
           </CollapsibleSection>
         </FadeInUp>

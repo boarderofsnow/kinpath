@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import * as authHelpers from "./auth";
 import { api } from "./api";
 import { queryCache } from "./cache";
+import { identifyUser, resetUser } from "./purchases";
 import type { User } from "@supabase/supabase-js";
 
 type AuthResult = { data?: any; error?: authHelpers.AuthError };
@@ -44,6 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
+        // Identify the restored session user in RevenueCat
+        if (session?.user?.id) {
+          identifyUser(session.user.id).catch(() => {});
+        }
       } catch (err) {
         // Network errors during cold start are non-fatal;
         // the user can still sign in manually.
@@ -59,6 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const subscription = authHelpers.onAuthStateChange((session) => {
       setSession(session);
       setUser(session?.user || null);
+      if (session?.user?.id) {
+        identifyUser(session.user.id).catch(() => {});
+      }
     });
 
     return () => {
@@ -76,6 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     queryCache.clear();
+    await resetUser().catch(() => {});
     return authHelpers.signOut();
   };
 

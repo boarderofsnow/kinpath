@@ -3,21 +3,25 @@ import {
   View,
   Text,
   StyleSheet,
-  Linking,
-  Platform,
+  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 import type { SubscriptionTier } from "@kinpath/shared";
 import { TIER_LIMITS } from "@kinpath/shared";
 import { colors, fonts, typography, spacing, radii } from "../../lib/theme";
 import { PressableScale } from "../motion";
 import { api } from "../../lib/api";
+import { Linking, Platform } from "react-native";
+import { ENTITLEMENT_ID } from "../../lib/purchases";
 
 interface SubscriptionSectionProps {
   subscriptionTier: SubscriptionTier;
   stripeCustomerId: string | null;
   rcCustomerId: string | null;
+  /** Called after a successful purchase or restore so the parent can refresh tier data. */
+  onSubscriptionChange?: () => void;
 }
 
 const TIER_DESCRIPTIONS: Record<SubscriptionTier, string> = {
@@ -36,41 +40,53 @@ export function SubscriptionSection({
   subscriptionTier,
   stripeCustomerId,
   rcCustomerId,
+  onSubscriptionChange,
 }: SubscriptionSectionProps) {
   const [loading, setLoading] = useState(false);
   const isPaid = subscriptionTier !== "free";
   const isRevenueCat = !!rcCustomerId;
   const isStripe = !!stripeCustomerId && !rcCustomerId;
 
+  // ── Upgrade (free → paid) ────────────────────────────────────────────────
   const handleUpgrade = async () => {
-    // TODO: Integrate RevenueCat offerings for IAP
-    // For now, show a placeholder message
-    // In production: use Purchases.getOfferings() and presentPaywall
     setLoading(true);
     try {
-      // Placeholder: Open web pricing page
-      await Linking.openURL("https://kinpath.family/pricing");
-    } catch {
-      // ignore
+      const result = await RevenueCatUI.presentPaywallIfNeeded({
+        requiredEntitlementIdentifier: ENTITLEMENT_ID,
+      });
+
+      if (
+        result === PAYWALL_RESULT.PURCHASED ||
+        result === PAYWALL_RESULT.RESTORED
+      ) {
+        Alert.alert(
+          "You're all set!",
+          "Your Kinpath Pro subscription is now active. Pull down to refresh if your plan hasn't updated yet.",
+          [{ text: "Got it", onPress: onSubscriptionChange }]
+        );
+      }
+    } catch (error) {
+      console.error("[RevenueCat] Paywall error:", error);
+      Alert.alert(
+        "Something went wrong",
+        "We couldn't load the subscription options. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Manage existing subscription ─────────────────────────────────────────
   const handleManageSubscription = async () => {
     setLoading(true);
     try {
       if (isRevenueCat) {
-        // Open platform-specific subscription management
-        if (Platform.OS === "ios") {
-          await Linking.openURL("https://apps.apple.com/account/subscriptions");
-        } else {
-          await Linking.openURL(
-            "https://play.google.com/store/account/subscriptions"
-          );
-        }
+        // RevenueCat Customer Center — lets users cancel, request refunds,
+        // restore purchases, and contact support without leaving the app.
+        await RevenueCatUI.presentCustomerCenter();
+        // Refresh tier in case the user downgraded or restored.
+        onSubscriptionChange?.();
       } else if (isStripe) {
-        // Open Stripe billing portal
         const { data, error } = await api.stripe.portal();
         if (error) {
           console.error("Stripe portal error:", error);
@@ -79,9 +95,37 @@ export function SubscriptionSection({
         if (data && typeof data === "object" && "url" in data) {
           await Linking.openURL((data as { url: string }).url);
         }
+      } else {
+        // Fallback: open platform subscription management directly
+        const url =
+          Platform.OS === "ios"
+            ? "https://apps.apple.com/account/subscriptions"
+            : "https://play.google.com/store/account/subscriptions";
+        await Linking.openURL(url);
       }
     } catch {
-      console.error("Failed to open subscription management");
+      console.error("[RevenueCat] Failed to open subscription management");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Restore purchases ────────────────────────────────────────────────────
+  const handleRestore = async () => {
+    setLoading(true);
+    try {
+      const result = await RevenueCatUI.presentPaywallIfNeeded({
+        requiredEntitlementIdentifier: ENTITLEMENT_ID,
+      });
+      if (result === PAYWALL_RESULT.RESTORED) {
+        Alert.alert(
+          "Purchases restored",
+          "Your previous subscription has been restored.",
+          [{ text: "Got it", onPress: onSubscriptionChange }]
+        );
+      }
+    } catch (error) {
+      console.error("[RevenueCat] Restore error:", error);
     } finally {
       setLoading(false);
     }
@@ -89,7 +133,7 @@ export function SubscriptionSection({
 
   return (
     <View>
-      {/* Current Plan */}
+      {/* ── Current Plan ──────────────────────────────── */}
       <View style={styles.planCard}>
         <View style={styles.planHeader}>
           <View
@@ -101,7 +145,8 @@ export function SubscriptionSection({
             <Text style={styles.planBadgeText}>
               {subscriptionTier === "free"
                 ? "Free Plan"
-                : subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}
+                : subscriptionTier.charAt(0).toUpperCase() +
+                  subscriptionTier.slice(1)}
             </Text>
           </View>
         </View>
@@ -109,14 +154,18 @@ export function SubscriptionSection({
           {TIER_DESCRIPTIONS[subscriptionTier]}
         </Text>
 
-        {/* Feature highlights */}
+        {/* Feature list */}
         <View style={styles.featureList}>
           <FeatureRow
             label={`${TIER_LIMITS[subscriptionTier].ai_questions_per_month ?? "Unlimited"} AI questions/mo`}
             enabled={true}
           />
           <FeatureRow
-            label={TIER_LIMITS[subscriptionTier].max_children === null ? "Unlimited child profiles" : `${TIER_LIMITS[subscriptionTier].max_children} child profile`}
+            label={
+              TIER_LIMITS[subscriptionTier].max_children === null
+                ? "Unlimited child profiles"
+                : `${TIER_LIMITS[subscriptionTier].max_children} child profile`
+            }
             enabled={true}
           />
           <FeatureRow
@@ -136,51 +185,72 @@ export function SubscriptionSection({
             enabled={TIER_LIMITS[subscriptionTier].email_digests_enabled}
           />
           <FeatureRow
-            label={subscriptionTier === "family" ? "Up to 5 caregivers" : "Partner sharing"}
+            label={
+              subscriptionTier === "family"
+                ? "Up to 5 caregivers"
+                : "Partner sharing"
+            }
             enabled={TIER_LIMITS[subscriptionTier].partner_invite_enabled}
           />
         </View>
       </View>
 
-      {/* Action button */}
+      {/* ── Action buttons ────────────────────────────── */}
       {isPaid ? (
-        <PressableScale
-          style={styles.manageButton}
-          onPress={handleManageSubscription}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.brand[500]} size="small" />
-          ) : (
-            <>
-              <Ionicons name="card-outline" size={18} color={colors.brand[500]} />
-              <Text style={styles.manageButtonText}>Manage Subscription</Text>
-            </>
-          )}
-        </PressableScale>
+        <>
+          <PressableScale
+            style={styles.manageButton}
+            onPress={handleManageSubscription}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.brand[500]} size="small" />
+            ) : (
+              <>
+                <Ionicons
+                  name="card-outline"
+                  size={18}
+                  color={colors.brand[500]}
+                />
+                <Text style={styles.manageButtonText}>
+                  Manage Subscription
+                </Text>
+              </>
+            )}
+          </PressableScale>
+          <Text style={styles.manageHint}>
+            {isRevenueCat
+              ? "Cancel, get support, or restore through Customer Center"
+              : "Change plan, update payment method, or cancel"}
+          </Text>
+        </>
       ) : (
-        <PressableScale
-          style={styles.upgradeButton}
-          onPress={handleUpgrade}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color={colors.white} size="small" />
-          ) : (
-            <>
-              <Ionicons name="sparkles" size={18} color={colors.white} />
-              <Text style={styles.upgradeButtonText}>Upgrade Plan</Text>
-            </>
-          )}
-        </PressableScale>
-      )}
+        <>
+          <PressableScale
+            style={styles.upgradeButton}
+            onPress={handleUpgrade}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color={colors.white} size="small" />
+            ) : (
+              <>
+                <Ionicons name="sparkles" size={18} color={colors.white} />
+                <Text style={styles.upgradeButtonText}>
+                  Upgrade to Kinpath Pro
+                </Text>
+              </>
+            )}
+          </PressableScale>
 
-      {isPaid && (
-        <Text style={styles.manageHint}>
-          {isRevenueCat
-            ? "Change plan or cancel through the App Store"
-            : "Change plan, update payment method, or cancel"}
-        </Text>
+          <PressableScale
+            style={styles.restoreButton}
+            onPress={handleRestore}
+            disabled={loading}
+          >
+            <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+          </PressableScale>
+        </>
       )}
     </View>
   );
@@ -194,7 +264,9 @@ function FeatureRow({ label, enabled }: { label: string; enabled: boolean }) {
         size={16}
         color={enabled ? colors.brand[500] : colors.stone[300]}
       />
-      <Text style={[featureStyles.label, !enabled && featureStyles.labelDisabled]}>
+      <Text
+        style={[featureStyles.label, !enabled && featureStyles.labelDisabled]}
+      >
         {label}
       </Text>
     </View>
@@ -259,11 +331,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent[500],
     borderRadius: radii.md,
     paddingVertical: 14,
+    marginBottom: spacing.sm,
   },
   upgradeButtonText: {
     fontFamily: fonts.sansBold,
     fontSize: 15,
     color: colors.white,
+  },
+  restoreButton: {
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+  },
+  restoreButtonText: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.stone[400],
+    textDecorationLine: "underline",
   },
   manageButton: {
     flexDirection: "row",

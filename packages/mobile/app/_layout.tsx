@@ -12,6 +12,10 @@ import {
 } from "@expo-google-fonts/inter";
 import { DMSerifDisplay_400Regular } from "@expo-google-fonts/dm-serif-display";
 import { colors } from "../lib/theme";
+import { configureRevenueCat } from "../lib/purchases";
+
+// Initialize RevenueCat once at module load time — before any component mounts.
+configureRevenueCat();
 
 function RootLayoutContent() {
   const { session, isLoading } = useAuth();
