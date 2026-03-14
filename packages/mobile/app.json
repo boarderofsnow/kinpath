@@ -1,18 +1,21 @@
 {
   "expo": {
-    "name": "KinPath",
-    "slug": "kinpath",
+    "name": "Kinpath Family",
+    "slug": "kinpath-family",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "kinpath",
+    "scheme": "kinpath-family",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#fdf4f0"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kinpath.app"
+      "bundleIdentifier": "family.kinpath.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "plugins": [
       "expo-router",
@@ -25,7 +28,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "920195f9-a8a8-4cdf-9b23-a402faf9b7ac"
       }
     }
   }
