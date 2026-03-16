@@ -16,15 +16,21 @@ export const ENTITLEMENT_ID = "Kinpath Pro";
 
 // ─── Initialization ─────────────────────────────────────────────────────────
 
+let readyResolve: () => void;
+const readyPromise = new Promise<void>((r) => {
+  readyResolve = r;
+});
+
 /**
- * Call once at app start (before the user is known).
- * User identification is deferred to `identifyUser()` after sign-in.
+ * Call once at app start (after native modules are ready).
+ * Other functions in this module will await configuration before proceeding.
  */
 export function configureRevenueCat(): void {
   if (__DEV__) {
     Purchases.setLogLevel(LOG_LEVEL.DEBUG);
   }
   Purchases.configure({ apiKey: RC_API_KEY });
+  readyResolve();
 }
 
 // ─── User Identity ───────────────────────────────────────────────────────────
@@ -35,6 +41,7 @@ export function configureRevenueCat(): void {
  */
 export async function identifyUser(userId: string): Promise<CustomerInfo | null> {
   try {
+    await readyPromise;
     const { customerInfo } = await Purchases.logIn(userId);
     return customerInfo;
   } catch (error) {
@@ -49,6 +56,7 @@ export async function identifyUser(userId: string): Promise<CustomerInfo | null>
  */
 export async function resetUser(): Promise<void> {
   try {
+    await readyPromise;
     await Purchases.logOut();
   } catch (error) {
     // logOut throws if the user is already anonymous — safe to ignore.
@@ -61,6 +69,7 @@ export async function resetUser(): Promise<void> {
 /** Fetch the latest CustomerInfo from RevenueCat. */
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
   try {
+    await readyPromise;
     return await Purchases.getCustomerInfo();
   } catch (error) {
     console.error("[RevenueCat] getCustomerInfo failed:", error);
@@ -88,6 +97,7 @@ export async function checkEntitlement(
  */
 export async function getOfferings(): Promise<PurchasesOfferings | null> {
   try {
+    await readyPromise;
     return await Purchases.getOfferings();
   } catch (error) {
     console.error("[RevenueCat] getOfferings failed:", error);
