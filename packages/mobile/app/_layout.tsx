@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
 import {
@@ -14,8 +14,7 @@ import { DMSerifDisplay_400Regular } from "@expo-google-fonts/dm-serif-display";
 import { colors } from "../lib/theme";
 import { configureRevenueCat } from "../lib/purchases";
 
-// Initialize RevenueCat once at module load time — before any component mounts.
-configureRevenueCat();
+let rcConfigured = false;
 
 function RootLayoutContent() {
   const { session, isLoading } = useAuth();
@@ -60,6 +59,12 @@ function RootLayoutContent() {
 }
 
 export default function RootLayout() {
+  // Configure RevenueCat once — must happen after native modules are ready
+  if (!rcConfigured) {
+    rcConfigured = true;
+    configureRevenueCat();
+  }
+
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
