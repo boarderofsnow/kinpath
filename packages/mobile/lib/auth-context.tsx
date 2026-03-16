@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const checkedPendingInvite = useRef(false);
+  const identifiedRcUser = useRef<string | null>(null);
 
   // Check for and accept pending household invites on login
   useEffect(() => {
@@ -37,6 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user]);
 
   useEffect(() => {
+    // Identify user in RevenueCat only when the user ID actually changes
+    function identifyIfNeeded(userId: string | undefined) {
+      if (userId && userId !== identifiedRcUser.current) {
+        identifiedRcUser.current = userId;
+        identifyUser(userId).catch(() => {});
+      }
+    }
+
     // Check current session on mount
     async function getSession() {
       try {
@@ -45,10 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } = await supabase.auth.getSession();
         setSession(session);
         setUser(session?.user || null);
-        // Identify the restored session user in RevenueCat
-        if (session?.user?.id) {
-          identifyUser(session.user.id).catch(() => {});
-        }
+        identifyIfNeeded(session?.user?.id);
       } catch (err) {
         // Network errors during cold start are non-fatal;
         // the user can still sign in manually.
@@ -64,9 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const subscription = authHelpers.onAuthStateChange((session) => {
       setSession(session);
       setUser(session?.user || null);
-      if (session?.user?.id) {
-        identifyUser(session.user.id).catch(() => {});
-      }
+      identifyIfNeeded(session?.user?.id);
     });
 
     return () => {
@@ -84,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     queryCache.clear();
+    identifiedRcUser.current = null;
     await resetUser().catch(() => {});
     return authHelpers.signOut();
   };

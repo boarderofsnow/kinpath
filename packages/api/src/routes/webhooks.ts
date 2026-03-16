@@ -219,9 +219,9 @@ const RC_EXPIRED_EVENTS = new Set(["EXPIRATION", "BILLING_ISSUE"]);
 // POST /webhooks/revenuecat
 webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
   // ── Auth: shared secret ────────────────────────────────────────────────────
-  const webhookSecret = process.env.RC_WEBHOOK_SECRET;
+  const webhookSecret = process.env.REVENUECAT_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error("RC_WEBHOOK_SECRET is not set");
+    console.error("REVENUECAT_WEBHOOK_SECRET is not set");
     res.status(500).json({ error: "Webhook secret not configured" });
     return;
   }
