@@ -21,7 +21,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/icons/android/foreground.png",
         "backgroundColor": "#fdf4f0"
-      }
+      },
+      "package": "family.kinpath.app"
     },
     "web": {
       "favicon": "./assets/icons/web/favicon.png"
