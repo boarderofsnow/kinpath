@@ -7,6 +7,7 @@ import {
   ScrollView,
   RefreshControl,
   SafeAreaView,
+  Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -333,15 +334,15 @@ export default function SettingsScreen() {
         <FadeInUp delay={(tier === "premium" || tier === "family") ? 560 : 480}>
           <View style={styles.supportSection}>
             <View style={styles.supportCard}>
-              <PressableScale style={styles.supportRow}>
+              <PressableScale style={styles.supportRow} onPress={() => Linking.openURL("https://kinpath.family/support")}>
                 <Text style={styles.supportRowLabel}>Help & FAQ</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.stone[300]} />
               </PressableScale>
-              <PressableScale style={styles.supportRow}>
+              <PressableScale style={styles.supportRow} onPress={() => Linking.openURL("https://kinpath.family/privacy")}>
                 <Text style={styles.supportRowLabel}>Privacy Policy</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.stone[300]} />
               </PressableScale>
-              <PressableScale style={[styles.supportRow, styles.supportRowLast]}>
+              <PressableScale style={[styles.supportRow, styles.supportRowLast]} onPress={() => Linking.openURL("https://kinpath.family/terms")}>
                 <Text style={styles.supportRowLabel}>Terms of Service</Text>
                 <Ionicons name="chevron-forward" size={18} color={colors.stone[300]} />
               </PressableScale>
@@ -350,7 +351,7 @@ export default function SettingsScreen() {
         </FadeInUp>
 
         {/* ── Version ───────────────────────────── */}
-        <Text style={styles.versionText}>KinPath v{getAppVersion()}</Text>
+        <Text style={styles.versionText}>Kinpath Family v{getAppVersion()}</Text>
       </ScrollView>
     </SafeAreaView>
   );

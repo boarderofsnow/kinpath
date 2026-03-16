@@ -52,14 +52,19 @@ export async function identifyUser(userId: string): Promise<CustomerInfo | null>
 
 /**
  * Call on sign-out. Reverts RevenueCat to an anonymous user ID so the next
- * sign-in gets a clean slate.
+ * sign-in gets a clean slate. Times out after 3s to avoid blocking sign-out.
  */
 export async function resetUser(): Promise<void> {
   try {
     await readyPromise;
-    await Purchases.logOut();
+    await Promise.race([
+      Purchases.logOut(),
+      new Promise<void>((_, reject) =>
+        setTimeout(() => reject(new Error("logOut timed out")), 3000)
+      ),
+    ]);
   } catch (error) {
-    // logOut throws if the user is already anonymous — safe to ignore.
+    // logOut throws if the user is already anonymous or times out — safe to ignore.
     console.warn("[RevenueCat] resetUser:", error);
   }
 }
