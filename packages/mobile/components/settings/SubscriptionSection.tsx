@@ -44,8 +44,9 @@ export function SubscriptionSection({
 }: SubscriptionSectionProps) {
   const [loading, setLoading] = useState(false);
   const isPaid = subscriptionTier !== "free";
-  const isRevenueCat = !!rcCustomerId;
+  // On mobile, use RevenueCat unless the user explicitly subscribed via Stripe on web
   const isStripe = !!stripeCustomerId && !rcCustomerId;
+  const isRevenueCat = !isStripe;
 
   // ── Upgrade (free → paid) ────────────────────────────────────────────────
   const handleUpgrade = async () => {
