@@ -51,10 +51,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const {
           data: { session },
+          error,
         } = await supabase.auth.getSession();
-        setSession(session);
-        setUser(session?.user || null);
-        identifyIfNeeded(session?.user?.id);
+        if (error) {
+          // Stored refresh token is invalid or revoked — clear it so the
+          // autoRefreshToken timer stops hammering the auth server with a
+          // dead token (which causes the "Invalid Refresh Token" error loop).
+          await supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          setSession(session);
+          setUser(session?.user || null);
+          identifyIfNeeded(session?.user?.id);
+        }
       } catch (err) {
         // Network errors during cold start are non-fatal;
         // the user can still sign in manually.
