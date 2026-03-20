@@ -26,6 +26,18 @@ export async function signUp(email: string, password: string, displayName: strin
       return { error: { message: error.message, code: error.code } };
     }
 
+    // Supabase returns a fake success (no error, no session, empty identities)
+    // when signing up with an email that already exists. Detect this and return
+    // a user-friendly error instead of showing the "check your email" screen.
+    if (data?.user && data.user.identities?.length === 0) {
+      return {
+        error: {
+          message: "An account with this email already exists.",
+          code: "user_already_exists",
+        },
+      };
+    }
+
     return { data };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error during sign up";

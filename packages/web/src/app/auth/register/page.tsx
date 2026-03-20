@@ -19,7 +19,7 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -30,8 +30,19 @@ export default function RegisterPage() {
       },
     });
 
-    if (error) {
-      setError(error.message);
+    if (signUpError) {
+      setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Supabase returns a fake success (no error, empty identities) when
+    // signing up with an email that already exists. Detect this and show
+    // a helpful message instead of silently redirecting.
+    if (data?.user && data.user.identities?.length === 0) {
+      setError(
+        "An account with this email already exists. Please sign in or reset your password."
+      );
       setLoading(false);
       return;
     }

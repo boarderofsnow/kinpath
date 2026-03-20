@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   ScrollView,
   Image,
+  Alert,
 } from "react-native";
 import { Link, useRouter, useNavigation } from "expo-router";
 import { useState } from "react";
@@ -49,7 +50,23 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       const result = await signUp(email, password, displayName);
-      if (result.error) { setError(result.error.message); setIsLoading(false); return; }
+      if (result.error) {
+        if (result.error.code === "user_already_exists") {
+          Alert.alert(
+            "Account Already Exists",
+            "An account with this email already exists. Would you like to reset your password?",
+            [
+              { text: "Reset Password", onPress: () => router.push("/(auth)/forgot-password") },
+              { text: "Go to Sign In", onPress: () => router.push("/(auth)/login") },
+              { text: "Cancel", style: "cancel" },
+            ]
+          );
+        } else {
+          setError(result.error.message);
+        }
+        setIsLoading(false);
+        return;
+      }
 
       // If Supabase returned an active session, go straight to the app.
       // Otherwise email confirmation is required — show success message.

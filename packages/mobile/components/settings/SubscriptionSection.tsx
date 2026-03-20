@@ -60,9 +60,11 @@ export function SubscriptionSection({
         result === PAYWALL_RESULT.PURCHASED ||
         result === PAYWALL_RESULT.RESTORED
       ) {
+        // Give the webhook a moment to process, then refresh tier data
+        setTimeout(() => onSubscriptionChange?.(), 2000);
         Alert.alert(
           "You're all set!",
-          "Your Kinpath Pro subscription is now active. Pull down to refresh if your plan hasn't updated yet.",
+          "Your Kinpath Pro subscription is now active.",
           [{ text: "Got it", onPress: onSubscriptionChange }]
         );
       }

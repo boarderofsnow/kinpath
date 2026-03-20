@@ -197,8 +197,15 @@ webhooksRouter.post("/stripe", async (req: Request, res: Response) => {
  *   (neither)         → "free"
  */
 function resolveRcTier(
-  entitlements: Record<string, unknown>
+  entitlements: string[] | Record<string, unknown>
 ): SubscriptionTier {
+  // RevenueCat sends entitlements as an array of entitlement IDs
+  if (Array.isArray(entitlements)) {
+    if (entitlements.includes("Kinpath Family")) return "family";
+    if (entitlements.includes("Kinpath Pro")) return "premium";
+    return "free";
+  }
+  // Fallback: object keyed by entitlement name
   if ("Kinpath Family" in entitlements) return "family";
   if ("Kinpath Pro" in entitlements) return "premium";
   return "free";
@@ -252,12 +259,17 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
   const userId = event.app_user_id;
   const supabase = createServiceRoleClient();
 
+  console.log(`[RC webhook] Received ${event.type} for user ${userId}`, {
+    entitlements: event.entitlements,
+  });
+
   try {
     if (RC_ACTIVE_EVENTS.has(event.type)) {
       // ── Active subscription ──────────────────────────────────────────────
       const tier = resolveRcTier(event.entitlements ?? {});
+      console.log(`[RC webhook] Resolved tier: ${tier}`);
 
-      const { data: user } = await supabase
+      const { data: user, error: updateError } = await supabase
         .from("users")
         .update({
           subscription_tier: tier,
@@ -267,7 +279,10 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
         .select("id")
         .single();
 
-      if (user) {
+      if (updateError) {
+        console.error(`[RC webhook] Supabase update failed:`, updateError);
+      } else if (user) {
+        console.log(`[RC webhook] Updated user ${user.id} to tier: ${tier}`);
         await syncHousehold(supabase, user.id, tier);
       } else {
         console.warn(`[RC webhook] No user found for app_user_id: ${userId}`);
@@ -282,6 +297,7 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
         .single();
 
       if (user) {
+        console.log(`[RC webhook] Downgraded user ${user.id} to free`);
         await syncHousehold(supabase, user.id, "free");
       }
     }
