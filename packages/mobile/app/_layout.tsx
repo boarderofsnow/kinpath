@@ -59,11 +59,15 @@ function RootLayoutContent() {
 }
 
 export default function RootLayout() {
-  // Configure RevenueCat once — must happen after native modules are ready
-  if (!rcConfigured) {
-    rcConfigured = true;
-    configureRevenueCat();
-  }
+  useEffect(() => {
+    // Configure RevenueCat once — must happen after native modules are ready.
+    // In React Native 0.76+ (New Architecture), calling TurboModules synchronously 
+    // during root render can cause fatal EXC_BAD_ACCESS Hermes crashes.
+    if (!rcConfigured) {
+      rcConfigured = true;
+      configureRevenueCat();
+    }
+  }, []);
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
