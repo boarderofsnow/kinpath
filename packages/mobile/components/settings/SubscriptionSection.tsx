@@ -14,7 +14,7 @@ import { colors, fonts, typography, spacing, radii } from "../../lib/theme";
 import { PressableScale } from "../motion";
 import { api } from "../../lib/api";
 import { Linking, Platform } from "react-native";
-import { ENTITLEMENT_ID } from "../../lib/purchases";
+import { ENTITLEMENT_ID, checkEntitlement } from "../../lib/purchases";
 
 interface SubscriptionSectionProps {
   subscriptionTier: SubscriptionTier;
@@ -67,6 +67,17 @@ export function SubscriptionSection({
           "Your Kinpath Pro subscription is now active.",
           [{ text: "Got it", onPress: onSubscriptionChange }]
         );
+      } else if (result === PAYWALL_RESULT.NOT_PRESENTED) {
+        // Paywall not shown — the entitlement is already active in RevenueCat
+        // but Supabase may be out of sync. Refresh to pick up the correct tier.
+        const hasEntitlement = await checkEntitlement();
+        if (hasEntitlement) {
+          Alert.alert(
+            "You're already subscribed!",
+            "Your subscription is active. Refreshing your plan details now.",
+            [{ text: "OK", onPress: onSubscriptionChange }]
+          );
+        }
       }
     } catch (error) {
       console.error("[RevenueCat] Paywall error:", error);
@@ -126,6 +137,21 @@ export function SubscriptionSection({
           "Your previous subscription has been restored.",
           [{ text: "Got it", onPress: onSubscriptionChange }]
         );
+      } else if (result === PAYWALL_RESULT.NOT_PRESENTED) {
+        // Entitlement already active — sync and notify
+        const hasEntitlement = await checkEntitlement();
+        if (hasEntitlement) {
+          Alert.alert(
+            "Subscription Found",
+            "Your subscription is already active. Refreshing your plan details now.",
+            [{ text: "OK", onPress: onSubscriptionChange }]
+          );
+        } else {
+          Alert.alert(
+            "No Subscription Found",
+            "We couldn't find an active subscription to restore."
+          );
+        }
       }
     } catch (error) {
       console.error("[RevenueCat] Restore error:", error);
