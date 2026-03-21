@@ -29,34 +29,37 @@ export async function GET(request: Request) {
 
   if (user) {
     // ── Household invite linking ──────────────────────────────────
-    // Strategy 1: check user_metadata for household_member_id
-    //   (set when inviteUserByEmail is called with data: { household_member_id })
-    let householdMemberId =
-      user.user_metadata?.household_member_id as string | undefined;
+    // Only attempt invite linking for users who don't already belong
+    // to a household (as owner or member). This prevents stale
+    // metadata or pending invites from hijacking existing users.
+    const serviceClient = createServiceRoleClient();
 
-    // Strategy 2: fallback — match pending invite by email.
-    //   Handles the case where a user registered manually instead of
-    //   clicking the invite link, so metadata was never set.
-    //   Only for genuinely new users who don't already belong to a household.
-    if (!householdMemberId && user.email) {
-      const serviceClient = createServiceRoleClient();
+    const { data: existingMembership } = await serviceClient
+      .from("household_members")
+      .select("id")
+      .eq("user_id", user.id)
+      .limit(1)
+      .maybeSingle();
 
-      // Skip email-based invite lookup if the user already has household ties
-      const { data: existingMembership } = await serviceClient
-        .from("household_members")
-        .select("id")
-        .eq("user_id", user.id)
-        .limit(1)
-        .maybeSingle();
+    const { data: ownedHousehold } = await serviceClient
+      .from("households")
+      .select("id")
+      .eq("owner_user_id", user.id)
+      .limit(1)
+      .maybeSingle();
 
-      const { data: ownedHousehold } = await serviceClient
-        .from("households")
-        .select("id")
-        .eq("owner_user_id", user.id)
-        .limit(1)
-        .maybeSingle();
+    const alreadyInHousehold = !!(existingMembership || ownedHousehold);
 
-      if (!existingMembership && !ownedHousehold) {
+    if (!alreadyInHousehold) {
+      // Strategy 1: check user_metadata for household_member_id
+      //   (set when inviteUserByEmail is called with data: { household_member_id })
+      let householdMemberId =
+        user.user_metadata?.household_member_id as string | undefined;
+
+      // Strategy 2: fallback — match pending invite by email.
+      //   Handles the case where a user registered manually instead of
+      //   clicking the invite link, so metadata was never set.
+      if (!householdMemberId && user.email) {
         const { data: pendingInvite } = await serviceClient
           .from("household_members")
           .select("id")
@@ -69,45 +72,43 @@ export async function GET(request: Request) {
           householdMemberId = pendingInvite.id;
         }
       }
-    }
 
-    if (householdMemberId) {
-      try {
-        const serviceClient = createServiceRoleClient();
+      if (householdMemberId) {
+        try {
+          // 1. Fetch the member record to get household_id and the owner's subscription_tier.
+          const { data: memberRow } = await serviceClient
+            .from("household_members")
+            .select("household_id, households!inner(owner_user_id, users!inner(subscription_tier))")
+            .eq("id", householdMemberId)
+            .single();
 
-        // 1. Fetch the member record to get household_id and the owner's subscription_tier.
-        const { data: memberRow } = await serviceClient
-          .from("household_members")
-          .select("household_id, households!inner(owner_user_id, users!inner(subscription_tier))")
-          .eq("id", householdMemberId)
-          .single();
+          // 2. Link the household_members record to this user and mark accepted.
+          await serviceClient
+            .from("household_members")
+            .update({
+              user_id: user.id,
+              status: "accepted",
+              accepted_at: new Date().toISOString(),
+            })
+            .eq("id", householdMemberId);
 
-        // 2. Link the household_members record to this user and mark accepted.
-        await serviceClient
-          .from("household_members")
-          .update({
-            user_id: user.id,
-            status: "accepted",
-            accepted_at: new Date().toISOString(),
-          })
-          .eq("id", householdMemberId);
+          // 3. Copy the owner's subscription_tier and mark onboarding complete
+          //    (partners share the owner's children/preferences, so they skip onboarding).
+          const ownerTier =
+            (memberRow as any)?.households?.users?.subscription_tier ?? "free";
 
-        // 3. Copy the owner's subscription_tier and mark onboarding complete
-        //    (partners share the owner's children/preferences, so they skip onboarding).
-        const ownerTier =
-          (memberRow as any)?.households?.users?.subscription_tier ?? "free";
+          await serviceClient
+            .from("users")
+            .update({ onboarding_complete: true, subscription_tier: ownerTier })
+            .eq("id", user.id);
+        } catch (linkError) {
+          // Non-fatal — log and continue.
+          console.error("Failed to link household member on invite accept:", linkError);
+        }
 
-        await serviceClient
-          .from("users")
-          .update({ onboarding_complete: true, subscription_tier: ownerTier })
-          .eq("id", user.id);
-      } catch (linkError) {
-        // Non-fatal — log and continue.
-        console.error("Failed to link household member on invite accept:", linkError);
+        // Send invited partners to complete their profile (name + password)
+        return NextResponse.redirect(`${origin}/auth/complete-profile`);
       }
-
-      // Send invited partners to complete their profile (name + password)
-      return NextResponse.redirect(`${origin}/auth/complete-profile`);
     }
 
     return NextResponse.redirect(`${origin}${next}`);
