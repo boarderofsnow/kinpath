@@ -246,7 +246,7 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
       app_user_id: string;
       aliases?: string[];
       subscriber_attributes?: Record<string, unknown>;
-      entitlements?: Record<string, unknown>;
+      entitlement_ids?: string[];
     };
   };
 
@@ -293,13 +293,13 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
   }
 
   console.log(`[RC webhook] Received ${event.type} for user ${userId}`, {
-    entitlements: event.entitlements,
+    entitlements: event.entitlement_ids,
   });
 
   try {
     if (RC_ACTIVE_EVENTS.has(event.type)) {
       // ── Active subscription ──────────────────────────────────────────────
-      const tier = resolveRcTier(event.entitlements ?? {});
+      const tier = resolveRcTier(event.entitlement_ids ?? []);
       console.log(`[RC webhook] Resolved tier: ${tier}`);
 
       const { data: user, error: updateError } = await supabase
