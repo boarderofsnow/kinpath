@@ -2,8 +2,101 @@ import { Router, Response } from "express";
 import { requireAuth, AuthenticatedRequest } from "../middleware/auth";
 import { createUserSupabaseClient, createServiceRoleClient } from "../lib/supabase";
 import { getStripe } from "../lib/stripe";
+import type { SubscriptionTier } from "@kinpath/shared";
 
 export const accountRouter = Router();
+
+// ─── RevenueCat tier resolution (mirrors webhooks.ts) ────────────────────────
+
+function resolveRcTierFromEntitlements(
+  entitlements: Record<string, unknown>
+): SubscriptionTier {
+  if ("Kinpath Family" in entitlements) return "family";
+  if ("Kinpath Pro" in entitlements) return "premium";
+  return "free";
+}
+
+// POST /account/sync-subscription
+// Called by the mobile app when RevenueCat reports an active entitlement but
+// Supabase is out of sync (common in Apple sandbox where subs renew rapidly).
+accountRouter.post(
+  "/sync-subscription",
+  requireAuth,
+  async (req, res: Response) => {
+    const { userId } = req as AuthenticatedRequest;
+    const rcApiKey = process.env.REVENUECAT_API_KEY;
+
+    if (!rcApiKey) {
+      console.error("REVENUECAT_API_KEY is not set");
+      res.status(500).json({ error: "RevenueCat API key not configured" });
+      return;
+    }
+
+    try {
+      // Fetch the subscriber's current state from RevenueCat's REST API
+      const rcRes = await fetch(
+        `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(userId)}`,
+        {
+          headers: {
+            Authorization: `Bearer ${rcApiKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!rcRes.ok) {
+        console.error(
+          `[sync-subscription] RevenueCat API returned ${rcRes.status}`
+        );
+        res.status(502).json({ error: "Failed to fetch RevenueCat subscriber" });
+        return;
+      }
+
+      const rcData = (await rcRes.json()) as {
+        subscriber?: {
+          entitlements?: Record<
+            string,
+            { expires_date: string | null; product_identifier: string }
+          >;
+        };
+      };
+
+      // Build a map of currently active entitlements
+      const now = Date.now();
+      const activeEntitlements: Record<string, unknown> = {};
+      for (const [name, ent] of Object.entries(
+        rcData.subscriber?.entitlements ?? {}
+      )) {
+        // No expiry = lifetime; future expiry = still active
+        if (!ent.expires_date || new Date(ent.expires_date).getTime() > now) {
+          activeEntitlements[name] = ent;
+        }
+      }
+
+      const tier = resolveRcTierFromEntitlements(activeEntitlements);
+
+      const supabase = createServiceRoleClient();
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ subscription_tier: tier, rc_customer_id: userId })
+        .eq("id", userId);
+
+      if (updateError) {
+        console.error("[sync-subscription] Supabase update failed:", updateError);
+        res.status(500).json({ error: "Failed to update subscription tier" });
+        return;
+      }
+
+      console.log(
+        `[sync-subscription] Synced user ${userId} to tier: ${tier}`
+      );
+      res.json({ tier });
+    } catch (err) {
+      console.error("[sync-subscription] Error:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
 
 // POST /account/delete
 accountRouter.post("/delete", requireAuth, async (req, res: Response) => {

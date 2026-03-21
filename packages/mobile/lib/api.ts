@@ -129,6 +129,8 @@ export const api = {
   // Account
   account: {
     delete: () => request("/account", { method: "DELETE" }),
+    syncSubscription: () =>
+      request<{ tier: string }>("/account/sync-subscription", { method: "POST" }),
   },
 
   // Stripe / Payments

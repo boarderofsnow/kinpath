@@ -69,13 +69,21 @@ export function SubscriptionSection({
         );
       } else if (result === PAYWALL_RESULT.NOT_PRESENTED) {
         // Paywall not shown — the entitlement is already active in RevenueCat
-        // but Supabase may be out of sync. Refresh to pick up the correct tier.
+        // but Supabase may be out of sync (common in Apple sandbox where subs
+        // renew rapidly and EXPIRATION webhooks reset the tier to "free").
+        // Ask the server to verify the user's entitlements via RevenueCat's
+        // REST API and update Supabase to match.
         const hasEntitlement = await checkEntitlement();
         if (hasEntitlement) {
+          const { error } = await api.account.syncSubscription();
+          if (error) {
+            console.error("[RevenueCat] Sync failed:", error);
+          }
+          onSubscriptionChange?.();
           Alert.alert(
             "You're already subscribed!",
             "Your subscription is active. Refreshing your plan details now.",
-            [{ text: "OK", onPress: onSubscriptionChange }]
+            [{ text: "OK" }]
           );
         }
       }
@@ -132,19 +140,25 @@ export function SubscriptionSection({
         requiredEntitlementIdentifier: ENTITLEMENT_ID,
       });
       if (result === PAYWALL_RESULT.RESTORED) {
+        setTimeout(() => onSubscriptionChange?.(), 2000);
         Alert.alert(
           "Purchases restored",
           "Your previous subscription has been restored.",
           [{ text: "Got it", onPress: onSubscriptionChange }]
         );
       } else if (result === PAYWALL_RESULT.NOT_PRESENTED) {
-        // Entitlement already active — sync and notify
+        // Entitlement already active — sync Supabase via server and notify
         const hasEntitlement = await checkEntitlement();
         if (hasEntitlement) {
+          const { error } = await api.account.syncSubscription();
+          if (error) {
+            console.error("[RevenueCat] Sync failed:", error);
+          }
+          onSubscriptionChange?.();
           Alert.alert(
             "Subscription Found",
             "Your subscription is already active. Refreshing your plan details now.",
-            [{ text: "OK", onPress: onSubscriptionChange }]
+            [{ text: "OK" }]
           );
         } else {
           Alert.alert(
