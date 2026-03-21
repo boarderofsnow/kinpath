@@ -2,7 +2,8 @@ import { Stack } from "expo-router";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { useEffect, useRef } from "react";
-import { useRouter, useSegments } from "expo-router";
+import { useRouter, useSegments, useNavigationContainerRef } from "expo-router";
+import { CommonActions } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -20,6 +21,7 @@ function RootLayoutContent() {
   const { session, isLoading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const rootNav = useNavigationContainerRef();
 
   useEffect(() => {
     if (isLoading) return;
@@ -34,8 +36,12 @@ function RootLayoutContent() {
       // Logged-in user on auth or welcome screen → send to dashboard
       router.replace("/(tabs)");
     } else if (!session && inProtectedGroup) {
-      // Unauthenticated user on protected screen → send to welcome
-      router.replace("/");
+      // Unauthenticated user on protected screen → reset to welcome.
+      // router.replace("/") is ambiguous because both app/index.tsx and
+      // app/(tabs)/index.tsx map to "/". Reset the root navigator instead.
+      rootNav.dispatch(
+        CommonActions.reset({ index: 0, routes: [{ name: "index" }] })
+      );
     }
     // Otherwise: let the user stay where they are
   }, [session, isLoading, segments]);
