@@ -43,3 +43,4 @@ coverage/
 # Sentry
 .sentryclirc
 supabase-deployment.env
+generate-apple-secret.js

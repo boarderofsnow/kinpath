@@ -35,7 +35,7 @@ import { FamilySharingSection } from "../../components/settings/FamilySharingSec
 import { AccountSection } from "../../components/settings/AccountSection";
 
 export default function SettingsScreen() {
-  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { user, isLoading: authLoading, signOut, effectiveOwnerId, isPartner: isPartnerFromCtx } = useAuth();
 
   // ── Canonical data ─────────────────────────────
   const [userData, setUserData] = useState<User | null>(null);
@@ -67,12 +67,13 @@ export default function SettingsScreen() {
       }
 
       try {
+        const ownerId = effectiveOwnerId || user.id;
         const [userRes, childrenRes, prefsRes, notifRes] = await Promise.all([
           supabase.from("users").select("*").eq("id", user.id).single(),
           supabase
             .from("children")
             .select("*")
-            .eq("user_id", user.id)
+            .eq("user_id", ownerId)
             .order("created_at", { ascending: true }),
           supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
           supabase
@@ -143,7 +144,7 @@ export default function SettingsScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, refreshTrigger]);
+  }, [user?.id, effectiveOwnerId, refreshTrigger]);
 
   const onRefresh = () => {
     setRefreshing(true);

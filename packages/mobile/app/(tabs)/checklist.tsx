@@ -50,7 +50,7 @@ interface ChecklistSection {
 // ════════════════════════════════════════════════════════════
 
 export default function ChecklistScreen() {
-  const { user } = useAuth();
+  const { user, effectiveOwnerId } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -93,11 +93,12 @@ export default function ChecklistScreen() {
 
   const fetchChildren = async () => {
     if (!user) return;
+    const ownerId = effectiveOwnerId || user.id;
     try {
       const { data, error } = await supabase
         .from("children")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", ownerId)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -109,23 +110,24 @@ export default function ChecklistScreen() {
 
   const fetchAllData = async () => {
     if (!user) return;
+    const ownerId = effectiveOwnerId || user.id;
     setLoading(true);
     try {
-      // Fetch checklist items
+      // Fetch checklist items — use effectiveOwnerId for shared household data
       let checklistQuery = supabase
         .from("checklist_items")
         .select("*")
-        .eq("user_id", user.id);
+        .eq("user_id", ownerId);
 
       if (selectedChildId && selectedChildId !== "all") {
         checklistQuery = checklistQuery.eq("child_id", selectedChildId);
       }
 
-      // Fetch doctor discussion items
+      // Fetch doctor discussion items — use effectiveOwnerId for shared household data
       let doctorQuery = supabase
         .from("doctor_discussion_items")
         .select("*, doctor_item_children(child_id)")
-        .eq("user_id", user.id);
+        .eq("user_id", ownerId);
 
       const [checklistResult, doctorResult] = await Promise.all([
         checklistQuery.order("sort_order", { ascending: true }),

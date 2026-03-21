@@ -202,7 +202,7 @@ const SUGGESTIONS = [
 // ── Main Component ──────────────────────────────────────────
 
 export default function ChatScreen() {
-  const { user } = useAuth();
+  const { user, effectiveOwnerId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -220,12 +220,12 @@ export default function ChatScreen() {
 
   useEffect(() => {
     const fetchChildren = async () => {
-      if (!user?.id) return;
+      if (!user?.id || !effectiveOwnerId) return;
       try {
         const { data, error } = await supabase
           .from("children")
           .select("id, name")
-          .eq("user_id", user.id);
+          .eq("user_id", effectiveOwnerId);
 
         if (error) { setIsLoadingChildren(false); return; }
         if (data && data.length > 0) {
@@ -236,7 +236,7 @@ export default function ChatScreen() {
       } catch { setIsLoadingChildren(false); }
     };
     fetchChildren();
-  }, [user?.id]);
+  }, [user?.id, effectiveOwnerId]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;

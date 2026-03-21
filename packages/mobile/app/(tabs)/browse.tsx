@@ -135,7 +135,7 @@ const ResourceCardItem = memo(function ResourceCardItem({ item, onPress }: Resou
 /* ── Main Browse Screen ────────────────────────────────── */
 
 export default function BrowseScreen() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, effectiveOwnerId } = useAuth();
   const router = useRouter();
 
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -152,11 +152,11 @@ export default function BrowseScreen() {
     : null;
 
   const loadData = useCallback(async (bypassCache = false) => {
-    if (!user?.id) return;
+    if (!user?.id || !effectiveOwnerId) return;
 
     try {
-      // Fetch all children (cached for 5 min)
-      const childrenCacheKey = `children:${user.id}`;
+      // Fetch all children (cached for 5 min) — use effectiveOwnerId for partners
+      const childrenCacheKey = `children:${effectiveOwnerId}`;
       let children: EnrichedChild[] = bypassCache
         ? []
         : queryCache.get<EnrichedChild[]>(childrenCacheKey) ?? [];
@@ -165,7 +165,7 @@ export default function BrowseScreen() {
         const { data: childrenData } = await supabase
           .from("children")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveOwnerId)
           .order("created_at", { ascending: true });
 
         if (childrenData && childrenData.length > 0) {
@@ -187,7 +187,7 @@ export default function BrowseScreen() {
       // Check resource cache (keyed by child or "all")
       const resourceCacheKey = filterChild
         ? `resources:${filterChild.id}`
-        : `resources:all:${user.id}`;
+        : `resources:all:${effectiveOwnerId}`;
       const cachedResources = bypassCache
         ? null
         : queryCache.get<EnrichedResource[]>(resourceCacheKey);
@@ -238,11 +238,11 @@ export default function BrowseScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.id, selectedChildId]);
+  }, [user?.id, effectiveOwnerId, selectedChildId]);
 
   useEffect(() => {
     loadData();
-  }, [user?.id, selectedChildId, loadData]);
+  }, [user?.id, effectiveOwnerId, selectedChildId, loadData]);
 
   // Client-side topic + keyword filtering
   useEffect(() => {

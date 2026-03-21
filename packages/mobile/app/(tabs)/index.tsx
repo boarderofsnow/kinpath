@@ -29,7 +29,7 @@ interface EnrichedChild extends ChildWithAge {
 }
 
 export default function HomeScreen() {
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, effectiveOwnerId } = useAuth();
   const router = useRouter();
 
   const [userData, setUserData] = useState<User | null>(null);
@@ -39,7 +39,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async (bypassCache = false) => {
-    if (!user?.id) {
+    if (!user?.id || !effectiveOwnerId) {
       setLoading(false);
       setRefreshing(false);
       return;
@@ -62,8 +62,8 @@ export default function HomeScreen() {
       }
       if (userRecord) setUserData(userRecord);
 
-      // Children (cached 5 min, shared with Browse)
-      const childrenCacheKey = `children:${user.id}`;
+      // Children (cached 5 min, shared with Browse) — use effectiveOwnerId for partners
+      const childrenCacheKey = `children:${effectiveOwnerId}`;
       let enrichedChildren: EnrichedChild[] = bypassCache
         ? []
         : queryCache.get<EnrichedChild[]>(childrenCacheKey) ?? [];
@@ -72,7 +72,7 @@ export default function HomeScreen() {
         const { data: childrenData } = await supabase
           .from("children")
           .select("*")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveOwnerId)
           .order("created_at", { ascending: false });
 
         if (childrenData) {
@@ -124,11 +124,11 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user?.id]);
+  }, [user?.id, effectiveOwnerId]);
 
   useEffect(() => {
     loadData();
-  }, [user?.id, loadData]);
+  }, [user?.id, effectiveOwnerId, loadData]);
 
   const onRefresh = () => {
     setRefreshing(true);

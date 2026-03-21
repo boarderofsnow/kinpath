@@ -4,6 +4,7 @@ import * as authHelpers from "./auth";
 import { api } from "./api";
 import { queryCache } from "./cache";
 import { identifyUser, resetUser } from "./purchases";
+import { getHouseholdContext } from "./household";
 import type { User } from "@supabase/supabase-js";
 
 type AuthResult = { data?: any; error?: authHelpers.AuthError };
@@ -12,6 +13,9 @@ interface AuthContextType {
   user: User | null;
   session: any | null;
   isLoading: boolean;
+  /** The user_id to use for shared data queries (children, checklist). For partners, this is the owner's ID. */
+  effectiveOwnerId: string | null;
+  isPartner: boolean;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string, displayName: string) => Promise<AuthResult>;
   signOut: () => Promise<AuthResult>;
@@ -25,6 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [effectiveOwnerId, setEffectiveOwnerId] = useState<string | null>(null);
+  const [isPartner, setIsPartner] = useState(false);
   const checkedPendingInvite = useRef(false);
   const identifiedRcUser = useRef<string | null>(null);
   const signingOutRef = useRef(false);
@@ -37,6 +43,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Non-fatal: silently ignore if the call fails
     });
   }, [user]);
+
+  // Resolve household context — determines effectiveOwnerId for shared data queries
+  useEffect(() => {
+    if (!user?.id) {
+      setEffectiveOwnerId(null);
+      setIsPartner(false);
+      return;
+    }
+
+    getHouseholdContext(user.id).then((ctx) => {
+      setEffectiveOwnerId(ctx.effectiveOwnerId);
+      setIsPartner(ctx.isPartner);
+    }).catch(() => {
+      // Fallback: use own ID if household resolution fails
+      setEffectiveOwnerId(user.id);
+      setIsPartner(false);
+    });
+  }, [user?.id]);
 
   useEffect(() => {
     // Identify user in RevenueCat only when the user ID actually changes
@@ -109,6 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // unmounting protected screens before any async work runs.
     setUser(null);
     setSession(null);
+    setEffectiveOwnerId(null);
+    setIsPartner(false);
     queryCache.clear();
     identifiedRcUser.current = null;
     try {
@@ -128,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, signIn, signUp, signOut, signInWithApple, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, session, isLoading, effectiveOwnerId, isPartner, signIn, signUp, signOut, signInWithApple, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
