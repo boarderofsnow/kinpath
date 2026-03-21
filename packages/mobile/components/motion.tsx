@@ -28,13 +28,15 @@ export function FadeIn({
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(opacity, {
+    const anim = Animated.timing(opacity, {
       toValue: 1,
       duration,
       delay,
       easing: EASE_OUT,
       useNativeDriver: true,
-    }).start();
+    });
+    anim.start();
+    return () => anim.stop();
   }, []);
 
   return (
@@ -54,7 +56,7 @@ export function FadeInUp({
   const translateY = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    const anim = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration,
@@ -69,7 +71,9 @@ export function FadeInUp({
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    anim.start();
+    return () => anim.stop();
   }, []);
 
   return (
@@ -94,7 +98,7 @@ export function PageTransition({
   const translateY = useRef(new Animated.Value(8)).current;
 
   useEffect(() => {
-    Animated.parallel([
+    const anim = Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
         duration: 300,
@@ -107,7 +111,9 @@ export function PageTransition({
         easing: EASE_OUT,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
+    anim.start();
+    return () => anim.stop();
   }, []);
 
   return (

@@ -27,6 +27,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const checkedPendingInvite = useRef(false);
   const identifiedRcUser = useRef<string | null>(null);
+  const signingOutRef = useRef(false);
 
   // Check for and accept pending household invites on login
   useEffect(() => {
@@ -78,6 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for auth changes
     const subscription = authHelpers.onAuthStateChange((session) => {
+      // During sign-out, ignore auth events (e.g. TOKEN_REFRESHED) that would
+      // re-set session/user and cause a double mount/unmount cycle crash.
+      if (signingOutRef.current) return;
+
       setSession(session);
       setUser(session?.user || null);
       identifyIfNeeded(session?.user?.id);
@@ -97,14 +102,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Suppress the auth state listener so token-refresh events cannot
+    // re-set session/user while async cleanup is in progress.
+    signingOutRef.current = true;
     // Clear state first so the route guard navigates immediately,
     // unmounting protected screens before any async work runs.
     setUser(null);
     setSession(null);
     queryCache.clear();
     identifiedRcUser.current = null;
-    await resetUser().catch(() => {});
-    return authHelpers.signOut();
+    try {
+      await resetUser().catch(() => {});
+      return await authHelpers.signOut();
+    } finally {
+      signingOutRef.current = false;
+    }
   };
 
   const signInWithApple = async () => {

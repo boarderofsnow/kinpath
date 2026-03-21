@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   StyleSheet,
   View,
@@ -48,93 +48,106 @@ export default function SettingsScreen() {
   // ── UI state ───────────────────────────────────
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
 
   // ── Load all data ──────────────────────────────
-  const loadData = useCallback(async () => {
-    if (!user?.id) {
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
+  useEffect(() => {
+    let cancelled = false;
 
-    try {
-      // Parallel queries
-      const [userRes, childrenRes, prefsRes, notifRes] = await Promise.all([
-        supabase.from("users").select("*").eq("id", user.id).single(),
-        supabase
-          .from("children")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: true }),
-        supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
-        supabase
-          .from("notification_preferences")
-          .select("*")
-          .eq("user_id", user.id)
-          .single(),
-      ]);
+    async function load() {
+      if (!user?.id) {
+        if (!cancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
+        return;
+      }
 
-      if (userRes.data) setUserData(userRes.data);
-      if (childrenRes.data) setChildren(childrenRes.data);
-      if (prefsRes.data) setPreferences(prefsRes.data as UserPreferences);
-      if (notifRes.data) setNotificationPrefs(notifRes.data as NotificationPreferences);
-
-      // Household (conditional on premium + family tiers)
-      if (userRes.data?.subscription_tier === "premium" || userRes.data?.subscription_tier === "family") {
-        // Check if user is a partner first
-        const { data: partnerCheck } = await supabase
-          .from("household_members")
-          .select("household_id")
-          .eq("user_id", user.id)
-          .eq("status", "accepted")
-          .maybeSingle();
-
-        if (partnerCheck) {
-          setIsPartner(true);
-          // Load members for the household they belong to
-          const { data: members } = await supabase
-            .from("household_members")
+      try {
+        const [userRes, childrenRes, prefsRes, notifRes] = await Promise.all([
+          supabase.from("users").select("*").eq("id", user.id).single(),
+          supabase
+            .from("children")
             .select("*")
-            .eq("household_id", partnerCheck.household_id)
-            .order("invited_at", { ascending: true });
-          if (members) setHouseholdMembers(members as HouseholdMember[]);
-        } else {
-          setIsPartner(false);
-          // Check if user owns a household
-          const { data: household } = await supabase
-            .from("households")
-            .select("id")
-            .eq("owner_user_id", user.id)
+            .eq("user_id", user.id)
+            .order("created_at", { ascending: true }),
+          supabase.from("user_preferences").select("*").eq("user_id", user.id).single(),
+          supabase
+            .from("notification_preferences")
+            .select("*")
+            .eq("user_id", user.id)
+            .single(),
+        ]);
+
+        if (cancelled) return;
+
+        if (userRes.data) setUserData(userRes.data);
+        if (childrenRes.data) setChildren(childrenRes.data);
+        if (prefsRes.data) setPreferences(prefsRes.data as UserPreferences);
+        if (notifRes.data) setNotificationPrefs(notifRes.data as NotificationPreferences);
+
+        // Household (conditional on premium + family tiers)
+        if (userRes.data?.subscription_tier === "premium" || userRes.data?.subscription_tier === "family") {
+          const { data: partnerCheck } = await supabase
+            .from("household_members")
+            .select("household_id")
+            .eq("user_id", user.id)
+            .eq("status", "accepted")
             .maybeSingle();
 
-          if (household) {
+          if (cancelled) return;
+
+          if (partnerCheck) {
+            setIsPartner(true);
             const { data: members } = await supabase
               .from("household_members")
               .select("*")
-              .eq("household_id", household.id)
+              .eq("household_id", partnerCheck.household_id)
               .order("invited_at", { ascending: true });
-            if (members) setHouseholdMembers(members as HouseholdMember[]);
+            if (!cancelled && members) setHouseholdMembers(members as HouseholdMember[]);
+          } else {
+            setIsPartner(false);
+            const { data: household } = await supabase
+              .from("households")
+              .select("id")
+              .eq("owner_user_id", user.id)
+              .maybeSingle();
+
+            if (cancelled) return;
+
+            if (household) {
+              const { data: members } = await supabase
+                .from("household_members")
+                .select("*")
+                .eq("household_id", household.id)
+                .order("invited_at", { ascending: true });
+              if (!cancelled && members) setHouseholdMembers(members as HouseholdMember[]);
+            }
           }
         }
+      } catch (error) {
+        if (!cancelled) console.error("Error loading settings data:", error);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
-    } catch (error) {
-      console.error("Error loading settings data:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
     }
-  }, [user?.id]);
 
-  useEffect(() => {
-    loadData();
-  }, [user?.id, loadData]);
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, refreshTrigger]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadData();
+    setRefreshTrigger((n) => n + 1);
   };
 
   // ── Profile name editing ───────────────────────
@@ -300,7 +313,7 @@ export default function SettingsScreen() {
               subscriptionTier={tier as any}
               stripeCustomerId={userData?.stripe_customer_id ?? null}
               rcCustomerId={userData?.rc_customer_id ?? null}
-              onSubscriptionChange={loadData}
+              onSubscriptionChange={() => setRefreshTrigger((n) => n + 1)}
             />
           </CollapsibleSection>
         </FadeInUp>
