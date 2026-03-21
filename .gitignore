@@ -44,3 +44,4 @@ coverage/
 .sentryclirc
 supabase-deployment.env
 generate-apple-secret.js
+.vercel
