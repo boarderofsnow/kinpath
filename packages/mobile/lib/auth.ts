@@ -167,7 +167,10 @@ export async function signInWithApple() {
  */
 export async function signInWithGoogle() {
   try {
-    const redirectTo = makeRedirectUri();
+    const redirectTo = makeRedirectUri({
+      scheme: "kinpath-family",
+      path: "auth-callback",
+    });
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
