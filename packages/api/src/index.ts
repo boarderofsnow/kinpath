@@ -17,9 +17,14 @@ import { startCronJobs } from "./cron/digest";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// ── Stripe webhook must receive the raw body for signature verification ──────
-// Mount this BEFORE express.json() so the raw Buffer is preserved.
+// ── Webhook routes (mounted BEFORE CORS/helmet — server-to-server calls) ─────
+// Stripe needs the raw body for signature verification.
 app.use("/webhooks/stripe", express.raw({ type: "application/json" }));
+// RevenueCat and other webhooks use JSON bodies.
+app.use("/webhooks/revenuecat", express.json());
+// Mount the webhooks router early so external webhook providers aren't
+// blocked by CORS or Helmet (they send their own Origin headers).
+app.use("/webhooks", webhooksRouter);
 
 // ── Global middleware ─────────────────────────────────────────────────────────
 app.use(helmet());
@@ -63,7 +68,6 @@ app.use("/review", reviewRouter);
 app.use("/household", householdRouter);
 app.use("/account", accountRouter);
 app.use("/stripe", stripeRouter);
-app.use("/webhooks", webhooksRouter);
 app.use("/admin", adminRouter);
 
 // ── Error handler (must be last) ──────────────────────────────────────────────
