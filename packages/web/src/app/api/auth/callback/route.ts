@@ -37,18 +37,37 @@ export async function GET(request: Request) {
     // Strategy 2: fallback — match pending invite by email.
     //   Handles the case where a user registered manually instead of
     //   clicking the invite link, so metadata was never set.
+    //   Only for genuinely new users who don't already belong to a household.
     if (!householdMemberId && user.email) {
       const serviceClient = createServiceRoleClient();
-      const { data: pendingInvite } = await serviceClient
+
+      // Skip email-based invite lookup if the user already has household ties
+      const { data: existingMembership } = await serviceClient
         .from("household_members")
         .select("id")
-        .eq("invited_email", user.email.toLowerCase())
-        .is("user_id", null)
-        .eq("status", "pending")
+        .eq("user_id", user.id)
+        .limit(1)
         .maybeSingle();
 
-      if (pendingInvite) {
-        householdMemberId = pendingInvite.id;
+      const { data: ownedHousehold } = await serviceClient
+        .from("households")
+        .select("id")
+        .eq("owner_user_id", user.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingMembership && !ownedHousehold) {
+        const { data: pendingInvite } = await serviceClient
+          .from("household_members")
+          .select("id")
+          .eq("invited_email", user.email.toLowerCase())
+          .is("user_id", null)
+          .eq("status", "pending")
+          .maybeSingle();
+
+        if (pendingInvite) {
+          householdMemberId = pendingInvite.id;
+        }
       }
     }
 
