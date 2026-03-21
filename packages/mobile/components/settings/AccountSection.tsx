@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, fonts, typography, spacing, radii } from "../../lib/theme";
@@ -13,6 +13,8 @@ export function AccountSection({ onSignOut }: AccountSectionProps) {
   const [signingOut, setSigningOut] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const unmountedRef = useRef(false);
+  useEffect(() => () => { unmountedRef.current = true; }, []);
 
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -30,7 +32,7 @@ export function AccountSection({ onSignOut }: AccountSectionProps) {
           } catch {
             Alert.alert("Error", "An unexpected error occurred.");
           } finally {
-            setSigningOut(false);
+            if (!unmountedRef.current) setSigningOut(false);
           }
         },
       },

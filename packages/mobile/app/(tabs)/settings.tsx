@@ -261,7 +261,7 @@ export default function SettingsScreen() {
           >
             <ChildrenSection
               children={children}
-              userId={user!.id}
+              userId={user?.id ?? ""}
               onChildrenChange={setChildren}
             />
           </CollapsibleSection>
@@ -272,7 +272,7 @@ export default function SettingsScreen() {
           <CollapsibleSection title="Your Preferences" icon="options-outline">
             <PreferencesSection
               preferences={preferences}
-              userId={user!.id}
+              userId={user?.id ?? ""}
               onPreferencesChange={setPreferences}
             />
           </CollapsibleSection>
@@ -283,7 +283,7 @@ export default function SettingsScreen() {
           <CollapsibleSection title="Notifications" icon="notifications-outline">
             <NotificationsSection
               notificationPrefs={notificationPrefs}
-              userId={user!.id}
+              userId={user?.id ?? ""}
               onNotificationPrefsChange={setNotificationPrefs}
             />
           </CollapsibleSection>

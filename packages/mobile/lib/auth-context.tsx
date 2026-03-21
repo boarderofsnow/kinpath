@@ -97,6 +97,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear state first so the route guard navigates immediately,
+    // unmounting protected screens before any async work runs.
+    setUser(null);
+    setSession(null);
     queryCache.clear();
     identifiedRcUser.current = null;
     await resetUser().catch(() => {});
