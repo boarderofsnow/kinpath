@@ -35,6 +35,12 @@ export function configureRevenueCat(): void {
 
 // ─── User Identity ───────────────────────────────────────────────────────────
 
+/** Resolves once the current user has been identified (or identification failed). */
+let identifiedResolve: () => void;
+let identifiedPromise = new Promise<void>((r) => {
+  identifiedResolve = r;
+});
+
 /**
  * Call after the user signs in. Associates RevenueCat purchases with the
  * Supabase user ID so cross-platform entitlements are unified.
@@ -43,11 +49,24 @@ export async function identifyUser(userId: string): Promise<CustomerInfo | null>
   try {
     await readyPromise;
     const { customerInfo } = await Purchases.logIn(userId);
+    identifiedResolve();
     return customerInfo;
   } catch (error) {
     console.error("[RevenueCat] identifyUser failed:", error);
+    identifiedResolve(); // Unblock callers even on failure
     return null;
   }
+}
+
+/**
+ * Wait for the current user to be identified in RevenueCat.
+ * Times out after 5s so the purchase flow isn't blocked indefinitely.
+ */
+export async function waitForIdentification(): Promise<void> {
+  await Promise.race([
+    identifiedPromise,
+    new Promise<void>((r) => setTimeout(r, 5000)),
+  ]);
 }
 
 /**
@@ -55,6 +74,10 @@ export async function identifyUser(userId: string): Promise<CustomerInfo | null>
  * sign-in gets a clean slate. Times out after 3s to avoid blocking sign-out.
  */
 export async function resetUser(): Promise<void> {
+  // Reset the identification promise for the next sign-in cycle
+  identifiedPromise = new Promise<void>((r) => {
+    identifiedResolve = r;
+  });
   try {
     await readyPromise;
     await Promise.race([

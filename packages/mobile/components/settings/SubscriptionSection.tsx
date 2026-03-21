@@ -14,7 +14,7 @@ import { colors, fonts, typography, spacing, radii } from "../../lib/theme";
 import { PressableScale } from "../motion";
 import { api } from "../../lib/api";
 import { Linking, Platform } from "react-native";
-import { ENTITLEMENT_ID, checkEntitlement } from "../../lib/purchases";
+import { ENTITLEMENT_ID, checkEntitlement, waitForIdentification } from "../../lib/purchases";
 
 interface SubscriptionSectionProps {
   subscriptionTier: SubscriptionTier;
@@ -52,6 +52,10 @@ export function SubscriptionSection({
   const handleUpgrade = async () => {
     setLoading(true);
     try {
+      // Ensure the user is identified in RevenueCat before presenting the
+      // paywall — prevents purchases going through under an anonymous ID.
+      await waitForIdentification();
+
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: ENTITLEMENT_ID,
       });
@@ -136,6 +140,8 @@ export function SubscriptionSection({
   const handleRestore = async () => {
     setLoading(true);
     try {
+      await waitForIdentification();
+
       const result = await RevenueCatUI.presentPaywallIfNeeded({
         requiredEntitlementIdentifier: ENTITLEMENT_ID,
       });

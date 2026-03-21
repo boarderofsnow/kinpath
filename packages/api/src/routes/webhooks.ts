@@ -255,9 +255,42 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
     return;
   }
 
-  // app_user_id is the Supabase user UUID set via Purchases.logIn(userId)
-  const userId = event.app_user_id;
   const supabase = createServiceRoleClient();
+
+  // app_user_id is normally the Supabase UUID set via Purchases.logIn(userId).
+  // However, if logIn hasn't completed yet the purchase may land under an
+  // anonymous $RCAnonymousID. In that case, check aliases (which contain the
+  // Supabase UUID when the user was later identified) and fall back to looking
+  // up the user by rc_customer_id.
+  let userId = event.app_user_id;
+  const isAnonymous = userId.startsWith("$RCAnonymousID:");
+
+  if (isAnonymous) {
+    // Try aliases first — RevenueCat includes the identified user ID here
+    const supabaseId = event.aliases?.find((a) => !a.startsWith("$"));
+    if (supabaseId) {
+      userId = supabaseId;
+    } else {
+      // Fall back: look up by rc_customer_id stored from a previous sync
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("rc_customer_id", event.app_user_id)
+        .maybeSingle();
+      if (existingUser) {
+        userId = existingUser.id;
+      } else {
+        console.warn(
+          `[RC webhook] Cannot resolve anonymous ID ${event.app_user_id} to a user`
+        );
+        res.json({ received: true });
+        return;
+      }
+    }
+    console.log(
+      `[RC webhook] Resolved anonymous ID to user ${userId}`
+    );
+  }
 
   console.log(`[RC webhook] Received ${event.type} for user ${userId}`, {
     entitlements: event.entitlements,
@@ -273,7 +306,7 @@ webhooksRouter.post("/revenuecat", async (req: Request, res: Response) => {
         .from("users")
         .update({
           subscription_tier: tier,
-          rc_customer_id: userId, // idempotent — already set after first purchase
+          rc_customer_id: event.app_user_id, // store the RC ID (may be anonymous or identified)
         })
         .eq("id", userId)
         .select("id")
