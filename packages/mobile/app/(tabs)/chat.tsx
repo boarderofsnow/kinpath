@@ -14,6 +14,7 @@ import {
   Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
 import { api } from "../../lib/api";
@@ -25,6 +26,7 @@ interface CitedResource {
   index: number;
   id: string | null;
   title: string;
+  slug?: string | null;
   url: string | null;
 }
 
@@ -55,7 +57,7 @@ interface MarkdownElement {
 
 // ── Markdown Helpers ────────────────────────────────────────
 
-const renderInlineMarkdown = (text: string, isUser: boolean): React.ReactNode[] => {
+const renderInlineMarkdown = (text: string, isUser: boolean, knownCitations?: Set<number>): React.ReactNode[] => {
   const elements: React.ReactNode[] = [];
   const regex = /(\*\*[^*]+\*\*)|(\[\d+\])|([^\*\[\]]+)/g;
   let match;
@@ -77,9 +79,15 @@ const renderInlineMarkdown = (text: string, isUser: boolean): React.ReactNode[] 
       );
     } else if (match[2]) {
       const citationNum = match[2].slice(1, -1);
+      const hasSource = !knownCitations || knownCitations.has(Number(citationNum));
       elements.push(
-        <View key={currentIndex} style={markdownStyles.citationBadge}>
-          <Text style={markdownStyles.citationText}>{citationNum}</Text>
+        <View
+          key={currentIndex}
+          style={[markdownStyles.citationBadge, !hasSource && markdownStyles.citationBadgeOrphaned]}
+        >
+          <Text style={[markdownStyles.citationText, !hasSource && markdownStyles.citationTextOrphaned]}>
+            {citationNum}
+          </Text>
         </View>
       );
     } else if (match[3]) {
@@ -107,7 +115,7 @@ const renderInlineMarkdown = (text: string, isUser: boolean): React.ReactNode[] 
       ];
 };
 
-const renderMarkdown = (text: string): React.ReactNode => {
+const renderMarkdown = (text: string, knownCitations?: Set<number>): React.ReactNode => {
   const elements: MarkdownElement[] = [];
   const lines = text.split("\n");
 
@@ -145,38 +153,38 @@ const renderMarkdown = (text: string): React.ReactNode => {
           case "h1":
             return (
               <Text key={idx} style={markdownStyles.h1}>
-                {renderInlineMarkdown(el.content, false)}
+                {renderInlineMarkdown(el.content, false, knownCitations)}
               </Text>
             );
           case "h2":
             return (
               <Text key={idx} style={markdownStyles.h2}>
-                {renderInlineMarkdown(el.content, false)}
+                {renderInlineMarkdown(el.content, false, knownCitations)}
               </Text>
             );
           case "h3":
             return (
               <Text key={idx} style={markdownStyles.h3}>
-                {renderInlineMarkdown(el.content, false)}
+                {renderInlineMarkdown(el.content, false, knownCitations)}
               </Text>
             );
           case "bullet":
             return (
               <View key={idx} style={markdownStyles.bulletRow}>
                 <Text style={markdownStyles.bulletDot}>{"\u2022"}</Text>
-                <Text style={{ flex: 1 }}>{renderInlineMarkdown(el.content, false)}</Text>
+                <Text style={{ flex: 1 }}>{renderInlineMarkdown(el.content, false, knownCitations)}</Text>
               </View>
             );
           case "number":
             return (
               <View key={idx} style={markdownStyles.numberRow}>
                 <Text style={markdownStyles.numberLabel}>{el.index}.</Text>
-                <Text style={{ flex: 1 }}>{renderInlineMarkdown(el.content, false)}</Text>
+                <Text style={{ flex: 1 }}>{renderInlineMarkdown(el.content, false, knownCitations)}</Text>
               </View>
             );
           default:
             return (
-              <Text key={idx}>{renderInlineMarkdown(el.content, false)}</Text>
+              <Text key={idx}>{renderInlineMarkdown(el.content, false, knownCitations)}</Text>
             );
         }
       })}
@@ -203,7 +211,11 @@ const markdownStyles = StyleSheet.create({
     paddingVertical: 1,
     marginHorizontal: 2,
   },
+  citationBadgeOrphaned: {
+    backgroundColor: colors.stone[100],
+  },
   citationText: { fontFamily: fonts.sansBold, fontSize: 10, color: colors.brand[600] },
+  citationTextOrphaned: { color: colors.stone[400] },
 });
 
 // Module-level variable persists conversationId across tab navigation
@@ -222,6 +234,7 @@ const SUGGESTIONS = [
 // ── Main Component ──────────────────────────────────────────
 
 export default function ChatScreen() {
+  const router = useRouter();
   const { user, effectiveOwnerId } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -238,6 +251,7 @@ export default function ChatScreen() {
   const [discussingMessageId, setDiscussingMessageId] = useState<string | null>(null);
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(null);
   const [dismissedPrefUpdates, setDismissedPrefUpdates] = useState<Set<string>>(new Set());
+  const [isLimitReached, setIsLimitReached] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -286,7 +300,16 @@ export default function ChatScreen() {
         conversation_id: conversationId || undefined,
       });
 
-      if (response.error) { setError(response.error); setIsLoading(false); return; }
+      if (response.error) {
+        if (response.status === 429) {
+          setIsLimitReached(true);
+          setRemainingQuestions(0);
+        } else {
+          setError(response.error);
+        }
+        setIsLoading(false);
+        return;
+      }
 
       const data = response.data as {
         message: string;
@@ -415,6 +438,7 @@ export default function ChatScreen() {
     setDiscussedMessageIds(new Set());
     setDiscussingMessageId(null);
     setDismissedPrefUpdates(new Set());
+    setIsLimitReached(false);
     setInputValue("");
     _cachedConversationId = null;
   };
@@ -423,7 +447,10 @@ export default function ChatScreen() {
     if (!user?.id) return;
     await supabase
       .from("user_preferences")
-      .upsert({ user_id: user.id, [suggestion.field]: suggestion.suggested_value });
+      .upsert(
+        { user_id: user.id, [suggestion.field]: suggestion.suggested_value },
+        { onConflict: "user_id" }
+      );
     setDismissedPrefUpdates((prev) => new Set(prev).add(messageId));
   }, [user?.id]);
 
@@ -446,7 +473,7 @@ export default function ChatScreen() {
           {isUser ? (
             <Text style={styles.userText}>{item.content}</Text>
           ) : (
-            renderMarkdown(item.content)
+            renderMarkdown(item.content, new Set((item.cited_resources ?? []).map((r) => r.index)))
           )}
 
           {/* Cited resources — numbered footnotes */}
@@ -459,17 +486,23 @@ export default function ChatScreen() {
                   <Pressable
                     key={resource.index}
                     style={styles.citedResource}
-                    onPress={() => resource.url ? Linking.openURL(resource.url) : undefined}
+                    onPress={() => {
+                      if (resource.url) Linking.openURL(resource.url);
+                      else if (resource.slug) router.push({ pathname: "/resource/[slug]", params: { slug: resource.slug } });
+                    }}
                   >
                     <Text style={styles.citedResourceIndex}>[{resource.index}]</Text>
                     <Text
-                      style={[styles.citedResourceText, resource.url ? styles.citedResourceLink : null]}
+                      style={[styles.citedResourceText, (resource.url || resource.slug) ? styles.citedResourceLink : null]}
                       numberOfLines={2}
                     >
                       {resource.title}
                     </Text>
                     {resource.url && (
                       <Ionicons name="open-outline" size={11} color={colors.brand[500]} />
+                    )}
+                    {!resource.url && resource.slug && (
+                      <Ionicons name="chevron-forward" size={11} color={colors.brand[500]} />
                     )}
                   </Pressable>
                 ))}
@@ -658,6 +691,26 @@ export default function ChatScreen() {
         {error && (
           <View style={styles.errorBanner}>
             <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
+
+        {/* Limit reached upgrade card */}
+        {isLimitReached && (
+          <View style={styles.limitReachedCard}>
+            <View style={styles.limitReachedHeader}>
+              <Ionicons name="lock-closed-outline" size={18} color="#92400e" />
+              <Text style={styles.limitReachedTitle}>Monthly limit reached</Text>
+            </View>
+            <Text style={styles.limitReachedBody}>
+              You've used all your AI questions this month. Upgrade to Kinpath Pro for unlimited access.
+            </Text>
+            <PressableScale
+              style={styles.upgradeButton}
+              onPress={() => router.push("/(tabs)/settings")}
+            >
+              <Ionicons name="sparkles" size={14} color={colors.white} />
+              <Text style={styles.upgradeButtonText}>Upgrade to Kinpath Pro</Text>
+            </PressableScale>
           </View>
         )}
 
@@ -1044,6 +1097,33 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     flex: 1,
   },
+
+  // Limit reached upgrade card
+  limitReachedCard: {
+    backgroundColor: "#fffbeb",
+    borderWidth: 1,
+    borderColor: "#fcd34d",
+    borderRadius: radii.md,
+    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  limitReachedHeader: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  limitReachedTitle: { fontFamily: fonts.sansSemiBold, fontSize: 14, color: "#92400e" },
+  limitReachedBody: { fontFamily: fonts.sans, fontSize: 13, color: "#78350f", lineHeight: 18 },
+  upgradeButton: {
+    backgroundColor: "#f59e0b",
+    borderRadius: radii.full,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xs,
+  },
+  upgradeButtonText: { fontFamily: fonts.sansSemiBold, fontSize: 14, color: colors.white },
 
   // Error
   errorBanner: {

@@ -6,6 +6,16 @@ import { aiChatMessageSchema, TIER_LIMITS } from "@kinpath/shared";
 
 export const aiRouter = Router();
 
+/** Strip URL to base origin only (scheme + host) to avoid linking to dead deep-link paths. */
+function toBaseUrl(raw: string): string {
+  try {
+    const u = new URL(raw);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return raw;
+  }
+}
+
 let _anthropic: Anthropic | null = null;
 function getAnthropic(): Anthropic {
   if (!_anthropic) {
@@ -22,14 +32,20 @@ RULES:
   - If RELEVANT RESOURCES are provided below, cite them as [1], [2] matching the list order.
   - For any authoritative external source not covered by provided resources, continue the numbering (e.g. [3]) and append a SOURCES block at the very end of your response in this exact format (do not include it in the conversational text):
     <<<SOURCES>>>
-    [N] Source Name: https://url.example.com
+    [N] Source Name: https://root-domain-only.example.com
     <<<END_SOURCES>>>
+  - CRITICAL URL RULE: In the SOURCES block, use ONLY the root domain URL — NEVER a specific page path.
+    Correct:   [3] ACOG: https://www.acog.org
+    Incorrect: [3] ACOG Stages of Labor: https://www.acog.org/clinical/guidance/committee-opinion/articles/...
+  - IMPORTANT: If you emit [N] inline for an external source, you MUST include the SOURCES block at the end.
+    Omitting the SOURCES block causes broken references. There are NO exceptions — every external citation
+    number must have a corresponding SOURCES entry.
   - Acceptable external sources:
-    Clinical guidelines: ACOG (acog.org), NICE (nice.org.uk), WHO (who.int), Cochrane (cochranelibrary.com)
-    Child development: AAP (aap.org), CDC Developmental Milestones (cdc.gov/ncbddd/actearly), Zero to Three (zerotothree.org)
-    Postpartum mental health: PSI (postpartum.net), MGH Center for Women's Mental Health (womensmentalhealth.org), LactMed (ncbi.nlm.nih.gov/books/NBK501922)
-    Lactation & feeding: La Leche League (llli.org), Academy of Breastfeeding Medicine (bfmed.org), Evidence Based Birth (evidencebasedbirth.com)
-    Drug safety: MotherToBaby (mothertobaby.org), Mayo Clinic (mayoclinic.org)
+    Clinical guidelines: ACOG (https://www.acog.org), NICE (https://www.nice.org.uk), WHO (https://www.who.int), Cochrane (https://www.cochranelibrary.com)
+    Child development: AAP (https://www.aap.org), CDC (https://www.cdc.gov), Zero to Three (https://www.zerotothree.org)
+    Postpartum mental health: PSI (https://www.postpartum.net), MGH Women's Mental Health (https://womensmentalhealth.org), LactMed (https://www.ncbi.nlm.nih.gov)
+    Lactation & feeding: La Leche League (https://www.llli.org), Academy of Breastfeeding Medicine (https://www.bfmed.org), Evidence Based Birth (https://evidencebasedbirth.com)
+    Drug safety: MotherToBaby (https://mothertobaby.org), Mayo Clinic (https://www.mayoclinic.org)
     Also acceptable: Williams Obstetrics, Gabbe's Obstetrics, Nelson Textbook of Pediatrics (cite by title and edition, no URL needed)
   - If you genuinely cannot find a reputable source for a claim, acknowledge the uncertainty explicitly — never state unsupported facts as certainties.
 - Never provide medical diagnoses or treatment plans
@@ -213,7 +229,7 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
   // ── Retrieve relevant resources via text search ──────────────────────────
   let resourceQuery = supabase
     .from("resources")
-    .select("id, title, summary, body")
+    .select("id, title, slug, summary, body")
     .eq("status", "published")
     .textSearch("title", message.split(" ").slice(0, 5).join(" & "), {
       type: "websearch",
@@ -233,7 +249,7 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
   if ((!resources || resources.length === 0) && childAgeWeeks !== null) {
     const { data: fallbackResources } = await supabase
       .from("resources")
-      .select("id, title, summary, body")
+      .select("id, title, slug, summary, body")
       .eq("status", "published")
       .textSearch("title", message.split(" ").slice(0, 5).join(" & "), {
         type: "websearch",
@@ -297,7 +313,7 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
       for (const line of sourcesMatch[1].trim().split("\n")) {
         const m = line.match(/^\[(\d+)\]\s+(.+?):\s+(https?:\/\/\S+)$/);
         if (m) {
-          externalCitations.push({ index: parseInt(m[1]), title: m[2].trim(), url: m[3].trim() });
+          externalCitations.push({ index: parseInt(m[1]), title: m[2].trim(), url: toBaseUrl(m[3].trim()) });
         }
       }
     }
@@ -357,6 +373,7 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
       index: i + 1,
       id: r.id,
       title: r.title,
+      slug: (r.slug as string | null) ?? null,
       url: null as string | null,
     }));
 
