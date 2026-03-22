@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -10,6 +10,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Linking,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
@@ -19,11 +21,25 @@ import { colors, fonts, typography, spacing, radii, shadows, cardBase } from "..
 import { FadeInUp, StaggerItem, PressableScale, PulsingDot } from "../../components/motion";
 import { ChatSkeleton } from "../../components/skeleton";
 
+interface CitedResource {
+  index: number;
+  id: string | null;
+  title: string;
+  url: string | null;
+}
+
+interface PreferenceUpdateSuggestion {
+  field: string;
+  suggested_value: string;
+  reason: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  cited_resources?: Array<{ id: string; title: string }>;
+  cited_resources?: CitedResource[];
+  preference_update_suggestion?: PreferenceUpdateSuggestion | null;
 }
 
 interface Child {
@@ -190,6 +206,10 @@ const markdownStyles = StyleSheet.create({
   citationText: { fontFamily: fonts.sansBold, fontSize: 10, color: colors.brand[600] },
 });
 
+// Module-level variable persists conversationId across tab navigation
+// (Expo Router keeps tab screens mounted, but this guards re-mount edge cases)
+let _cachedConversationId: string | null = null;
+
 // ── Suggestions ─────────────────────────────────────────────
 
 const SUGGESTIONS = [
@@ -216,6 +236,8 @@ export default function ChatScreen() {
   const [addingMessageId, setAddingMessageId] = useState<string | null>(null);
   const [discussedMessageIds, setDiscussedMessageIds] = useState<Set<string>>(new Set());
   const [discussingMessageId, setDiscussingMessageId] = useState<string | null>(null);
+  const [remainingQuestions, setRemainingQuestions] = useState<number | null>(null);
+  const [dismissedPrefUpdates, setDismissedPrefUpdates] = useState<Set<string>>(new Set());
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
@@ -237,6 +259,11 @@ export default function ChatScreen() {
     };
     fetchChildren();
   }, [user?.id, effectiveOwnerId]);
+
+  // Restore active conversation ID if component re-mounts within the app session
+  useEffect(() => {
+    if (_cachedConversationId) setConversationId(_cachedConversationId);
+  }, []);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -264,18 +291,26 @@ export default function ChatScreen() {
       const data = response.data as {
         message: string;
         conversation_id: string;
-        cited_resources?: Array<{ id: string; title: string }>;
+        cited_resources?: CitedResource[];
+        preference_update_suggestion?: PreferenceUpdateSuggestion | null;
+        usage?: { used: number; limit: number; remaining: number } | null;
       };
 
       if (!data?.message) { setError("No response received"); setIsLoading(false); return; }
 
       setConversationId(data.conversation_id);
+      _cachedConversationId = data.conversation_id;
+
+      if (data.usage != null) {
+        setRemainingQuestions(data.usage.remaining);
+      }
 
       const assistantMessage: Message = {
         id: `${Date.now()}-assistant`,
         role: "assistant",
         content: data.message,
         cited_resources: data.cited_resources,
+        preference_update_suggestion: data.preference_update_suggestion ?? null,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -379,8 +414,22 @@ export default function ChatScreen() {
     setAddedMessageIds(new Set());
     setDiscussedMessageIds(new Set());
     setDiscussingMessageId(null);
+    setDismissedPrefUpdates(new Set());
     setInputValue("");
+    _cachedConversationId = null;
   };
+
+  const handlePreferenceUpdate = useCallback(async (messageId: string, suggestion: PreferenceUpdateSuggestion) => {
+    if (!user?.id) return;
+    await supabase
+      .from("user_preferences")
+      .upsert({ user_id: user.id, [suggestion.field]: suggestion.suggested_value });
+    setDismissedPrefUpdates((prev) => new Set(prev).add(messageId));
+  }, [user?.id]);
+
+  const handleDismissPrefUpdate = useCallback((messageId: string) => {
+    setDismissedPrefUpdates((prev) => new Set(prev).add(messageId));
+  }, []);
 
   // ── Render Helpers ──────────────────────────────────────
 
@@ -400,17 +449,55 @@ export default function ChatScreen() {
             renderMarkdown(item.content)
           )}
 
-          {/* Cited resources */}
+          {/* Cited resources — numbered footnotes */}
           {!isUser && item.cited_resources && item.cited_resources.length > 0 && (
             <View style={styles.citedSection}>
-              {item.cited_resources.map((resource) => (
-                <PressableScale key={resource.id} style={styles.citedResource}>
-                  <Ionicons name="sparkles" size={12} color={colors.brand[500]} />
-                  <Text style={styles.citedResourceText} numberOfLines={1}>
-                    {resource.title}
-                  </Text>
+              <Text style={styles.citedSectionHeader}>Sources</Text>
+              {[...item.cited_resources]
+                .sort((a, b) => a.index - b.index)
+                .map((resource) => (
+                  <Pressable
+                    key={resource.index}
+                    style={styles.citedResource}
+                    onPress={() => resource.url ? Linking.openURL(resource.url) : undefined}
+                  >
+                    <Text style={styles.citedResourceIndex}>[{resource.index}]</Text>
+                    <Text
+                      style={[styles.citedResourceText, resource.url ? styles.citedResourceLink : null]}
+                      numberOfLines={2}
+                    >
+                      {resource.title}
+                    </Text>
+                    {resource.url && (
+                      <Ionicons name="open-outline" size={11} color={colors.brand[500]} />
+                    )}
+                  </Pressable>
+                ))}
+            </View>
+          )}
+
+          {/* Preference update suggestion card */}
+          {!isUser && item.preference_update_suggestion && !dismissedPrefUpdates.has(item.id) && (
+            <View style={styles.prefUpdateCard}>
+              <View style={styles.prefUpdateHeader}>
+                <Ionicons name="refresh-circle-outline" size={16} color={colors.brand[600]} />
+                <Text style={styles.prefUpdateTitle}>Update your preferences?</Text>
+              </View>
+              <Text style={styles.prefUpdateReason}>{item.preference_update_suggestion.reason}</Text>
+              <View style={styles.prefUpdateButtons}>
+                <PressableScale
+                  style={styles.prefUpdateButtonPrimary}
+                  onPress={() => handlePreferenceUpdate(item.id, item.preference_update_suggestion!)}
+                >
+                  <Text style={styles.prefUpdateButtonPrimaryText}>Update</Text>
                 </PressableScale>
-              ))}
+                <PressableScale
+                  style={styles.prefUpdateButtonSecondary}
+                  onPress={() => handleDismissPrefUpdate(item.id)}
+                >
+                  <Text style={styles.prefUpdateButtonSecondaryText}>Keep current</Text>
+                </PressableScale>
+              </View>
             </View>
           )}
 
@@ -596,6 +683,24 @@ export default function ChatScreen() {
 
         {/* Input */}
         <View style={styles.inputArea}>
+          {remainingQuestions !== null && (
+            <View style={[
+              styles.usageCounter,
+              remainingQuestions <= 1 && styles.usageCounterLow,
+            ]}>
+              <Ionicons
+                name="chatbubble-ellipses-outline"
+                size={11}
+                color={remainingQuestions <= 1 ? "#92400e" : colors.stone[500]}
+              />
+              <Text style={[
+                styles.usageCounterText,
+                remainingQuestions <= 1 && styles.usageCounterTextLow,
+              ]}>
+                {remainingQuestions} question{remainingQuestions !== 1 ? "s" : ""} remaining this month
+              </Text>
+            </View>
+          )}
           <View style={styles.inputRow}>
             <TextInput
               style={styles.inputField}
@@ -731,19 +836,119 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: `${colors.stone[200]}66`,
+    gap: 4,
+  },
+  citedSectionHeader: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 11,
+    color: colors.stone[400],
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   citedResource: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xs,
+    alignItems: "flex-start",
     gap: spacing.xs,
     paddingVertical: 2,
   },
+  citedResourceIndex: {
+    fontFamily: fonts.sansBold,
+    fontSize: 11,
+    color: colors.brand[600],
+    minWidth: 20,
+    lineHeight: 16,
+  },
   citedResourceText: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.stone[600],
+    flex: 1,
+    lineHeight: 16,
+  },
+  citedResourceLink: {
+    color: colors.brand[600],
+    textDecorationLine: "underline",
+  },
+
+  // Preference update card
+  prefUpdateCard: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: `${colors.stone[200]}66`,
+    backgroundColor: colors.brand[50],
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  prefUpdateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  prefUpdateTitle: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 13,
+    color: colors.brand[700],
+  },
+  prefUpdateReason: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.stone[500],
+    lineHeight: 17,
+  },
+  prefUpdateButtons: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  prefUpdateButtonPrimary: {
+    backgroundColor: colors.brand[500],
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radii.full,
+  },
+  prefUpdateButtonPrimaryText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 12,
+    color: colors.white,
+  },
+  prefUpdateButtonSecondary: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.stone[300],
+  },
+  prefUpdateButtonSecondaryText: {
     fontFamily: fonts.sansMedium,
     fontSize: 12,
-    color: colors.brand[600],
-    flex: 1,
+    color: colors.stone[500],
+  },
+
+  // Usage counter
+  usageCounter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    backgroundColor: colors.stone[100],
+    marginBottom: spacing.sm,
+  },
+  usageCounterLow: {
+    backgroundColor: "#fef3c7",
+  },
+  usageCounterText: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    color: colors.stone[500],
+  },
+  usageCounterTextLow: {
+    color: "#92400e",
   },
 
   // Action bar

@@ -18,9 +18,19 @@ const SYSTEM_PROMPT = `You are KinPath AI, a warm and supportive parenting assis
 
 RULES:
 - CITATION IS MANDATORY: Every response that makes a factual claim MUST include at least one citation.
-  - If RELEVANT RESOURCES are provided below, cite them using a bracketed number like [1], [2] matching the order listed.
-  - For any claim not covered by provided resources, cite an authoritative external source inline using **[Source Name](URL)** format.
-  - Acceptable external sources: AAP — American Academy of Pediatrics (aap.org), CDC (cdc.gov), WHO (who.int), Evidence Based Birth (evidencebasedbirth.com), La Leche League International (llli.org), Mayo Clinic (mayoclinic.org).
+  - Always use bracketed numbers [1], [2], etc. inline for every citation — never use any other format.
+  - If RELEVANT RESOURCES are provided below, cite them as [1], [2] matching the list order.
+  - For any authoritative external source not covered by provided resources, continue the numbering (e.g. [3]) and append a SOURCES block at the very end of your response in this exact format (do not include it in the conversational text):
+    <<<SOURCES>>>
+    [N] Source Name: https://url.example.com
+    <<<END_SOURCES>>>
+  - Acceptable external sources:
+    Clinical guidelines: ACOG (acog.org), NICE (nice.org.uk), WHO (who.int), Cochrane (cochranelibrary.com)
+    Child development: AAP (aap.org), CDC Developmental Milestones (cdc.gov/ncbddd/actearly), Zero to Three (zerotothree.org)
+    Postpartum mental health: PSI (postpartum.net), MGH Center for Women's Mental Health (womensmentalhealth.org), LactMed (ncbi.nlm.nih.gov/books/NBK501922)
+    Lactation & feeding: La Leche League (llli.org), Academy of Breastfeeding Medicine (bfmed.org), Evidence Based Birth (evidencebasedbirth.com)
+    Drug safety: MotherToBaby (mothertobaby.org), Mayo Clinic (mayoclinic.org)
+    Also acceptable: Williams Obstetrics, Gabbe's Obstetrics, Nelson Textbook of Pediatrics (cite by title and edition, no URL needed)
   - If you genuinely cannot find a reputable source for a claim, acknowledge the uncertainty explicitly — never state unsupported facts as certainties.
 - Never provide medical diagnoses or treatment plans
 - For urgent medical concerns, always recommend contacting a pediatrician or calling emergency services
@@ -30,7 +40,14 @@ RULES:
 - Never store, request, or reference protected health information
 - Keep responses concise but thorough (aim for 2-4 paragraphs)
 - Use markdown formatting: **bold** for emphasis, bullet lists for multiple points, numbered lists for steps
-- IMPORTANT: When child context is provided, always tailor your answer to the child's specific age and developmental stage. Reference the child by name when appropriate.`;
+- IMPORTANT: When child context is provided, always tailor your answer to the child's specific age and developmental stage. Reference the child by name when appropriate.
+- PREFERENCE CHANGE DETECTION: If the user describes an actual change in their situation that conflicts with a known preference (birth_preference, feeding_preference, or parenting_style), append this block at the very end of your response (after content, after SOURCES if any):
+  <<<PREF_UPDATE>>>{"field":"birth_preference","suggested_value":"hospital","reason":"You mentioned delivering at the hospital"}<<<END_PREF_UPDATE>>>
+  Only emit this when the user states a fact about what DID happen, not hypotheticals.
+  Valid fields and values:
+    birth_preference: home | hospital | birth_center
+    feeding_preference: breastfeeding | formula | combination
+    parenting_style: attachment | gentle | montessori | rie | no_preference`;
 
 /** Calculate a human-readable age string from a date of birth. */
 function formatChildAge(dob: Date): string {
@@ -88,10 +105,15 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
   const tier = profile?.subscription_tier ?? "free";
   const limits = TIER_LIMITS[tier as keyof typeof TIER_LIMITS];
 
+  let monthlyUsed = 0;
+  let monthlyLimit: number | null = null;
+
   if (limits.ai_questions_per_month !== null) {
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    monthlyLimit = limits.ai_questions_per_month;
+
+    // Use UTC to avoid timezone-related boundary issues
+    const now = new Date();
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
     // Count individual user turns (messages) across all conversations this month
     const { data: usageData } = await supabase
@@ -100,16 +122,16 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
       .eq("user_id", userId)
       .gte("created_at", startOfMonth.toISOString());
 
-    const totalTurns = (usageData ?? []).reduce((sum, row) => {
+    monthlyUsed = (usageData ?? []).reduce((sum, row) => {
       const msgs = row.messages as Array<{ role: string }>;
       return sum + msgs.filter((m) => m.role === "user").length;
     }, 0);
 
-    if (totalTurns >= limits.ai_questions_per_month) {
+    if (monthlyUsed >= monthlyLimit) {
       res.status(429).json({
         error: "Monthly AI question limit reached",
-        limit: limits.ai_questions_per_month,
-        used: totalTurns,
+        limit: monthlyLimit,
+        used: monthlyUsed,
         upgrade_url: "/pricing",
         show_upgrade_modal: true,
       });
@@ -260,8 +282,40 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
       ],
     });
 
-    const assistantMessage =
+    const rawMessage =
       response.content[0].type === "text" ? response.content[0].text : "";
+
+    // ── Parse and strip <<<SOURCES>>> block ─────────────────────────────────
+    type ExternalCitation = { index: number; title: string; url: string };
+    const externalCitations: ExternalCitation[] = [];
+    const sourcesMatch = rawMessage.match(/<<<SOURCES>>>([\s\S]*?)<<<END_SOURCES>>>/);
+    let assistantMessage = rawMessage
+      .replace(/<<<SOURCES>>>[\s\S]*?<<<END_SOURCES>>>/, "")
+      .trim();
+
+    if (sourcesMatch) {
+      for (const line of sourcesMatch[1].trim().split("\n")) {
+        const m = line.match(/^\[(\d+)\]\s+(.+?):\s+(https?:\/\/\S+)$/);
+        if (m) {
+          externalCitations.push({ index: parseInt(m[1]), title: m[2].trim(), url: m[3].trim() });
+        }
+      }
+    }
+
+    // ── Parse and strip <<<PREF_UPDATE>>> block ──────────────────────────────
+    type PreferenceUpdateSuggestion = { field: string; suggested_value: string; reason: string };
+    let preferenceUpdateSuggestion: PreferenceUpdateSuggestion | null = null;
+    const prefMatch = assistantMessage.match(/<<<PREF_UPDATE>>>([\s\S]*?)<<<END_PREF_UPDATE>>>/);
+    if (prefMatch) {
+      try {
+        preferenceUpdateSuggestion = JSON.parse(prefMatch[1].trim());
+      } catch {
+        // malformed JSON — ignore
+      }
+      assistantMessage = assistantMessage
+        .replace(/<<<PREF_UPDATE>>>[\s\S]*?<<<END_PREF_UPDATE>>>/, "")
+        .trim();
+    }
 
     const newMessages: ChatMessage[] = [
       ...priorMessages,
@@ -299,10 +353,24 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
       savedConversationId = inserted?.id ?? null;
     }
 
+    const internalCitations = (finalResources ?? []).map((r, i) => ({
+      index: i + 1,
+      id: r.id,
+      title: r.title,
+      url: null as string | null,
+    }));
+
     res.json({
       message: assistantMessage,
       conversation_id: savedConversationId,
-      cited_resources: finalResources?.map((r) => ({ id: r.id, title: r.title })),
+      cited_resources: [
+        ...internalCitations,
+        ...externalCitations.map((c) => ({ index: c.index, id: null, title: c.title, url: c.url })),
+      ],
+      preference_update_suggestion: preferenceUpdateSuggestion,
+      usage: monthlyLimit !== null
+        ? { used: monthlyUsed + 1, limit: monthlyLimit, remaining: Math.max(0, monthlyLimit - monthlyUsed - 1) }
+        : null,
     });
   } catch (error) {
     console.error("AI chat error:", error);
