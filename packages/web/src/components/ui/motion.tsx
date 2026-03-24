@@ -6,6 +6,7 @@ import { useRef, useEffect, useState } from "react";
 /**
  * Lightweight CSS-based animation replacements for framer-motion.
  * These provide the same visual effects with zero bundle cost.
+ * All components respect prefers-reduced-motion.
  */
 
 interface MotionProps {
@@ -14,9 +15,16 @@ interface MotionProps {
   className?: string;
 }
 
+function useReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 /* ── Fade In ─────────────────────────────────────────────── */
 
 export function FadeIn({ children, delay = 0, className = "" }: MotionProps) {
+  const reduced = useReducedMotion();
+  if (reduced) return <div className={className}>{children}</div>;
   return (
     <div
       className={`animate-fade-in ${className}`}
@@ -34,6 +42,8 @@ export function FadeInUp({
   delay = 0,
   className = "",
 }: MotionProps) {
+  const reduced = useReducedMotion();
+  if (reduced) return <div className={className}>{children}</div>;
   return (
     <div
       className={`animate-fade-in-up ${className}`}
@@ -51,10 +61,12 @@ export function ScrollReveal({
   delay = 0,
   className = "",
 }: MotionProps) {
+  const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(reduced);
 
   useEffect(() => {
+    if (reduced) return;
     const el = ref.current;
     if (!el) return;
 
@@ -70,13 +82,13 @@ export function ScrollReveal({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [reduced]);
 
   return (
     <div
       ref={ref}
       className={`${visible ? "animate-fade-in-up" : "opacity-0"} ${className}`}
-      style={visible ? { animationDelay: `${delay}s`, animationFillMode: "both" } : undefined}
+      style={visible && !reduced ? { animationDelay: `${delay}s`, animationFillMode: "both" } : undefined}
     >
       {children}
     </div>
@@ -95,10 +107,12 @@ export function StaggerContainer({
   children,
   className = "",
 }: StaggerContainerProps) {
+  const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(reduced);
 
   useEffect(() => {
+    if (reduced) return;
     const el = ref.current;
     if (!el) return;
 
@@ -114,7 +128,7 @@ export function StaggerContainer({
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [reduced]);
 
   return (
     <div ref={ref} className={`${visible ? "stagger-visible" : "stagger-hidden"} ${className}`}>
@@ -145,6 +159,8 @@ export function PageTransition({
   children,
   className = "",
 }: PageTransitionProps) {
+  const reduced = useReducedMotion();
+  if (reduced) return <div className={className}>{children}</div>;
   return (
     <div className={`animate-fade-in-up ${className}`} style={{ animationDuration: "0.3s" }}>
       {children}

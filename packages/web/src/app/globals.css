@@ -112,3 +112,19 @@ button:not(:disabled):active {
 .animate-step-enter {
   animation: step-enter 0.25s ease-out;
 }
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-fade-in-up,
+  .animate-step-enter,
+  .stagger-visible .stagger-item {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .stagger-hidden .stagger-item {
+    opacity: 1;
+    transform: none;
+  }
+}

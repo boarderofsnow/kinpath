@@ -19,12 +19,12 @@ import {
 
 export default function LandingPage() {
   return (
-    <main className="flex min-h-screen flex-col">
+    <main id="main-content" className="flex min-h-screen flex-col">
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12">
         <Link href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/kinpath-logo.png" alt="KinPath" className="h-9 w-auto" />
+          <img src="/kinpath-logo.png" alt="Kinpath" width={144} height={36} className="h-9 w-auto" />
         </Link>
         <div className="flex items-center gap-4">
           <Link
@@ -67,7 +67,7 @@ export default function LandingPage() {
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
                 href="/auth/register"
-                className="rounded-xl bg-accent-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-accent-600 hover:shadow-xl transition-all"
+                className="rounded-xl bg-accent-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-accent-600 hover:shadow-xl transition-colors duration-150"
               >
                 Start Your Free Journey
               </Link>
@@ -266,7 +266,7 @@ export default function LandingPage() {
                   journey.
                 </p>
                 <p className="mt-4 text-sm font-medium text-stone-500">
-                  — KinPath parent
+                  — Kinpath parent
                 </p>
               </div>
             </div>
@@ -289,7 +289,7 @@ export default function LandingPage() {
             <div className="mt-8 flex justify-center">
               <Link
                 href="/auth/register"
-                className="inline-flex items-center gap-2 rounded-xl bg-accent-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-accent-600 hover:shadow-xl transition-all"
+                className="inline-flex items-center gap-2 rounded-xl bg-accent-500 px-8 py-3 text-base font-medium text-white shadow-lg hover:bg-accent-600 hover:shadow-xl transition-colors duration-150"
               >
                 Get Started Free <ArrowRight className="h-4 w-4" />
               </Link>
@@ -308,7 +308,9 @@ export default function LandingPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/kinpath-logo.png"
-                alt="KinPath"
+                alt="Kinpath"
+                width={112}
+                height={28}
                 className="h-7 w-auto"
               />
               <p className="mt-2 text-sm text-stone-600">

@@ -30,7 +30,9 @@ export function AppNav({ currentPath }: AppNavProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kinpath-logo.png"
-              alt="KinPath"
+              alt="Kinpath"
+              width={128}
+              height={32}
               className="h-8 w-auto"
             />
           </Link>
@@ -52,7 +54,7 @@ export function AppNav({ currentPath }: AppNavProps) {
                       : "text-stone-600 hover:text-brand-600"
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4" aria-hidden="true" />
                   {item.label}
                   {/* Active underline indicator */}
                   {isActive && (
@@ -85,6 +87,7 @@ export function AppNav({ currentPath }: AppNavProps) {
               >
                 <Icon
                   className={`h-5 w-5 ${isActive ? "text-brand-500" : ""}`}
+                  aria-hidden="true"
                 />
                 <span>{item.label}</span>
               </Link>
@@ -99,7 +102,9 @@ export function AppNav({ currentPath }: AppNavProps) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/kinpath-logo.png"
-            alt="KinPath"
+            alt="Kinpath"
+            width={112}
+            height={28}
             className="h-7 w-auto"
           />
         </Link>

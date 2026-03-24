@@ -308,7 +308,7 @@ export function ChatInterface({
                       setInputValue(question);
                       textareaRef.current?.focus();
                     }}
-                    className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-600 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-600 hover:shadow-card"
+                    className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-600 shadow-sm transition-colors duration-150 hover:-translate-y-0.5 hover:border-brand-200 hover:text-brand-600 hover:shadow-card"
                   >
                     {question}
                   </button>
@@ -364,7 +364,7 @@ export function ChatInterface({
                           onClick={() => handleAddToDoctorList(msg, idx)}
                           disabled={addedToDoctorList.has(idx)}
                           className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                          title={addedToDoctorList.has(idx) ? "Added to provider list" : "Add to provider list"}
+                          aria-label={addedToDoctorList.has(idx) ? "Added to provider list" : "Add to provider list"}
                         >
                           {addedToDoctorList.has(idx) ? (
                             <Check className="h-4 w-4 text-green-500" />
@@ -377,7 +377,7 @@ export function ChatInterface({
                             onClick={() => handleSaveConversation(msg, idx)}
                             disabled={savingId === msg.conversation_id}
                             className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                            title={msg.is_saved ? "Unsave conversation" : "Save conversation"}
+                            aria-label={msg.is_saved ? "Unsave conversation" : "Save conversation"}
                           >
                             {msg.is_saved ? (
                               <BookmarkCheck className="h-4 w-4 text-brand-500" />
@@ -414,7 +414,7 @@ export function ChatInterface({
 
       {/* Error message */}
       {error && (
-        <div className="mx-6 mb-4 flex items-start gap-3 rounded-lg border border-red-200/60 bg-red-50 px-4 py-3">
+        <div aria-live="polite" className="mx-6 mb-4 flex items-start gap-3 rounded-lg border border-red-200/60 bg-red-50 px-4 py-3">
           <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-600" />
           <p className="text-sm text-red-700">{error}</p>
         </div>
@@ -429,7 +429,9 @@ export function ChatInterface({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask about parenting, sleep, nutrition..."
+              aria-label="Ask a question"
+              name="message"
+              placeholder="Ask about parenting, sleep, nutrition…"
               disabled={loading}
               rows={1}
               className="flex-1 resize-none rounded-2xl border border-stone-200/60 bg-white px-4 py-3 text-sm text-stone-900 placeholder-stone-500 shadow-sm transition-colors disabled:bg-stone-50 disabled:text-stone-500"
@@ -437,7 +439,8 @@ export function ChatInterface({
             <button
               onClick={handleSendMessage}
               disabled={loading || !inputValue.trim()}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-sm transition-all disabled:bg-stone-300 hover:enabled:bg-brand-600"
+              aria-label={loading ? "Sending…" : "Send message"}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500 text-white shadow-sm transition-colors duration-150 disabled:bg-stone-300 hover:enabled:bg-brand-600"
             >
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

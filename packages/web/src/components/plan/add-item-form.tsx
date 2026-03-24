@@ -54,6 +54,8 @@ export function AddItemForm({
     >
       <input
         type="text"
+        aria-label="Task title"
+        name="title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="What needs to be done?"
@@ -62,6 +64,8 @@ export function AddItemForm({
       />
       <input
         type="text"
+        aria-label="Note (optional)"
+        name="description"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Add a note (optional)"
@@ -80,10 +84,11 @@ export function AddItemForm({
 
       {hasMembers && (
         <div className="mt-3">
-          <label className="text-xs font-medium text-stone-500">
+          <label htmlFor="assignee-select" className="text-xs font-medium text-stone-500">
             Assign to
           </label>
           <select
+            id="assignee-select"
             value={assigneeMemberId}
             onChange={(e) => setAssigneeMemberId(e.target.value)}
             className="mt-1 w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-700 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
@@ -101,6 +106,8 @@ export function AddItemForm({
       <div className="mt-3 flex items-center gap-3">
         <input
           type="date"
+          aria-label="Due date"
+          name="dueDate"
           value={dueDate}
           onChange={(e) => setDueDate(e.target.value)}
           className="rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-600 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"

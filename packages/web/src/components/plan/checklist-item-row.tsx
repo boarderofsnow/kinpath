@@ -48,6 +48,7 @@ export function ChecklistItemRow({
       {/* Checkbox */}
       <button
         onClick={() => onToggle(item.id, !item.is_completed)}
+        aria-label={item.is_completed ? `Mark "${item.title}" incomplete` : `Mark "${item.title}" complete`}
         className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
           item.is_completed
             ? "border-brand-500 bg-brand-500 text-white"
@@ -55,7 +56,7 @@ export function ChecklistItemRow({
         }`}
       >
         {item.is_completed && (
-          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+          <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path
               d="M2 6l3 3 5-5"
               stroke="currentColor"
@@ -89,12 +90,13 @@ export function ChecklistItemRow({
 
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3 text-stone-400" />
+            <Calendar className="h-3 w-3 text-stone-400" aria-hidden="true" />
             <input
               type="date"
+              aria-label="Due date"
               value={displayDate ?? ""}
               onChange={(e) => onDateChange(item.id, e.target.value)}
-              className="rounded border-none bg-transparent p-0 text-xs text-stone-500 focus:outline-none focus:ring-0"
+              className="rounded border-none bg-transparent p-0 text-xs text-stone-500 focus:ring-1 focus:ring-brand-400"
             />
           </div>
 
@@ -141,9 +143,10 @@ export function ChecklistItemRow({
           ) : (
             <button
               onClick={() => setConfirmDelete(true)}
-              className="rounded p-1 text-stone-300 opacity-0 transition-all hover:bg-stone-100 hover:text-stone-500 group-hover:opacity-100"
+              aria-label={`Delete "${item.title}"`}
+              className="rounded p-1 text-stone-300 opacity-0 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-500 group-hover:opacity-100"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
           )}
         </div>

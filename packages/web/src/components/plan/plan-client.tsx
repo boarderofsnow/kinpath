@@ -224,8 +224,10 @@ export function PlanClient({
       </header>
 
       {/* Page tabs: Checklist / Doctor */}
-      <div className="mt-4 flex gap-1 rounded-xl bg-stone-100 p-1">
+      <div role="tablist" className="mt-4 flex gap-1 rounded-xl bg-stone-100 p-1">
         <button
+          role="tab"
+          aria-selected={activeTab === "checklist"}
           onClick={() => setActiveTab("checklist")}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "checklist"
@@ -233,10 +235,12 @@ export function PlanClient({
               : "text-stone-500 hover:text-stone-700"
           }`}
         >
-          <ClipboardList className="h-4 w-4" />
+          <ClipboardList className="h-4 w-4" aria-hidden="true" />
           Checklist
         </button>
         <button
+          role="tab"
+          aria-selected={activeTab === "doctor"}
           onClick={() => setActiveTab("doctor")}
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
             activeTab === "doctor"
@@ -244,7 +248,7 @@ export function PlanClient({
               : "text-stone-500 hover:text-stone-700"
           }`}
         >
-          <Stethoscope className="h-4 w-4" />
+          <Stethoscope className="h-4 w-4" aria-hidden="true" />
           Discuss with Provider
         </button>
       </div>
@@ -286,7 +290,14 @@ export function PlanClient({
                 <span>{completedCount} of {total} completed</span>
                 <span className="font-medium">{progressPct}%</span>
               </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200">
+              <div
+                role="progressbar"
+                aria-valuenow={progressPct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Checklist progress"
+                className="mt-1.5 h-2 overflow-hidden rounded-full bg-stone-200"
+              >
                 <div
                   className="h-full rounded-full bg-brand-500 transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
@@ -298,7 +309,7 @@ export function PlanClient({
           {grouped.overdue.length > 0 && (
             <Section
               title="Overdue"
-              icon={<AlertCircle className="h-4 w-4 text-red-500" />}
+              icon={<AlertCircle className="h-4 w-4 text-red-500" aria-hidden="true" />}
               count={grouped.overdue.length}
               accentClass="border-red-200 bg-red-50/50"
             >
@@ -319,7 +330,7 @@ export function PlanClient({
           {grouped.thisMonth.length > 0 && (
             <Section
               title="This Month"
-              icon={<Clock className="h-4 w-4 text-brand-500" />}
+              icon={<Clock className="h-4 w-4 text-brand-500" aria-hidden="true" />}
               count={grouped.thisMonth.length}
             >
               {grouped.thisMonth.map((item) => (
@@ -339,7 +350,7 @@ export function PlanClient({
           {grouped.comingUp.length > 0 && (
             <Section
               title="Coming Up"
-              icon={<Clock className="h-4 w-4 text-stone-400" />}
+              icon={<Clock className="h-4 w-4 text-stone-400" aria-hidden="true" />}
               count={grouped.comingUp.length}
             >
               {grouped.comingUp.map((item) => (
@@ -437,7 +448,7 @@ export function PlanClient({
           {grouped.completed.length > 0 && (
             <Section
               title="Completed"
-              icon={<CheckCircle2 className="h-4 w-4 text-green-500" />}
+              icon={<CheckCircle2 className="h-4 w-4 text-green-500" aria-hidden="true" />}
               count={grouped.completed.length}
               defaultCollapsed
               accentClass="opacity-75"
