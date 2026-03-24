@@ -244,11 +244,10 @@ export function ChatInterface({
             <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setSelectedChildId(null)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                  selectedChildId === null
+                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${selectedChildId === null
                     ? "bg-brand-500 text-white shadow-sm"
                     : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
-                }`}
+                  }`}
               >
                 All Children
               </button>
@@ -256,11 +255,10 @@ export function ChatInterface({
                 <button
                   key={child.id}
                   onClick={() => setSelectedChildId(child.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                    selectedChildId === child.id
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${selectedChildId === child.id
                       ? "bg-brand-500 text-white shadow-sm"
                       : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
-                  }`}
+                    }`}
                 >
                   {child.name}
                 </button>
@@ -321,16 +319,14 @@ export function ChatInterface({
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex ${
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 <div
-                  className={`max-w-lg ${
-                    msg.role === "user"
+                  className={`max-w-lg ${msg.role === "user"
                       ? "rounded-2xl rounded-br-md bg-brand-500 px-4 py-3 text-white"
                       : "rounded-2xl rounded-bl-md border border-stone-200/60 bg-white px-4 py-3 shadow-card"
-                  }`}
+                    }`}
                 >
                   {msg.role === "user" ? (
                     <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -478,7 +474,7 @@ export function ChatInterface({
 
           {/* AI disclaimer */}
           <p className="text-center text-[11px] leading-tight text-stone-400">
-            KinPath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
+            Kinpath chat uses AI and can make mistakes. Always consult your healthcare provider for medical advice.
           </p>
         </div>
       </div>
