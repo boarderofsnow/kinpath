@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | KinPath",
+  title: "Privacy Policy | Kinpath",
   description:
-    "Learn how KinPath collects, uses, and protects your personal information and your family's data.",
+    "Learn how Kinpath collects, uses, and protects your personal information and your family's data.",
 };
 
 const LAST_UPDATED = "February 20, 2026";
@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/kinpath-logo.png" alt="KinPath" className="h-8 w-auto" />
+            <img src="/kinpath-logo.png" alt="Kinpath" className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link
@@ -47,7 +47,7 @@ export default function PrivacyPolicyPage() {
             Effective {EFFECTIVE_DATE} &nbsp;·&nbsp; Last updated {LAST_UPDATED}
           </p>
           <p className="mt-6 text-stone-600 leading-relaxed">
-            KinPath is built for parents and parents-to-be. We understand that
+            Kinpath is built for parents and parents-to-be. We understand that
             the information you share with us about your family, your child,
             and your parenting journey is deeply personal. This policy explains
             exactly what we collect, why, and how we protect it.
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
               <li>We never sell your personal data to anyone, ever.</li>
               <li>We do not store health records or medical data.</li>
               <li>You can delete your account and all associated data at any time.</li>
-              <li>We use your information only to provide and improve KinPath.</li>
+              <li>We use your information only to provide and improve Kinpath.</li>
             </ul>
           </div>
 
@@ -111,16 +111,16 @@ export default function PrivacyPolicyPage() {
             <SectionHeading number="1" title="Who We Are" />
             <Prose>
               <p>
-                Kinpath Family, LLC (&ldquo;KinPath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the KinPath
+                Kinpath Family, LLC (&ldquo;Kinpath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;) operates the Kinpath
                 website and mobile-optimized web application located at{" "}
                 <span className="font-medium text-stone-800">kinpath.family</span>{" "}
-                (the &ldquo;Service&rdquo;). KinPath provides evidence-based parenting
+                (the &ldquo;Service&rdquo;). Kinpath provides evidence-based parenting
                 resources, personalized guidance, and family planning tools for
                 parents and parents-to-be from pregnancy through early childhood.
               </p>
               <p>
                 This Privacy Policy applies to all users of the Service. By
-                using KinPath, you agree to the collection and use of
+                using Kinpath, you agree to the collection and use of
                 information described in this policy.
               </p>
             </Prose>
@@ -206,7 +206,7 @@ export default function PrivacyPolicyPage() {
                 email address from those providers as permitted by your account
                 settings with them. We do not receive your passwords or any
                 other data from these providers beyond what is needed to create
-                or link your KinPath account.
+                or link your Kinpath account.
               </p>
             </Prose>
 
@@ -214,7 +214,7 @@ export default function PrivacyPolicyPage() {
             <Prose>
               <ul>
                 <li>
-                  <strong>Medical records or health records.</strong> KinPath is
+                  <strong>Medical records or health records.</strong> Kinpath is
                   not a medical provider. We do not collect, store, or process
                   Protected Health Information (PHI) as defined under HIPAA.
                 </li>
@@ -321,7 +321,7 @@ export default function PrivacyPolicyPage() {
                   information.
                 </li>
                 <li>
-                  <strong>Professional reviewers.</strong> Resources on KinPath
+                  <strong>Professional reviewers.</strong> Resources on Kinpath
                   may be reviewed by licensed healthcare professionals. Reviewers
                   see only resource content, never your personal information.
                 </li>
@@ -329,11 +329,11 @@ export default function PrivacyPolicyPage() {
                   <strong>Legal requirements.</strong> We may disclose
                   information if required by law, court order, or government
                   request, or when we believe disclosure is necessary to protect
-                  the rights, property, or safety of KinPath, our users, or the
+                  the rights, property, or safety of Kinpath, our users, or the
                   public.
                 </li>
                 <li>
-                  <strong>Business transfers.</strong> If KinPath is acquired,
+                  <strong>Business transfers.</strong> If Kinpath is acquired,
                   merged, or goes through a similar corporate event, your
                   information may be transferred as part of that transaction.
                   We will notify you via the email address on your account
@@ -472,7 +472,7 @@ export default function PrivacyPolicyPage() {
             <SectionHeading number="7" title="Children's Privacy" />
             <Prose>
               <p>
-                KinPath is intended for use by adults (18 and older). We do not
+                Kinpath is intended for use by adults (18 and older). We do not
                 knowingly collect personal information from children under 13.
                 If you believe a child under 13 has provided us with personal
                 information, please contact us at{" "}
@@ -557,7 +557,7 @@ export default function PrivacyPolicyPage() {
                   <strong>Authentication cookies.</strong> Supabase sets
                   first-party cookies to maintain your login session across
                   page loads. These are essential to the Service and cannot be
-                  disabled while using KinPath.
+                  disabled while using Kinpath.
                 </li>
                 <li>
                   <strong>Preference cookies.</strong> We may store lightweight
@@ -583,7 +583,7 @@ export default function PrivacyPolicyPage() {
             <SectionHeading number="10" title="Third-Party Services" />
             <Prose>
               <p>
-                KinPath integrates with the following third-party services. Each
+                Kinpath integrates with the following third-party services. Each
                 has its own privacy policy which governs their data practices:
               </p>
             </Prose>
@@ -618,9 +618,9 @@ export default function PrivacyPolicyPage() {
             />
             <Prose>
               <p>
-                Links to external resources on KinPath (e.g., articles from the
+                Links to external resources on Kinpath (e.g., articles from the
                 AAP, CDC, WHO) lead to third-party websites. Once you leave
-                KinPath, this Privacy Policy no longer applies. We encourage
+                Kinpath, this Privacy Policy no longer applies. We encourage
                 you to review the privacy policies of any external sites you
                 visit.
               </p>
@@ -632,7 +632,7 @@ export default function PrivacyPolicyPage() {
             <SectionHeading number="11" title="International Users" />
             <Prose>
               <p>
-                KinPath is operated from the United States. If you access the
+                Kinpath is operated from the United States. If you access the
                 Service from outside the US, your information may be transferred
                 to and processed in the United States, where data protection
                 laws may differ from those in your country.
@@ -665,7 +665,7 @@ export default function PrivacyPolicyPage() {
                 </li>
                 <li>
                   Display an in-app banner for logged-in users when you next
-                  visit KinPath.
+                  visit Kinpath.
                 </li>
               </ul>
               <p>
@@ -687,7 +687,7 @@ export default function PrivacyPolicyPage() {
               </p>
             </Prose>
             <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-700 space-y-1">
-              <p className="font-semibold text-stone-900">KinPath Privacy Team</p>
+              <p className="font-semibold text-stone-900">Kinpath Privacy Team</p>
               <p>
                 Email:{" "}
                 <a
@@ -716,7 +716,7 @@ export default function PrivacyPolicyPage() {
           {/* Bottom navigation */}
           <div className="border-t border-stone-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-stone-500">
             <Link href="/" className="hover:text-brand-600 transition-colors">
-              ← Back to KinPath
+              ← Back to Kinpath
             </Link>
             <div className="flex gap-6">
               <Link href="/privacy" className="font-medium text-brand-600">

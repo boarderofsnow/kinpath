@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | KinPath",
+  title: "Terms of Service | Kinpath",
   description:
-    "Read the Terms of Service governing your use of KinPath, the evidence-based parenting guidance platform.",
+    "Read the Terms of Service governing your use of Kinpath, the evidence-based parenting guidance platform.",
 };
 
 const LAST_UPDATED = "February 20, 2026";
@@ -19,7 +19,7 @@ export default function TermsOfServicePage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/kinpath-logo.png" alt="KinPath" className="h-8 w-auto" />
+            <img src="/kinpath-logo.png" alt="Kinpath" className="h-8 w-auto" />
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link
@@ -48,8 +48,8 @@ export default function TermsOfServicePage() {
           </p>
           <p className="mt-6 text-stone-600 leading-relaxed">
             These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of
-            KinPath. Please read them carefully before using our Service. By
-            creating an account or using KinPath, you agree to be bound by
+            Kinpath. Please read them carefully before using our Service. By
+            creating an account or using Kinpath, you agree to be bound by
             these Terms.
           </p>
         </div>
@@ -105,10 +105,10 @@ export default function TermsOfServicePage() {
               Important notice
             </p>
             <ul className="mt-2 space-y-1 text-sm text-amber-700 list-disc list-inside">
-              <li>KinPath is <strong>not a medical provider</strong> and does not offer medical advice.</li>
+              <li>Kinpath is <strong>not a medical provider</strong> and does not offer medical advice.</li>
               <li>Always consult a qualified healthcare professional for medical decisions.</li>
               <li>These Terms include a binding arbitration clause and class action waiver (Section 15).</li>
-              <li>KinPath is for users 18 and older only.</li>
+              <li>Kinpath is for users 18 and older only.</li>
             </ul>
           </div>
 
@@ -117,7 +117,7 @@ export default function TermsOfServicePage() {
             <SectionHeading number="1" title="Acceptance of Terms" />
             <Prose>
               <p>
-                By accessing or using the KinPath website, web application, or
+                By accessing or using the Kinpath website, web application, or
                 any associated services (collectively, the &ldquo;Service&rdquo;), you
                 agree to be bound by these Terms of Service and our{" "}
                 <Link href="/privacy" className="text-brand-600 hover:underline">
@@ -129,7 +129,7 @@ export default function TermsOfServicePage() {
               <p>
                 These Terms constitute a legally binding agreement between you
                 (&ldquo;User,&rdquo; &ldquo;you,&rdquo; or &ldquo;your&rdquo;) and Kinpath Family, LLC
-                (&ldquo;KinPath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). If
+                (&ldquo;Kinpath,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;). If
                 you are using the Service on behalf of an organization, you
                 represent that you have authority to bind that organization to
                 these Terms.
@@ -142,7 +142,7 @@ export default function TermsOfServicePage() {
             <SectionHeading number="2" title="Description of Service" />
             <Prose>
               <p>
-                KinPath is an evidence-based parenting guidance platform that
+                Kinpath is an evidence-based parenting guidance platform that
                 provides:
               </p>
               <ul>
@@ -183,16 +183,16 @@ export default function TermsOfServicePage() {
             <Prose>
               <p>
                 You must be at least <strong>18 years of age</strong> to create
-                a KinPath account or use the Service. By using KinPath, you
+                a Kinpath account or use the Service. By using Kinpath, you
                 represent and warrant that you meet this age requirement and
                 have the legal capacity to enter into a binding agreement in
                 your jurisdiction.
               </p>
               <p>
-                KinPath is designed for parents, parents-to-be, and caregivers.
+                Kinpath is designed for parents, parents-to-be, and caregivers.
                 The Service is intended for personal, non-commercial use only
                 unless you have entered into a separate written agreement with
-                KinPath for commercial use.
+                Kinpath for commercial use.
               </p>
               <p>
                 The Service is currently available only to users in the United
@@ -223,7 +223,7 @@ export default function TermsOfServicePage() {
                 <a href="mailto:support@kinpath.family" className="text-brand-600 hover:underline">
                   support@kinpath.family
                 </a>{" "}
-                if you suspect unauthorized access to your account. KinPath
+                if you suspect unauthorized access to your account. Kinpath
                 will not be liable for any loss or damage arising from your
                 failure to protect your credentials.
               </p>
@@ -232,7 +232,7 @@ export default function TermsOfServicePage() {
                 multiple accounts or transfer your account to another person
                 without our prior written consent. Household sharing (Family
                 plan) is the supported mechanism for giving a partner access
-                to your KinPath data.
+                to your Kinpath data.
               </p>
               <p>
                 <strong>Accuracy of information.</strong> We rely on the
@@ -250,7 +250,7 @@ export default function TermsOfServicePage() {
 
             <SubHeading>5.1 Subscription Plans</SubHeading>
             <Prose>
-              <p>KinPath offers the following subscription tiers:</p>
+              <p>Kinpath offers the following subscription tiers:</p>
             </Prose>
             <div className="mt-3 overflow-x-auto rounded-xl border border-stone-200 bg-white text-sm">
               <table className="w-full">
@@ -392,14 +392,14 @@ export default function TermsOfServicePage() {
           <section id="content" className="scroll-mt-24">
             <SectionHeading number="7" title="Content & Intellectual Property" />
 
-            <SubHeading>7.1 KinPath Content</SubHeading>
+            <SubHeading>7.1 Kinpath Content</SubHeading>
             <Prose>
               <p>
-                All content created, curated, or published by KinPath,
+                All content created, curated, or published by Kinpath,
                 including but not limited to resource articles, summaries,
                 editorial curation, the AI chat system, user interface design,
-                software code, logos, trademarks, and the &ldquo;KinPath&rdquo; name,
-                is owned by or licensed to KinPath and is protected by
+                software code, logos, trademarks, and the &ldquo;Kinpath&rdquo; name,
+                is owned by or licensed to Kinpath and is protected by
                 copyright, trademark, and other applicable intellectual property
                 laws.
               </p>
@@ -408,14 +408,14 @@ export default function TermsOfServicePage() {
                 revocable license to access and use the Service for your
                 personal, non-commercial purposes. This license does not permit
                 you to reproduce, distribute, modify, or create derivative works
-                from KinPath content without our express written consent.
+                from Kinpath content without our express written consent.
               </p>
             </Prose>
 
             <SubHeading>7.2 Third-Party Content</SubHeading>
             <Prose>
               <p>
-                Resources in the KinPath library may link to or summarize
+                Resources in the Kinpath library may link to or summarize
                 content from third-party organizations such as the AAP, CDC,
                 WHO, and ACOG. Such content belongs to its respective owners.
                 We make reasonable efforts to ensure resource accuracy but are
@@ -431,7 +431,7 @@ export default function TermsOfServicePage() {
                 (&ldquo;User Content&rdquo;). You retain ownership of your User Content.
               </p>
               <p>
-                By submitting User Content, you grant KinPath a limited,
+                By submitting User Content, you grant Kinpath a limited,
                 worldwide, royalty-free license to store, process, and display
                 your User Content solely for the purpose of providing the
                 Service to you. We do not use your User Content to train AI
@@ -453,7 +453,7 @@ export default function TermsOfServicePage() {
             <Prose>
               <p>
                 If you provide us with suggestions, ideas, or feedback about
-                the Service (&ldquo;Feedback&rdquo;), you grant KinPath a perpetual,
+                the Service (&ldquo;Feedback&rdquo;), you grant Kinpath a perpetual,
                 irrevocable, royalty-free license to use that Feedback for any
                 purpose without compensation or attribution to you.
               </p>
@@ -468,7 +468,7 @@ export default function TermsOfServicePage() {
                 Not Medical Advice
               </p>
               <p className="mt-2 text-sm text-red-700 leading-relaxed">
-                The information provided through the KinPath Service, including
+                The information provided through the Kinpath Service, including
                 all resources, articles, checklists, AI-generated responses,
                 and any other content, is for <strong>general informational and
                 educational purposes only</strong>. It does not constitute medical
@@ -478,7 +478,7 @@ export default function TermsOfServicePage() {
             </div>
             <Prose>
               <p>
-                KinPath is not a licensed medical provider, hospital, clinic,
+                Kinpath is not a licensed medical provider, hospital, clinic,
                 or healthcare organization. We do not create doctor-patient
                 relationships. Our physician review program allows licensed
                 professionals to annotate and approve content for accuracy; this
@@ -490,14 +490,14 @@ export default function TermsOfServicePage() {
                 questions you may have regarding a medical condition, a child&rsquo;s
                 health, pregnancy, medication, or treatment. Never disregard
                 professional medical advice or delay seeking it because of
-                something you have read on KinPath.
+                something you have read on Kinpath.
               </p>
               <p>
                 If you or your child is experiencing a medical emergency, call
                 911 (or your local emergency services) immediately.
               </p>
               <p>
-                By using the Service, you acknowledge and agree that KinPath is
+                By using the Service, you acknowledge and agree that Kinpath is
                 not responsible for any health or medical decisions you make
                 based on information you encounter on the Service.
               </p>
@@ -509,7 +509,7 @@ export default function TermsOfServicePage() {
             <SectionHeading number="9" title="AI Features Disclaimer" />
             <Prose>
               <p>
-                KinPath includes an AI-powered chat feature that uses large
+                Kinpath includes an AI-powered chat feature that uses large
                 language models to generate responses to your parenting
                 questions. You acknowledge and agree that:
               </p>
@@ -546,7 +546,7 @@ export default function TermsOfServicePage() {
               <p>
                 We strive to ground AI responses in our curated, evidence-based
                 resource library. However, the accuracy or completeness of AI
-                responses is not guaranteed, and KinPath expressly disclaims
+                responses is not guaranteed, and Kinpath expressly disclaims
                 any liability arising from your reliance on AI-generated content.
               </p>
             </Prose>
@@ -559,15 +559,15 @@ export default function TermsOfServicePage() {
               <p>
                 The Service may contain links to third-party websites,
                 resources, or services that are not owned or controlled by
-                KinPath. These links are provided for convenience and
+                Kinpath. These links are provided for convenience and
                 informational purposes only.
               </p>
               <p>
-                KinPath has no control over, and assumes no responsibility for,
+                Kinpath has no control over, and assumes no responsibility for,
                 the content, privacy policies, or practices of any third-party
                 websites. We do not endorse any third-party websites or
                 services. By clicking a third-party link, you acknowledge that
-                you are leaving the KinPath Service and that your interactions
+                you are leaving the Kinpath Service and that your interactions
                 with those sites are governed by their own terms.
               </p>
               <p>
@@ -596,7 +596,7 @@ export default function TermsOfServicePage() {
               </p>
             </Prose>
 
-            <SubHeading>11.2 Termination by KinPath</SubHeading>
+            <SubHeading>11.2 Termination by Kinpath</SubHeading>
             <Prose>
               <p>
                 We reserve the right to suspend or permanently terminate your
@@ -605,7 +605,7 @@ export default function TermsOfServicePage() {
               </p>
               <ul>
                 <li>Violation of these Terms or our Acceptable Use policy;</li>
-                <li>Conduct that we determine, in our sole discretion, to be harmful to other users, KinPath, or third parties;</li>
+                <li>Conduct that we determine, in our sole discretion, to be harmful to other users, Kinpath, or third parties;</li>
                 <li>Failure to pay subscription fees;</li>
                 <li>A request from law enforcement or a court order; or</li>
                 <li>Our discontinuation of the Service.</li>
@@ -720,7 +720,7 @@ export default function TermsOfServicePage() {
             <SectionHeading number="14" title="Indemnification" />
             <Prose>
               <p>
-                You agree to defend, indemnify, and hold harmless KinPath and
+                You agree to defend, indemnify, and hold harmless Kinpath and
                 its officers, directors, employees, contractors, and agents from
                 and against any claims, damages, liabilities, costs, and
                 expenses (including reasonable attorneys&rsquo; fees) arising from or
@@ -764,7 +764,7 @@ export default function TermsOfServicePage() {
             <Prose>
               <p>
                 If we cannot resolve a dispute informally, <strong>you and
-                KinPath agree to resolve any dispute, claim, or controversy
+                Kinpath agree to resolve any dispute, claim, or controversy
                 arising from or relating to these Terms or the Service through
                 binding individual arbitration</strong>, rather than in court,
                 except for disputes that qualify for small claims court.
@@ -809,7 +809,7 @@ export default function TermsOfServicePage() {
                 <a href="mailto:legal@kinpath.family" className="text-brand-600 hover:underline">
                   legal@kinpath.family
                 </a>{" "}
-                within 30 days of first creating your KinPath account. Your
+                within 30 days of first creating your Kinpath account. Your
                 notice must include your name, email address, and a clear
                 statement that you are opting out of arbitration. If you opt
                 out, disputes will be resolved in court as described in
@@ -826,7 +826,7 @@ export default function TermsOfServicePage() {
                 These Terms are governed by the laws of the State of Delaware,
                 United States, without regard to its conflict-of-law principles.
                 To the extent that any dispute is not subject to arbitration
-                under Section 15, you and KinPath agree to submit to the
+                under Section 15, you and Kinpath agree to submit to the
                 exclusive jurisdiction of the federal and state courts located
                 in Delaware for resolution of such dispute.
               </p>
@@ -877,7 +877,7 @@ export default function TermsOfServicePage() {
               <p>
                 <strong>Entire agreement.</strong> These Terms, together with
                 our Privacy Policy and any other policies referenced herein,
-                constitute the entire agreement between you and KinPath
+                constitute the entire agreement between you and Kinpath
                 regarding the Service and supersede all prior agreements,
                 understandings, and representations.
               </p>
@@ -892,17 +892,17 @@ export default function TermsOfServicePage() {
                 <strong>Waiver.</strong> Our failure to enforce any right or
                 provision of these Terms does not constitute a waiver of that
                 right or provision. Any waiver must be in writing and signed by
-                an authorized representative of KinPath.
+                an authorized representative of Kinpath.
               </p>
               <p>
                 <strong>Assignment.</strong> You may not assign or transfer
                 your rights or obligations under these Terms without our prior
-                written consent. KinPath may assign these Terms in connection
+                written consent. Kinpath may assign these Terms in connection
                 with a merger, acquisition, or sale of all or substantially all
                 of our assets, with notice to you.
               </p>
               <p>
-                <strong>Force majeure.</strong> KinPath will not be liable for
+                <strong>Force majeure.</strong> Kinpath will not be liable for
                 any delay or failure to perform resulting from causes outside
                 our reasonable control, including natural disasters, war,
                 terrorism, government action, internet outages, or
@@ -929,7 +929,7 @@ export default function TermsOfServicePage() {
               </p>
             </Prose>
             <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-6 text-sm text-stone-700 space-y-1">
-              <p className="font-semibold text-stone-900">KinPath Legal</p>
+              <p className="font-semibold text-stone-900">Kinpath Legal</p>
               <p>
                 Legal inquiries:{" "}
                 <a
@@ -967,7 +967,7 @@ export default function TermsOfServicePage() {
           {/* Bottom navigation */}
           <div className="border-t border-stone-200 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-stone-500">
             <Link href="/" className="hover:text-brand-600 transition-colors">
-              ← Back to KinPath
+              ← Back to Kinpath
             </Link>
             <div className="flex gap-6">
               <Link href="/privacy" className="hover:text-brand-600 transition-colors">
