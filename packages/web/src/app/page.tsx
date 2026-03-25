@@ -7,8 +7,6 @@ import {
   MessageCircle,
   LayoutGrid,
   Lock,
-  BookOpen,
-  GraduationCap,
   ArrowRight,
 } from "lucide-react";
 import {
@@ -44,17 +42,12 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="relative flex flex-col items-center justify-center overflow-hidden bg-[#FAFAF7] px-6 py-20 lg:py-32 lg:px-12">
-        {/* Soft Blooms for warmth */}
-        <div className="pointer-events-none absolute -right-32 top-0 h-96 w-96 rounded-full bg-[#D8E5DC]/50 blur-3xl" />
-        <div className="pointer-events-none absolute -left-32 bottom-0 h-96 w-96 rounded-full bg-[#E8F0EB]/60 blur-3xl" />
-
+      <section className="relative flex flex-col items-center justify-center overflow-hidden bg-[#FAFAF7] px-6 py-12 lg:py-20 lg:px-12">
         <div className="relative z-10 mx-auto max-w-7xl w-full grid gap-12 lg:grid-cols-2 lg:items-center">
           <div className="max-w-2xl">
             <FadeInUp>
-              <h1 className="font-serif text-4xl font-bold tracking-tight text-[#1C1C19] sm:text-5xl lg:text-5xl xl:text-6xl leading-tight">
-                Parenting guidance that{" "}
-                <span className="text-[#5B8A72]">grows with your child</span>
+              <h1 className="font-serif text-4xl font-bold tracking-tight text-[#5B8A72] sm:text-5xl lg:text-5xl xl:text-6xl leading-tight">
+                Parenting guidance that grows with your child
               </h1>
             </FadeInUp>
             <FadeInUp delay={0.15}>
@@ -74,7 +67,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="#features"
-                  className="inline-flex justify-center rounded-2xl border border-[#E5E5E0] bg-transparent px-8 py-3.5 text-base font-medium text-[#1C1C19] hover:bg-[#F3F1EC] transition-colors"
+                  className="inline-flex justify-center rounded-2xl border border-[#D8E5DC] bg-[#E8F0EB] px-8 py-3.5 text-base font-medium text-[#2B3D35] hover:bg-[#D8E5DC] transition-colors"
                 >
                   Learn more
                 </Link>
