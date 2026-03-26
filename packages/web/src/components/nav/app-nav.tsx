@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import {
   Home,
@@ -31,7 +31,6 @@ const navItems = [
 export function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { selectedChildId, setSelectedChildId } = useChild();
   const [children, setChildren] = useState<ChildOption[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -65,13 +64,15 @@ export function AppNav() {
     // For the resources (Browse) page, also update the URL param so server-side
     // personalized feed continues to work.
     if (pathname === "/resources") {
-      const params = new URLSearchParams(searchParams.toString());
+      // Use window.location.search to preserve existing query params (runs in click handler, always client-side)
+      const params = new URLSearchParams(window.location.search);
       if (id === "all") {
         params.delete("child");
       } else {
         params.set("child", id);
       }
-      router.push(`/resources?${params.toString()}`);
+      const qs = params.toString();
+      router.push(qs ? `/resources?${qs}` : "/resources");
     }
   }
 
