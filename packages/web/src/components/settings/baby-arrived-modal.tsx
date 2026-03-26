@@ -164,7 +164,7 @@ export function BabyArrivedModal({
               <button
                 onClick={handleConfirm}
                 disabled={loading || !dob}
-                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#C4956A] to-[#b8845c] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-[#b8845c] hover:to-[#a87550] transition-all disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#8B6F47] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#7a6240] transition-colors disabled:opacity-50"
               >
                 {loading ? (
                   "Recording..."

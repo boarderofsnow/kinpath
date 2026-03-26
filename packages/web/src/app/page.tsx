@@ -46,12 +46,12 @@ export default function LandingPage() {
         <div className="relative z-10 mx-auto max-w-7xl w-full grid gap-12 lg:grid-cols-2 lg:items-center">
           <div className="max-w-2xl">
             <FadeInUp>
-              <h1 className="font-serif text-4xl font-bold tracking-tight text-[#5B8A72] sm:text-5xl lg:text-5xl xl:text-6xl leading-tight">
+              <h1 className="font-serif text-4xl font-bold tracking-tight text-[#1C1C19] sm:text-5xl lg:text-5xl xl:text-6xl leading-tight">
                 Parenting guidance that grows with your child
               </h1>
             </FadeInUp>
             <FadeInUp delay={0.15}>
-              <p className="mt-6 text-lg text-[#6B6B68] leading-relaxed">
+              <p className="mt-6 text-lg text-[#394E53] leading-relaxed">
                 Evidence-based resources from trusted institutions, personalized to
                 your family&apos;s values. From pregnancy through age 5, always
                 the right information at the right time.

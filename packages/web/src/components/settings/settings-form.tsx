@@ -519,7 +519,7 @@ export function SettingsForm({
                       {!child.is_born && (
                         <button
                           onClick={() => setBirthChildId(child.id)}
-                          className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#C4956A] to-[#b8845c] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-[#b8845c] hover:to-[#a87550] transition-all"
+                          className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-[#8B6F47] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#7a6240] transition-colors"
                         >
                           <Sparkles className="h-3 w-3" />
                           Baby has arrived!
