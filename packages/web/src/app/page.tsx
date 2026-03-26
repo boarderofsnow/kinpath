@@ -22,8 +22,7 @@ export default function LandingPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12 backdrop-blur-md bg-white/90 sticky top-0 z-50">
         <Link href="/">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/kinpath-logo.png" alt="Kinpath" width={144} height={36} className="h-9 w-auto" />
+          <Image src="/kinpath-logo.png" alt="Kinpath" width={144} height={36} className="h-9 w-auto" />
         </Link>
         <div className="flex items-center gap-4">
           <Link
@@ -78,12 +77,13 @@ export default function LandingPage() {
           <FadeInUp delay={0.4} className="relative hidden lg:block">
             {/* Interactive Image Container */}
             <div className="relative aspect-[4/3] w-full rounded-[24px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.04)] transition-transform duration-500 hover:rotate-2 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
-              <Image 
-                src="/pregnant-parents-sanctuary-home.png" 
+              <Image
+                src="/pregnant-parents-sanctuary-home.png"
                 alt="A warm, sunlit moment capturing pregnant parents preparing for their child"
                 fill
                 className="object-cover"
                 priority
+                sizes="(max-width: 1024px) 0px, (max-width: 1280px) 50vw, 672px"
               />
             </div>
             {/* Decorative soft backing */}
@@ -218,11 +218,12 @@ export default function LandingPage() {
           <div className="order-2 lg:order-1 relative hidden sm:block">
             <FadeInUp>
               <div className="relative aspect-[4/5] w-full max-w-md mx-auto rounded-[24px] overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.04)] transition-transform duration-500 hover:-rotate-2 hover:shadow-[0_8px_32px_rgba(0,0,0,0.06)]">
-                <Image 
+                <Image
                   src="/parents-toddler-learning-play-home.png"
                   alt="Parents interacting with their child in a warm sunlit room"
                   fill
                   className="object-cover"
+                  sizes="(max-width: 640px) 0px, (max-width: 1024px) 448px, 448px"
                 />
               </div>
             </FadeInUp>
@@ -308,8 +309,7 @@ export default function LandingPage() {
             {/* Column 1: About */}
             <div className="lg:col-span-2">
               <Link href="/">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src="/kinpath-logo.png"
                   alt="Kinpath"
                   width={112}

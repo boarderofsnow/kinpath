@@ -7,6 +7,10 @@ import { useRef, useEffect, useState } from "react";
  * Lightweight CSS-based animation replacements for framer-motion.
  * These provide the same visual effects with zero bundle cost.
  * All components respect prefers-reduced-motion.
+ *
+ * SSR safety: content is always visible in server-rendered HTML.
+ * Scroll animations are progressive enhancement — they only activate
+ * after client JS confirms the element is off-screen on mount.
  */
 
 interface MotionProps {
@@ -16,8 +20,11 @@ interface MotionProps {
 }
 
 function useReducedMotion(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }, []);
+  return reduced;
 }
 
 /* ── Fade In ─────────────────────────────────────────────── */
@@ -63,12 +70,21 @@ export function ScrollReveal({
 }: MotionProps) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(reduced);
+  const [initialized, setInitialized] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    setInitialized(true);
     if (reduced) return;
     const el = ref.current;
     if (!el) return;
+
+    // If element is already in viewport on mount, show immediately
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight - 60) {
+      setVisible(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -84,11 +100,19 @@ export function ScrollReveal({
     return () => observer.disconnect();
   }, [reduced]);
 
+  // SSR / pre-hydration: always show content (no opacity-0 in server HTML)
+  // Post-hydration: hide off-screen elements until they scroll into view
+  const showContent = !initialized || reduced || visible;
+
   return (
     <div
       ref={ref}
-      className={`${visible ? "animate-fade-in-up" : "opacity-0"} ${className}`}
-      style={visible && !reduced ? { animationDelay: `${delay}s`, animationFillMode: "both" } : undefined}
+      className={`${showContent ? (visible && !reduced ? "animate-fade-in-up" : "") : "opacity-0"} ${className}`}
+      style={
+        visible && !reduced
+          ? { animationDelay: `${delay}s`, animationFillMode: "both" }
+          : undefined
+      }
     >
       {children}
     </div>
@@ -109,12 +133,21 @@ export function StaggerContainer({
 }: StaggerContainerProps) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(reduced);
+  const [initialized, setInitialized] = useState(false);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    setInitialized(true);
     if (reduced) return;
     const el = ref.current;
     if (!el) return;
+
+    // If element is already in viewport on mount, show immediately
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight - 60) {
+      setVisible(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -130,8 +163,13 @@ export function StaggerContainer({
     return () => observer.disconnect();
   }, [reduced]);
 
+  const showContent = !initialized || reduced || visible;
+
   return (
-    <div ref={ref} className={`${visible ? "stagger-visible" : "stagger-hidden"} ${className}`}>
+    <div
+      ref={ref}
+      className={`${showContent ? (visible && !reduced ? "stagger-visible" : "") : "stagger-hidden"} ${className}`}
+    >
       {children}
     </div>
   );
