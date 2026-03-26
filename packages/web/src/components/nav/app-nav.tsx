@@ -1,14 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
 import {
   Home,
   BookOpen,
   Settings,
   MessageCircle,
   ClipboardList,
+  ChevronDown,
+  Users,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useChild } from "@/lib/contexts/child-context";
 
-interface AppNavProps {
-  currentPath: string; // e.g. "/dashboard", "/resources", "/settings"
+interface ChildOption {
+  id: string;
+  name: string;
 }
 
 const navItems = [
@@ -19,14 +28,64 @@ const navItems = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function AppNav({ currentPath }: AppNavProps) {
+export function AppNav() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { selectedChildId, setSelectedChildId } = useChild();
+  const [children, setChildren] = useState<ChildOption[]>([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase
+      .from("children")
+      .select("id, name")
+      .order("created_at", { ascending: true })
+      .then(({ data }) => {
+        if (data) setChildren(data);
+      });
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  function handleSelectChild(id: string | "all") {
+    setSelectedChildId(id);
+    setDropdownOpen(false);
+    // For the resources (Browse) page, also update the URL param so server-side
+    // personalized feed continues to work.
+    if (pathname === "/resources") {
+      const params = new URLSearchParams(searchParams.toString());
+      if (id === "all") {
+        params.delete("child");
+      } else {
+        params.set("child", id);
+      }
+      router.push(`/resources?${params.toString()}`);
+    }
+  }
+
+  const selectedChild = children.find((c) => c.id === selectedChildId);
+  const displayLabel = selectedChild ? selectedChild.name : "All Children";
+  const showSelector = children.length > 0;
+
   return (
     <>
       {/* ── Desktop top nav (hidden on mobile) ────────────────── */}
       <div className="hidden border-b border-stone-200/60 bg-white sm:block">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          {/* Logo */}
-          <Link href="/dashboard" prefetch={false}>
+        <div className="mx-auto flex max-w-5xl items-center px-4 py-3">
+          {/* Logo — left */}
+          <Link href="/dashboard" prefetch={false} className="shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kinpath-logo.png"
@@ -37,11 +96,11 @@ export function AppNav({ currentPath }: AppNavProps) {
             />
           </Link>
 
-          {/* Nav Links */}
-          <nav className="flex items-center gap-6">
+          {/* Nav links — center */}
+          <nav className="flex flex-1 items-center justify-center gap-6">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = currentPath === item.href;
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
               return (
                 <Link
@@ -56,7 +115,6 @@ export function AppNav({ currentPath }: AppNavProps) {
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   {item.label}
-                  {/* Active underline indicator */}
                   {isActive && (
                     <span className="absolute -bottom-3 left-0 right-0 h-0.5 rounded-full bg-brand-500" />
                   )}
@@ -64,6 +122,63 @@ export function AppNav({ currentPath }: AppNavProps) {
               );
             })}
           </nav>
+
+          {/* Child selector — right */}
+          {showSelector && (
+            <div className="relative shrink-0" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen((v) => !v)}
+                className="flex items-center gap-1.5 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700"
+                aria-haspopup="listbox"
+                aria-expanded={dropdownOpen}
+              >
+                <Users className="h-3.5 w-3.5 text-brand-500" aria-hidden="true" />
+                <span>{displayLabel}</span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-stone-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                  aria-hidden="true"
+                />
+              </button>
+
+              {dropdownOpen && (
+                <div
+                  role="listbox"
+                  className="absolute right-0 top-full z-50 mt-1.5 min-w-[140px] overflow-hidden rounded-xl border border-stone-200/80 bg-white shadow-lg"
+                >
+                  <button
+                    role="option"
+                    aria-selected={selectedChildId === "all"}
+                    onClick={() => handleSelectChild("all")}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-stone-50 ${
+                      selectedChildId === "all"
+                        ? "font-semibold text-brand-600"
+                        : "text-stone-700"
+                    }`}
+                  >
+                    All Children
+                  </button>
+                  {children.map((child) => (
+                    <button
+                      key={child.id}
+                      role="option"
+                      aria-selected={selectedChildId === child.id}
+                      onClick={() => handleSelectChild(child.id)}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-stone-50 ${
+                        selectedChildId === child.id
+                          ? "font-semibold text-brand-600"
+                          : "text-stone-700"
+                      }`}
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-bold text-brand-600">
+                        {child.name.charAt(0).toUpperCase()}
+                      </span>
+                      {child.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -72,7 +187,7 @@ export function AppNav({ currentPath }: AppNavProps) {
         <nav className="flex items-center justify-around px-2 py-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = currentPath === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
 
             return (
               <Link

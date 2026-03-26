@@ -56,7 +56,7 @@ export default async function SavedChatsPage() {
 
   return (
     <div className="flex h-screen flex-col bg-[#f0eeec]">
-      <AppNav currentPath="/chat" />
+      <AppNav />
       <div className="mx-auto w-full max-w-4xl flex-1 overflow-y-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <div>

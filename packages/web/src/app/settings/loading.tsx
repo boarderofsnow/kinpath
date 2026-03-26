@@ -3,7 +3,7 @@ import { AppNav } from "@/components/nav/app-nav";
 export default function SettingsLoading() {
   return (
     <>
-      <AppNav currentPath="/settings" />
+      <AppNav />
       <div className="mx-auto max-w-4xl px-4 py-8 space-y-6 animate-pulse">
         {/* Profile section skeleton */}
         <section className="rounded-2xl bg-white p-6 shadow-card">

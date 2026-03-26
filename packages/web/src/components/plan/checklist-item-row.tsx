@@ -12,6 +12,7 @@ interface ChecklistItemRowProps {
   onToggle: (id: string, completed: boolean) => void;
   onDateChange: (id: string, newDate: string) => void;
   onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
   /** When true, hides delete button and disables date editing (for household partners). */
   readOnly?: boolean;
 }
@@ -23,6 +24,7 @@ export function ChecklistItemRow({
   onToggle,
   onDateChange,
   onDelete,
+  onEdit,
   readOnly = false,
 }: ChecklistItemRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -68,8 +70,15 @@ export function ChecklistItemRow({
         )}
       </button>
 
-      {/* Content */}
-      <div className="min-w-0 flex-1">
+      {/* Content — click to edit (if onEdit is provided and item is not readOnly) */}
+      <div
+        className={`min-w-0 flex-1 ${onEdit && !readOnly ? "cursor-pointer" : ""}`}
+        onClick={onEdit && !readOnly ? () => onEdit(item.id) : undefined}
+        role={onEdit && !readOnly ? "button" : undefined}
+        tabIndex={onEdit && !readOnly ? 0 : undefined}
+        onKeyDown={onEdit && !readOnly ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onEdit(item.id); } } : undefined}
+        aria-label={onEdit && !readOnly ? `Edit "${item.title}"` : undefined}
+      >
         <p
           className={`text-sm font-medium ${
             item.is_completed ? "text-stone-400 line-through" : "text-stone-800"
@@ -96,6 +105,7 @@ export function ChecklistItemRow({
               aria-label="Due date"
               value={displayDate ?? ""}
               onChange={(e) => onDateChange(item.id, e.target.value)}
+              onClick={(e) => e.stopPropagation()}
               className="rounded border-none bg-transparent p-0 text-xs text-stone-500 focus:ring-1 focus:ring-brand-400"
             />
           </div>

@@ -24,6 +24,7 @@ export function DoctorClient({
   const supabase = createClient();
   const [items, setItems] = useState<DoctorDiscussionItem[]>(initialItems);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showToDiscuss, setShowToDiscuss] = useState(true);
   const [showDiscussed, setShowDiscussed] = useState(false);
 
   // Filter by selected child
@@ -129,25 +130,37 @@ export function DoctorClient({
       {/* To Discuss section */}
       {toDiscuss.length > 0 && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-stone-200/60 bg-white shadow-card">
-          <div className="flex items-center gap-2 px-5 py-3">
-            <Stethoscope className="h-4 w-4 text-brand-500" />
-            <span className="text-sm font-semibold text-stone-800">To Discuss</span>
-            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
-              {toDiscuss.length}
+          <button
+            onClick={() => setShowToDiscuss((v) => !v)}
+            className="flex w-full items-center justify-between px-5 py-3"
+          >
+            <span className="flex items-center gap-2 text-sm font-semibold text-stone-800">
+              <Stethoscope className="h-4 w-4 text-brand-500" />
+              To Discuss
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
+                {toDiscuss.length}
+              </span>
             </span>
-          </div>
-          <div className="border-t border-stone-100">
-            {toDiscuss.map((item) => (
-              <DoctorItemRow
-                key={item.id}
-                item={item}
-                childProfiles={childProfiles}
-                onToggleDiscussed={handleToggleDiscussed}
-                onUpdateResponse={handleUpdateResponse}
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
+            {showToDiscuss ? (
+              <ChevronUp className="h-4 w-4 text-stone-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-stone-400" />
+            )}
+          </button>
+          {showToDiscuss && (
+            <div className="border-t border-stone-100">
+              {toDiscuss.map((item) => (
+                <DoctorItemRow
+                  key={item.id}
+                  item={item}
+                  childProfiles={childProfiles}
+                  onToggleDiscussed={handleToggleDiscussed}
+                  onUpdateResponse={handleUpdateResponse}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

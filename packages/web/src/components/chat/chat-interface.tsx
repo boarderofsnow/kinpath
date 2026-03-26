@@ -16,10 +16,12 @@ import {
   Stethoscope,
   Check,
   Heart,
+  Plus,
 } from "lucide-react";
 import { MarkdownBody } from "@/components/ui/markdown-body";
 import { UpgradeModal } from "@/components/ui/upgrade-modal";
 import { api } from "@/lib/api";
+import { useChild } from "@/lib/contexts/child-context";
 
 interface ChatInterfaceProps {
   childProfiles: ChildWithAge[];
@@ -47,12 +49,13 @@ export function ChatInterface({
   userId,
   subscriptionTier,
 }: ChatInterfaceProps) {
+  const { selectedChildId: ctxChildId } = useChild();
+  // Convert "all" context value to null for the API (null = no child filter)
+  const chatChildId = ctxChildId === "all" ? null : ctxChildId;
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(
-    childProfiles.length > 0 ? childProfiles[0].id : null
-  );
   const [inputValue, setInputValue] = useState("");
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(
     null
@@ -129,7 +132,7 @@ export function ChatInterface({
     try {
       const { data, error: apiError, status } = await api.ai.chat({
         message: userMessage,
-        child_id: selectedChildId,
+        child_id: chatChildId,
       });
 
       if (status === 429) {
@@ -213,7 +216,7 @@ export function ChatInterface({
       }
     }
 
-    const childIds = selectedChildId ? [selectedChildId] : childProfiles.map((c) => c.id);
+    const childIds = chatChildId ? [chatChildId] : childProfiles.map((c) => c.id);
 
     const { data, error: insertErr } = await supabase
       .from("doctor_discussion_items")
@@ -275,43 +278,29 @@ export function ChatInterface({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      {/* Header with child selector and saved link */}
-      {childProfiles.length > 0 && (
-        <div className="border-b border-stone-200/60 bg-white px-6 py-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedChildId(null)}
-                className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${selectedChildId === null
-                    ? "bg-brand-500 text-white shadow-sm"
-                    : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
-                  }`}
-              >
-                All Children
-              </button>
-              {childProfiles.map((child) => (
-                <button
-                  key={child.id}
-                  onClick={() => setSelectedChildId(child.id)}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${selectedChildId === child.id
-                      ? "bg-brand-500 text-white shadow-sm"
-                      : "bg-white text-stone-700 shadow-sm hover:bg-brand-50"
-                    }`}
-                >
-                  {child.name}
-                </button>
-              ))}
-            </div>
-            <Link
-              href="/chat/saved"
-              className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100"
-            >
-              <Archive className="h-4 w-4" />
-              Saved
-            </Link>
-          </div>
+      {/* Header: New Chat + Saved link */}
+      <div className="border-b border-stone-200/60 bg-white px-6 py-3">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => {
+              setMessages([]);
+              setError(null);
+            }}
+            className="flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-600 transition-colors hover:bg-brand-100"
+            aria-label="Start a new chat"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New Chat
+          </button>
+          <Link
+            href="/chat/saved"
+            className="flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-100"
+          >
+            <Archive className="h-4 w-4" />
+            Saved
+          </Link>
         </div>
-      )}
+      </div>
 
       {/* Messages area */}
       <div
@@ -377,15 +366,13 @@ export function ChatInterface({
                     <div className="mt-3 flex items-center justify-between gap-2">
                       {msg.cited_resources?.length ? (
                         <div className="flex flex-wrap gap-2">
-                          {msg.cited_resources.map((resource) => (
+                          {msg.cited_resources.map((resource, rIdx) => (
                             <a
                               key={resource.id}
-                              href={`/resources?search=${encodeURIComponent(
-                                resource.title
-                              )}`}
-                              className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2 py-1 text-xs text-brand-700 hover:bg-brand-100"
+                              href={`/resources/${resource.id}`}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-xs text-brand-700 hover:bg-brand-100"
                             >
-                              <Sparkles className="h-3 w-3" />
+                              <span className="font-semibold text-brand-500">[{rIdx + 1}]</span>
                               {resource.title}
                             </a>
                           ))}
@@ -397,20 +384,25 @@ export function ChatInterface({
                         <button
                           onClick={() => handleAddToDoctorList(msg, idx)}
                           disabled={addedToDoctorList.has(idx)}
-                          className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-                          aria-label={addedToDoctorList.has(idx) ? "Added to provider list" : "Add to provider list"}
+                          title={addedToDoctorList.has(idx) ? "Added to provider list" : "Discuss"}
+                          className="group flex items-center gap-1 rounded-full px-2.5 py-1.5 text-stone-400 transition-colors hover:bg-brand-50 hover:text-brand-600 disabled:cursor-default"
+                          aria-label={addedToDoctorList.has(idx) ? "Added to provider list" : "Discuss with provider"}
                         >
                           {addedToDoctorList.has(idx) ? (
                             <Check className="h-4 w-4 text-green-500" />
                           ) : (
                             <Stethoscope className="h-4 w-4" />
                           )}
+                          <span className="hidden text-xs font-medium group-hover:inline">
+                            {addedToDoctorList.has(idx) ? "Added" : "Discuss"}
+                          </span>
                         </button>
                         {msg.conversation_id && (
                           <button
                             onClick={() => handleSaveConversation(msg, idx)}
                             disabled={savingId === msg.conversation_id}
-                            className="rounded-full p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
+                            title={msg.is_saved ? "Unsave" : "Save"}
+                            className="group flex items-center gap-1 rounded-full px-2.5 py-1.5 text-stone-400 transition-colors hover:bg-brand-50 hover:text-brand-600 disabled:cursor-default"
                             aria-label={msg.is_saved ? "Unsave conversation" : "Save conversation"}
                           >
                             {msg.is_saved ? (
@@ -418,6 +410,9 @@ export function ChatInterface({
                             ) : (
                               <Bookmark className="h-4 w-4" />
                             )}
+                            <span className="hidden text-xs font-medium group-hover:inline">
+                              {msg.is_saved ? "Saved" : "Save"}
+                            </span>
                           </button>
                         )}
                       </div>

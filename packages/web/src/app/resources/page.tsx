@@ -99,7 +99,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
   return (
     <>
-      <AppNav currentPath="/resources" />
+      <AppNav />
       <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <div>
@@ -119,42 +119,6 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             )}
           </p>
         </div>
-
-        {/* Child selector pills — premium+ only */}
-        {enrichedChildren.length > 0 && canFilterByChild && (
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Link
-              href={browseHref({ child: null })}
-              prefetch={false}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
-                !activeChild
-                  ? "bg-brand-500 text-white"
-                  : "bg-white text-stone-700 hover:bg-brand-50"
-              }`}
-            >
-              All Resources
-            </Link>
-            {enrichedChildren.map((child) => (
-              <Link
-                key={child.id}
-                href={browseHref({ child: child.id })}
-                prefetch={false}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
-                  activeChild?.id === child.id
-                    ? "bg-brand-500 text-white"
-                    : "bg-white text-stone-700 hover:bg-brand-50"
-                }`}
-              >
-                {child.name}
-              </Link>
-            ))}
-          </div>
-        )}
-        {enrichedChildren.length > 0 && !canFilterByChild && (
-          <div className="mt-6">
-            <UpgradeBanner feature="child-specific resource filtering" compact />
-          </div>
-        )}
 
         {/* Search bar */}
         <div className="mt-6 max-w-xl">

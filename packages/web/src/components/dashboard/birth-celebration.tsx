@@ -30,19 +30,10 @@ export function BirthCelebration({ child }: BirthCelebrationProps) {
   if (!visible) return null;
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-2xl bg-gradient-to-r from-amber-50 via-orange-50 to-stone-50 border border-amber-100/60 shadow-sm">
-      {/* Subtle decorative glow */}
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          background:
-            "radial-gradient(ellipse at 20% 50%, #C4956A22 0%, transparent 60%)",
-        }}
-      />
-
+    <div className="relative mb-6 overflow-hidden rounded-2xl bg-amber-50 border border-amber-100/60 shadow-sm">
       <div className="relative flex items-start gap-4 px-5 py-4">
         {/* Icon */}
-        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-amber-100 to-orange-100 mt-0.5">
+        <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 mt-0.5">
           <Heart className="h-5 w-5 text-[#C4956A]" fill="currentColor" />
         </div>
 

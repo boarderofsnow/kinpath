@@ -63,7 +63,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
   if (enrichedChildren.length === 0) {
     return (
       <>
-        <AppNav currentPath="/plan" />
+        <AppNav />
         <div className="mx-auto max-w-4xl px-4 py-12 text-center">
           <p className="text-stone-500">
             Add a child in{" "}
@@ -76,11 +76,6 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
       </>
     );
   }
-
-  // Determine active child
-  const activeChild = params.child
-    ? enrichedChildren.find((c) => c.id === params.child) ?? enrichedChildren[0]
-    : enrichedChildren[0];
 
   // Normalize checklist items
   const checklistItems: ChecklistItem[] = (rawItems ?? []).map((row: any) => {
@@ -126,12 +121,11 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
 
   return (
     <>
-      <AppNav currentPath="/plan" />
+      <AppNav />
       <div className="mx-auto max-w-4xl px-4 py-8">
         <PlanClient
           userId={user.id}
           childProfiles={enrichedChildren}
-          activeChildId={activeChild.id}
           initialItems={checklistItems}
           initialDoctorItems={doctorItems}
           initialTab={(params.tab as "checklist" | "doctor") ?? "checklist"}

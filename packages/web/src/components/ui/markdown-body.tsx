@@ -100,7 +100,7 @@ function markdownToHtml(markdown: string, compact = false): string {
   return output.join("\n");
 }
 
-/** Process inline markdown: **bold**, *italic*, `code`, [links](url) */
+/** Process inline markdown: **bold**, *italic*, `code`, [links](url), [N] citations */
 function processInline(text: string): string {
   return (
     text
@@ -113,10 +113,15 @@ function processInline(text: string): string {
       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-stone-900">$1</strong>')
       // Italic: *text*
       .replace(/\*(.+?)\*/g, "<em>$1</em>")
-      // Links: [text](url)
+      // Links: [text](url) — must come before citation rule to avoid conflicts
       .replace(
         /\[([^\]]+)\]\(([^)]+)\)/g,
         '<a href="$2" class="text-brand-600 underline hover:text-brand-700" target="_blank" rel="noopener noreferrer">$1</a>'
+      )
+      // Citation numbers: [1] [2] etc. — only bare numeric brackets not followed by (
+      .replace(
+        /\[(\d+)\](?!\()/g,
+        '<sup class="text-brand-600 text-[10px] font-semibold leading-none">[$1]</sup>'
       )
   );
 }

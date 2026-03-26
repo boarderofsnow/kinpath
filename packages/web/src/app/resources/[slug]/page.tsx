@@ -44,7 +44,7 @@ export default async function ResourcePage({ params }: ResourcePageProps) {
 
   return (
     <>
-      <AppNav currentPath="/resources" />
+      <AppNav />
       <div className="mx-auto max-w-3xl px-4 py-8">
         {/* Back navigation */}
         <Link

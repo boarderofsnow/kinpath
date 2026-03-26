@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { useChild } from "@/lib/contexts/child-context";
 import {
   MILESTONE_TEMPLATES,
   calculateMilestoneDate,
@@ -19,7 +20,6 @@ import { AlertCircle, Clock, CheckCircle2, ChevronDown, ChevronUp, Sparkles, Plu
 interface PlanClientProps {
   userId: string;
   childProfiles: ChildWithAge[];
-  activeChildId: string;
   initialItems: ChecklistItem[];
   initialDoctorItems: DoctorDiscussionItem[];
   initialTab?: "checklist" | "doctor";
@@ -29,21 +29,22 @@ interface PlanClientProps {
 export function PlanClient({
   userId,
   childProfiles,
-  activeChildId,
   initialItems,
   initialDoctorItems,
   initialTab = "checklist",
   householdMembers = [],
 }: PlanClientProps) {
   const supabase = createClient();
+  const { selectedChildId: filterChildId } = useChild();
   const [items, setItems] = useState<ChecklistItem[]>(initialItems);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [addingMilestone, setAddingMilestone] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"checklist" | "doctor">(initialTab);
-  const [filterChildId, setFilterChildId] = useState<string | "all">(activeChildId);
 
-  const activeChild = childProfiles.find((c) => c.id === activeChildId) ?? childProfiles[0];
+  const activeChild = childProfiles[0];
+  const editingItem = editingItemId ? items.find((i) => i.id === editingItemId) ?? null : null;
   const filterChild = filterChildId === "all" ? null : childProfiles.find((c) => c.id === filterChildId) ?? activeChild;
 
   // Filter items by selected child
@@ -214,8 +215,74 @@ export function PlanClient({
     [supabase, suggestChild, filterChildId, childProfiles, userId, items.length]
   );
 
+  const handleEditSave = useCallback(
+    async (
+      title: string,
+      description: string,
+      dueDate: string | null,
+      childIds?: string[],
+      assigneeMemberId?: string | null
+    ) => {
+      if (!editingItemId) return;
+      const now = new Date().toISOString();
+
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === editingItemId
+            ? {
+                ...i,
+                title,
+                description: description || null,
+                due_date: dueDate,
+                child_ids: childIds ?? i.child_ids,
+                assignee_member_id: assigneeMemberId ?? i.assignee_member_id,
+              }
+            : i
+        )
+      );
+
+      await supabase
+        .from("checklist_items")
+        .update({
+          title,
+          description: description || null,
+          due_date: dueDate,
+          assignee_member_id: assigneeMemberId ?? undefined,
+          updated_at: now,
+        })
+        .eq("id", editingItemId);
+
+      setEditingItemId(null);
+    },
+    [supabase, editingItemId]
+  );
+
   return (
     <div>
+      {/* Edit item overlay */}
+      {editingItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+          onClick={() => setEditingItemId(null)}
+        >
+          <div className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+            <AddItemForm
+              onSave={handleEditSave}
+              onCancel={() => setEditingItemId(null)}
+              childProfiles={childProfiles}
+              householdMembers={householdMembers}
+              initialValues={{
+                title: editingItem.title,
+                description: editingItem.description ?? "",
+                dueDate: editingItem.due_date ?? editingItem.suggested_date ?? "",
+                childIds: editingItem.child_ids ?? [],
+                assigneeMemberId: editingItem.assignee_member_id ?? "",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <header>
         <h1 className="text-2xl font-bold text-stone-900">Plan</h1>
         <p className="mt-1 text-sm text-stone-500">
@@ -252,35 +319,6 @@ export function PlanClient({
           Discuss with Provider
         </button>
       </div>
-
-      {/* Child filter tabs */}
-      {childProfiles.length > 1 && (
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => setFilterChildId("all")}
-            className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
-              filterChildId === "all"
-                ? "bg-brand-500 text-white"
-                : "bg-white text-stone-700 hover:bg-brand-50"
-            }`}
-          >
-            All
-          </button>
-          {childProfiles.map((child) => (
-            <button
-              key={child.id}
-              onClick={() => setFilterChildId(child.id)}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-colors ${
-                filterChildId === child.id
-                  ? "bg-brand-500 text-white"
-                  : "bg-white text-stone-700 hover:bg-brand-50"
-              }`}
-            >
-              {child.name}
-            </button>
-          ))}
-        </div>
-      )}
 
       {activeTab === "checklist" && (
         <>
@@ -322,6 +360,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  onEdit={setEditingItemId}
                 />
               ))}
             </Section>
@@ -342,6 +381,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  onEdit={setEditingItemId}
                 />
               ))}
             </Section>
@@ -362,6 +402,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  onEdit={setEditingItemId}
                 />
               ))}
             </Section>
@@ -462,6 +503,7 @@ export function PlanClient({
                   onToggle={handleToggle}
                   onDateChange={handleDateChange}
                   onDelete={handleDelete}
+                  onEdit={setEditingItemId}
                 />
               ))}
             </Section>

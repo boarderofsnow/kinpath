@@ -3,7 +3,7 @@ import { AppNav } from "@/components/nav/app-nav";
 export default function ResourcesLoading() {
   return (
     <>
-      <AppNav currentPath="/resources" />
+      <AppNav />
       <div className="mx-auto max-w-5xl px-4 py-8 animate-pulse">
         {/* Header skeleton */}
         <div>

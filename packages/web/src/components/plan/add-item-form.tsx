@@ -16,6 +16,14 @@ interface AddItemFormProps {
   childProfiles?: ChildWithAge[];
   defaultChildIds?: string[];
   householdMembers?: HouseholdMember[];
+  /** When provided, form operates in edit mode with pre-populated values */
+  initialValues?: {
+    title: string;
+    description: string;
+    dueDate: string;
+    childIds: string[];
+    assigneeMemberId: string;
+  };
 }
 
 export function AddItemForm({
@@ -24,14 +32,18 @@ export function AddItemForm({
   childProfiles,
   defaultChildIds,
   householdMembers,
+  initialValues,
 }: AddItemFormProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const isEditing = !!initialValues;
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [description, setDescription] = useState(initialValues?.description ?? "");
+  const [dueDate, setDueDate] = useState(initialValues?.dueDate ?? "");
   const [selectedChildIds, setSelectedChildIds] = useState<string[]>(
-    defaultChildIds ?? []
+    initialValues?.childIds ?? defaultChildIds ?? []
   );
-  const [assigneeMemberId, setAssigneeMemberId] = useState<string>("");
+  const [assigneeMemberId, setAssigneeMemberId] = useState<string>(
+    initialValues?.assigneeMemberId ?? ""
+  );
 
   const hasMembers = householdMembers && householdMembers.length > 0;
 
@@ -125,7 +137,7 @@ export function AddItemForm({
           disabled={!title.trim()}
           className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
         >
-          Add
+          {isEditing ? "Save changes" : "Add"}
         </button>
       </div>
     </form>

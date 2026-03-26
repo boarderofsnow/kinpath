@@ -3,7 +3,7 @@ import { AppNav } from "@/components/nav/app-nav";
 export default function ChatLoading() {
   return (
     <div className="flex h-screen flex-col bg-[#f0eeec]">
-      <AppNav currentPath="/chat" />
+      <AppNav />
       <div className="flex flex-1 flex-col animate-pulse">
         {/* Child selector skeleton */}
         <div className="border-b border-stone-200/60 bg-white px-4 py-3">

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, DM_Serif_Display } from "next/font/google";
 import { SpeedInsightsClient } from "@/components/analytics/speed-insights";
+import { ChildProvider } from "@/lib/contexts/child-context";
 import "./globals.css";
 
 const inter = Inter({
@@ -44,7 +45,9 @@ export default function RootLayout({
         >
           Skip to content
         </a>
-        {children}
+        <ChildProvider>
+          {children}
+        </ChildProvider>
         <SpeedInsightsClient />
       </body>
     </html>

@@ -82,7 +82,7 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
   return (
     <div className="space-y-6">
       {/* Hero: Age + Stage + Fun Fact */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-brand-50 via-white to-sage-50 p-6 shadow-card">
+      <div className="overflow-hidden rounded-2xl bg-white p-6 shadow-card border border-stone-200/60">
         <div className="flex flex-col items-center gap-6 sm:flex-row">
           <div className="flex flex-col items-center text-center">
             <div className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-100">

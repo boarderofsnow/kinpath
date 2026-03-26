@@ -3,7 +3,7 @@ import { AppNav } from "@/components/nav/app-nav";
 export default function PlanLoading() {
   return (
     <>
-      <AppNav currentPath="/plan" />
+      <AppNav />
       <div className="mx-auto max-w-4xl px-4 py-8 animate-pulse">
         {/* Header with child tabs and tab switcher */}
         <div className="flex items-center justify-between">

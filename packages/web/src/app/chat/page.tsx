@@ -44,7 +44,7 @@ export default async function ChatPage() {
 
   return (
     <div className="flex h-screen flex-col bg-[#f0eeec]">
-      <AppNav currentPath="/chat" />
+      <AppNav />
       <ChatInterface
         childProfiles={children}
         userId={user.id}
