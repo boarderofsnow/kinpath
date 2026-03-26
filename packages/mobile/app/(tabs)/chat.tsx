@@ -36,12 +36,19 @@ interface PreferenceUpdateSuggestion {
   reason: string;
 }
 
+interface BirthUpdateSuggestion {
+  child_name: string;
+  dob: string; // ISO date or "unknown"
+  detected_phrase: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   cited_resources?: CitedResource[];
   preference_update_suggestion?: PreferenceUpdateSuggestion | null;
+  birth_update_suggestion?: BirthUpdateSuggestion | null;
 }
 
 interface Child {
@@ -251,6 +258,10 @@ export default function ChatScreen() {
   const [discussingMessageId, setDiscussingMessageId] = useState<string | null>(null);
   const [remainingQuestions, setRemainingQuestions] = useState<number | null>(null);
   const [dismissedPrefUpdates, setDismissedPrefUpdates] = useState<Set<string>>(new Set());
+  const [dismissedBirthSuggestions, setDismissedBirthSuggestions] = useState<Set<string>>(new Set());
+  const [confirmedBirths, setConfirmedBirths] = useState<Set<string>>(new Set());
+  const [birthDobOverrides, setBirthDobOverrides] = useState<Record<string, string>>({});
+  const [birthConfirmLoading, setBirthConfirmLoading] = useState<string | null>(null);
   const [isLimitReached, setIsLimitReached] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
@@ -316,6 +327,7 @@ export default function ChatScreen() {
         conversation_id: string;
         cited_resources?: CitedResource[];
         preference_update_suggestion?: PreferenceUpdateSuggestion | null;
+        birth_update_suggestion?: BirthUpdateSuggestion | null;
         usage?: { used: number; limit: number; remaining: number } | null;
       };
 
@@ -334,6 +346,7 @@ export default function ChatScreen() {
         content: data.message,
         cited_resources: data.cited_resources,
         preference_update_suggestion: data.preference_update_suggestion ?? null,
+        birth_update_suggestion: data.birth_update_suggestion ?? null,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
@@ -458,6 +471,25 @@ export default function ChatScreen() {
     setDismissedPrefUpdates((prev) => new Set(prev).add(messageId));
   }, []);
 
+  const handleRecordBirth = useCallback(async (messageId: string, suggestion: BirthUpdateSuggestion, children: Child[]) => {
+    const prenatalChildren = children.filter((c) => !("is_born" in c) || !(c as { is_born: boolean }).is_born);
+    // Use selectedChildId or try to match by name
+    const dobToUse = birthDobOverrides[messageId] ?? (suggestion.dob !== "unknown" ? suggestion.dob : "");
+    if (!dobToUse) return;
+
+    // Find matching child from the selected child or by name
+    const targetChildId = selectedChildId ?? null;
+    if (!targetChildId) return;
+
+    setBirthConfirmLoading(messageId);
+    const { error: apiError } = await api.children.markBorn(targetChildId, { dob: dobToUse });
+    setBirthConfirmLoading(null);
+
+    if (!apiError) {
+      setConfirmedBirths((prev) => new Set(prev).add(messageId));
+    }
+  }, [birthDobOverrides, selectedChildId]);
+
   // ── Render Helpers ──────────────────────────────────────
 
   const renderMessageBubble = ({ item }: { item: Message }) => {
@@ -531,6 +563,72 @@ export default function ChatScreen() {
                   <Text style={styles.prefUpdateButtonSecondaryText}>Keep current</Text>
                 </PressableScale>
               </View>
+            </View>
+          )}
+
+          {/* Birth update suggestion card */}
+          {!isUser && item.birth_update_suggestion && !dismissedBirthSuggestions.has(item.id) && (
+            <View style={styles.birthUpdateCard}>
+              {confirmedBirths.has(item.id) ? (
+                <View style={styles.birthUpdateHeader}>
+                  <Ionicons name="heart" size={16} color="#C4956A" />
+                  <Text style={styles.birthUpdateTitle}>Birth recorded! Check your dashboard.</Text>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.birthUpdateHeader}>
+                    <Ionicons name="heart-outline" size={16} color="#C4956A" />
+                    <Text style={styles.birthUpdateTitle}>
+                      {item.birth_update_suggestion.child_name} has arrived?
+                    </Text>
+                  </View>
+                  <Text style={styles.birthUpdateSubtitle}>
+                    Would you like to record the birth?
+                  </Text>
+                  {item.birth_update_suggestion.dob === "unknown" && (
+                    <TextInput
+                      style={styles.birthUpdateDateInput}
+                      placeholder="YYYY-MM-DD"
+                      placeholderTextColor={colors.stone[400]}
+                      value={birthDobOverrides[item.id] ?? ""}
+                      onChangeText={(text) =>
+                        setBirthDobOverrides((prev) => ({ ...prev, [item.id]: text }))
+                      }
+                    />
+                  )}
+                  {item.birth_update_suggestion.dob !== "unknown" && (
+                    <Text style={styles.birthUpdateDate}>
+                      Date: {new Date(item.birth_update_suggestion.dob).toLocaleDateString()}
+                    </Text>
+                  )}
+                  <View style={styles.prefUpdateButtons}>
+                    <PressableScale
+                      style={[
+                        styles.prefUpdateButtonPrimary,
+                        { backgroundColor: "#C4956A" },
+                        (birthConfirmLoading === item.id ||
+                          (item.birth_update_suggestion.dob === "unknown" && !birthDobOverrides[item.id])) &&
+                          { opacity: 0.5 },
+                      ]}
+                      onPress={() => handleRecordBirth(item.id, item.birth_update_suggestion!, [])}
+                      disabled={
+                        birthConfirmLoading === item.id ||
+                        (item.birth_update_suggestion.dob === "unknown" && !birthDobOverrides[item.id])
+                      }
+                    >
+                      <Text style={styles.prefUpdateButtonPrimaryText}>
+                        {birthConfirmLoading === item.id ? "Recording..." : "Record birth"}
+                      </Text>
+                    </PressableScale>
+                    <PressableScale
+                      style={styles.prefUpdateButtonSecondary}
+                      onPress={() => setDismissedBirthSuggestions((prev) => new Set(prev).add(item.id))}
+                    >
+                      <Text style={styles.prefUpdateButtonSecondaryText}>Not now</Text>
+                    </PressableScale>
+                  </View>
+                </>
+              )}
             </View>
           )}
 
@@ -934,6 +1032,48 @@ const styles = StyleSheet.create({
     borderRadius: radii.sm,
     padding: spacing.md,
     gap: spacing.xs,
+  },
+  birthUpdateCard: {
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "#fde8cc",
+    backgroundColor: "#fffbf5",
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    gap: spacing.xs,
+  },
+  birthUpdateHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  birthUpdateTitle: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 13,
+    color: "#92400e",
+    flex: 1,
+  },
+  birthUpdateSubtitle: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.stone[500],
+  },
+  birthUpdateDate: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.stone[600],
+  },
+  birthUpdateDateInput: {
+    borderWidth: 1,
+    borderColor: "#fde8cc",
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.stone[900],
+    backgroundColor: colors.white,
   },
   prefUpdateHeader: {
     flexDirection: "row",

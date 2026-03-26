@@ -11,6 +11,7 @@ import { accountRouter } from "./routes/account";
 import { stripeRouter } from "./routes/stripe";
 import { webhooksRouter } from "./routes/webhooks";
 import { adminRouter } from "./routes/admin";
+import { childrenRouter } from "./routes/children";
 import { errorHandler } from "./middleware/errorHandler";
 import { startCronJobs } from "./cron/digest";
 
@@ -69,6 +70,7 @@ app.use("/household", householdRouter);
 app.use("/account", accountRouter);
 app.use("/stripe", stripeRouter);
 app.use("/admin", adminRouter);
+app.use("/children", childrenRouter);
 
 // ── Error handler (must be last) ──────────────────────────────────────────────
 app.use(errorHandler);

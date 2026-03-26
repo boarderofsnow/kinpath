@@ -6,6 +6,7 @@ import type { ChecklistItem } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
 import { PostBirthDashboard } from "@/components/dashboard/post-birth-dashboard";
+import { BirthCelebration } from "@/components/dashboard/birth-celebration";
 import { SearchBar } from "@/components/search/search-bar";
 import { getHouseholdContext } from "@/lib/household";
 import { FadeInUp } from "@/components/ui/motion";
@@ -131,6 +132,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             </Link>
           ))}
         </div>
+      )}
+
+      {/* Birth celebration banner (client component, shown once via localStorage) */}
+      {activeChild && activeChild.is_born && (
+        <BirthCelebration child={activeChild} />
       )}
 
       {/* Pregnancy Dashboard (for expecting parents) */}

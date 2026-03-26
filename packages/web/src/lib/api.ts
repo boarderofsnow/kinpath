@@ -116,6 +116,15 @@ export const api = {
       }),
   },
 
+  // Children
+  children: {
+    markBorn: (childId: string, body: { dob: string; name?: string }) =>
+      request(`/children/${childId}/mark-born`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+  },
+
   // Household
   household: {
     invite: (body: { email: string; display_name?: string | null; role?: string }) =>

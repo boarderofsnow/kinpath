@@ -63,7 +63,11 @@ RULES:
   Valid fields and values:
     birth_preference: home | hospital | birth_center
     feeding_preference: breastfeeding | formula | combination
-    parenting_style: attachment | gentle | montessori | rie | no_preference`;
+    parenting_style: attachment | gentle | montessori | rie | no_preference
+- BIRTH DETECTION: If the user states that their baby has been born (e.g., "our baby arrived!", "I had the baby", "she was born yesterday", "we welcomed our son") AND the child context below shows the child is currently prenatal (Status: Prenatal), append this block at the very end of your response (after content, after SOURCES, after PREF_UPDATE if any):
+  <<<BIRTH_UPDATE>>>{"child_name":"<name from context>","dob":"YYYY-MM-DD","detected_phrase":"<the phrase that triggered this>"}<<<END_BIRTH_UPDATE>>>
+  Only emit this when the user states a fact about a birth that DID happen — not hypotheticals, questions about future birth, or general pregnancy discussion. If the user doesn't mention a specific date, use "unknown" for dob.
+  This is a joyful moment — congratulate them warmly and personally in your response!`;
 
 /** Calculate a human-readable age string from a date of birth. */
 function formatChildAge(dob: Date): string {
@@ -333,6 +337,21 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
         .trim();
     }
 
+    // ── Parse and strip <<<BIRTH_UPDATE>>> block ─────────────────────────────
+    type BirthUpdateSuggestion = { child_name: string; dob: string; detected_phrase: string };
+    let birthUpdateSuggestion: BirthUpdateSuggestion | null = null;
+    const birthMatch = assistantMessage.match(/<<<BIRTH_UPDATE>>>([\s\S]*?)<<<END_BIRTH_UPDATE>>>/);
+    if (birthMatch) {
+      try {
+        birthUpdateSuggestion = JSON.parse(birthMatch[1].trim());
+      } catch {
+        // malformed JSON — ignore
+      }
+      assistantMessage = assistantMessage
+        .replace(/<<<BIRTH_UPDATE>>>[\s\S]*?<<<END_BIRTH_UPDATE>>>/, "")
+        .trim();
+    }
+
     const newMessages: ChatMessage[] = [
       ...priorMessages,
       { role: "user", content: message },
@@ -385,6 +404,7 @@ aiRouter.post("/chat", requireAuth, async (req, res: Response) => {
         ...externalCitations.map((c) => ({ index: c.index, id: null, title: c.title, url: c.url })),
       ],
       preference_update_suggestion: preferenceUpdateSuggestion,
+      birth_update_suggestion: birthUpdateSuggestion,
       usage: monthlyLimit !== null
         ? { used: monthlyUsed + 1, limit: monthlyLimit, remaining: Math.max(0, monthlyLimit - monthlyUsed - 1) }
         : null,

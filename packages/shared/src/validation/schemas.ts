@@ -74,6 +74,21 @@ export const aiChatMessageSchema = z.object({
   conversation_id: z.string().uuid().optional(),
 });
 
+// ---- Birth Update Schemas ----
+
+export const birthUpdateSchema = z.object({
+  dob: z.string().min(1, "Date of birth is required").refine(
+    (val) => {
+      const date = new Date(val);
+      return !isNaN(date.getTime()) && date <= new Date();
+    },
+    { message: "Date of birth cannot be in the future" }
+  ),
+  name: z.string().min(1).max(100).optional(),
+});
+
+export type BirthUpdateInput = z.infer<typeof birthUpdateSchema>;
+
 // ---- Review Schemas ----
 
 export const submitReviewSchema = z.object({

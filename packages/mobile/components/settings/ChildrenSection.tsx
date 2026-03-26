@@ -15,6 +15,7 @@ import type { Child } from "@kinpath/shared";
 import { colors, fonts, typography, spacing, radii } from "../../lib/theme";
 import { PressableScale } from "../motion";
 import { DatePickerInput } from "./DatePickerInput";
+import { BabyArrivedSheet } from "./BabyArrivedSheet";
 
 interface ChildrenSectionProps {
   children: Child[];
@@ -44,6 +45,9 @@ export function ChildrenSection({
   // ── Delete state ───────────────────────────────
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ── Birth transition state ──────────────────────
+  const [birthChildId, setBirthChildId] = useState<string | null>(null);
 
   // ── Helpers ────────────────────────────────────
   const resetAddForm = () => {
@@ -177,8 +181,26 @@ export function ChildrenSection({
     }
   };
 
+  const birthChild = birthChildId
+    ? childList.find((c) => c.id === birthChildId) ?? null
+    : null;
+
   return (
     <View>
+      {/* Baby Arrived Sheet */}
+      {birthChild && (
+        <BabyArrivedSheet
+          child={birthChild}
+          onClose={() => setBirthChildId(null)}
+          onSuccess={(updatedChild) => {
+            onChildrenChange(
+              childList.map((c) => (c.id === updatedChild.id ? updatedChild : c))
+            );
+            setBirthChildId(null);
+          }}
+        />
+      )}
+
       {/* Add Child Button */}
       {!showAddForm && (
         <PressableScale
@@ -344,6 +366,15 @@ export function ChildrenSection({
                         {ageLabel}
                         {!child.is_born && "  ·  Expecting"}
                       </Text>
+                      {!child.is_born && (
+                        <PressableScale
+                          style={styles.babyArrivedButton}
+                          onPress={() => setBirthChildId(child.id)}
+                        >
+                          <Ionicons name="sparkles" size={12} color="#fff" />
+                          <Text style={styles.babyArrivedButtonText}>Baby has arrived!</Text>
+                        </PressableScale>
+                      )}
                     </View>
                   </View>
 
@@ -544,6 +575,22 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.stone[500],
     marginTop: 2,
+  },
+  babyArrivedButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    marginTop: 6,
+    backgroundColor: "#C4956A",
+    borderRadius: radii.xl,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  babyArrivedButtonText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 11,
+    color: "#fff",
   },
   childActions: {
     flexDirection: "row",

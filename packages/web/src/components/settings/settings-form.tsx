@@ -15,9 +15,10 @@ import {
   type EmailFrequency,
   type SubscriptionTier,
 } from "@kinpath/shared";
-import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, X } from "lucide-react";
+import { Edit2, Plus, Check, Bell, CreditCard, Crown, ArrowRight, X, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { HouseholdSection } from "@/components/settings/household-section";
+import { BabyArrivedModal } from "@/components/settings/baby-arrived-modal";
 import type { HouseholdMember } from "@kinpath/shared";
 import { api } from "@/lib/api";
 
@@ -78,6 +79,7 @@ export function SettingsForm({
   const [newChildIsBorn, setNewChildIsBorn] = useState<boolean | null>(null);
   const [newChildDate, setNewChildDate] = useState("");
   const [deletingChildId, setDeletingChildId] = useState<string | null>(null);
+  const [birthChildId, setBirthChildId] = useState<string | null>(null);
 
   // Preferences state
   const [preferences, setPreferences] = useState<Preferences>(
@@ -379,8 +381,27 @@ export function SettingsForm({
   const tierLimits = TIER_LIMITS[tier];
   const canAddChild = tierLimits.max_children === null || children.length < tierLimits.max_children;
 
+  const birthChild = birthChildId
+    ? children.find((c) => c.id === birthChildId) ?? null
+    : null;
+
   return (
     <div className="space-y-8">
+      {/* Baby Arrived Modal */}
+      {birthChild && (
+        <BabyArrivedModal
+          child={birthChild}
+          onClose={() => setBirthChildId(null)}
+          onSuccess={(updatedChild) => {
+            setChildren((prev) =>
+              prev.map((c) => (c.id === updatedChild.id ? updatedChild : c))
+            );
+            setBirthChildId(null);
+            router.refresh();
+          }}
+        />
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-stone-900">Settings</h1>
@@ -495,6 +516,15 @@ export function SettingsForm({
                       <span className="mt-1 inline-flex items-center rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
                         {child.is_born ? "Born" : "Expecting"}
                       </span>
+                      {!child.is_born && (
+                        <button
+                          onClick={() => setBirthChildId(child.id)}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#C4956A] to-[#b8845c] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-[#b8845c] hover:to-[#a87550] transition-all"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Baby has arrived!
+                        </button>
+                      )}
                     </div>
                     <div className="flex items-center gap-1">
                       <button

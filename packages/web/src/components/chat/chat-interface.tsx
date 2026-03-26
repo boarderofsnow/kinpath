@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChildWithAge } from "@kinpath/shared";
 import { createClient } from "@/lib/supabase/client";
@@ -15,6 +15,7 @@ import {
   Archive,
   Stethoscope,
   Check,
+  Heart,
 } from "lucide-react";
 import { MarkdownBody } from "@/components/ui/markdown-body";
 import { UpgradeModal } from "@/components/ui/upgrade-modal";
@@ -26,12 +27,19 @@ interface ChatInterfaceProps {
   subscriptionTier: string;
 }
 
+interface BirthUpdateSuggestion {
+  child_name: string;
+  dob: string; // ISO date or "unknown"
+  detected_phrase: string;
+}
+
 interface Message {
   role: "user" | "assistant";
   content: string;
   conversation_id?: string | null;
   cited_resources?: Array<{ id: string; title: string }>;
   is_saved?: boolean;
+  birth_update_suggestion?: BirthUpdateSuggestion | null;
 }
 
 export function ChatInterface({
@@ -52,6 +60,10 @@ export function ChatInterface({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [addedToDoctorList, setAddedToDoctorList] = useState<Set<number>>(new Set());
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [dismissedBirthSuggestions, setDismissedBirthSuggestions] = useState<Set<number>>(new Set());
+  const [confirmedBirths, setConfirmedBirths] = useState<Set<number>>(new Set());
+  const [birthDobOverrides, setBirthDobOverrides] = useState<Record<number, string>>({});
+  const [birthConfirmLoading, setBirthConfirmLoading] = useState<number | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -135,9 +147,10 @@ export function ChatInterface({
         content?: string;
         conversation_id: string | null;
         cited_resources?: Array<{ id: string; title: string }>;
+        birth_update_suggestion?: BirthUpdateSuggestion | null;
       };
 
-      // Add AI message with cited resources and conversation_id
+      // Add AI message with cited resources, conversation_id, and birth suggestion
       setMessages((prev) => [
         ...prev,
         {
@@ -146,6 +159,7 @@ export function ChatInterface({
           conversation_id: responseData.conversation_id,
           cited_resources: responseData.cited_resources,
           is_saved: false,
+          birth_update_suggestion: responseData.birth_update_suggestion ?? null,
         },
       ]);
 
@@ -221,6 +235,30 @@ export function ChatInterface({
         );
       }
       setAddedToDoctorList((prev) => new Set(prev).add(msgIdx));
+    }
+  };
+
+  const handleRecordBirth = async (msgIdx: number, suggestion: BirthUpdateSuggestion) => {
+    const prenatalChildren = childProfiles.filter((c) => !c.is_born);
+    const matchedChild =
+      prenatalChildren.find(
+        (c) => c.name.toLowerCase() === suggestion.child_name.toLowerCase()
+      ) ?? (prenatalChildren.length === 1 ? prenatalChildren[0] : null);
+
+    if (!matchedChild) return;
+
+    const dobToUse =
+      birthDobOverrides[msgIdx] ??
+      (suggestion.dob !== "unknown" ? suggestion.dob : "");
+    if (!dobToUse) return;
+
+    setBirthConfirmLoading(msgIdx);
+    const { error: apiError } = await api.children.markBorn(matchedChild.id, { dob: dobToUse });
+    setBirthConfirmLoading(null);
+
+    if (!apiError) {
+      localStorage.setItem(`kinpath_birth_celebrated_${matchedChild.id}`, "chat");
+      setConfirmedBirths((prev) => new Set(prev).add(msgIdx));
     }
   };
 
@@ -317,8 +355,8 @@ export function ChatInterface({
         ) : (
           <div className="space-y-4">
             {messages.map((msg, idx) => (
+              <Fragment key={idx}>
               <div
-                key={idx}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"
                   }`}
               >
@@ -387,6 +425,78 @@ export function ChatInterface({
                   )}
                 </div>
               </div>
+
+              {/* Birth update suggestion card */}
+              {msg.role === "assistant" &&
+                msg.birth_update_suggestion &&
+                !dismissedBirthSuggestions.has(idx) && (
+                  <div className="flex justify-start mt-2">
+                    <div className="max-w-lg w-full rounded-2xl rounded-bl-md border border-amber-200/60 bg-gradient-to-r from-amber-50 to-orange-50 px-4 py-3 shadow-sm">
+                      {confirmedBirths.has(idx) ? (
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-[#C4956A] flex-shrink-0" fill="currentColor" />
+                          <p className="text-sm font-medium text-stone-800">
+                            Birth recorded! Visit your dashboard to see the updated experience.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-2 mb-3">
+                            <div className="flex items-center gap-2">
+                              <Heart className="h-4 w-4 text-[#C4956A] flex-shrink-0 mt-0.5" />
+                              <p className="text-sm font-medium text-stone-800">
+                                It sounds like {msg.birth_update_suggestion.child_name} has arrived! Would you like to record the birth?
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => setDismissedBirthSuggestions((prev) => new Set(prev).add(idx))}
+                              className="text-stone-400 hover:text-stone-600 flex-shrink-0"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          {msg.birth_update_suggestion.dob === "unknown" ? (
+                            <input
+                              type="date"
+                              max={new Date().toISOString().split("T")[0]}
+                              value={birthDobOverrides[idx] ?? ""}
+                              onChange={(e) =>
+                                setBirthDobOverrides((prev) => ({ ...prev, [idx]: e.target.value }))
+                              }
+                              className="mb-3 w-full rounded-xl border border-amber-200 bg-white px-3 py-1.5 text-sm focus:border-[#C4956A] focus:ring-1 focus:ring-[#C4956A]"
+                            />
+                          ) : (
+                            <p className="mb-3 text-xs text-stone-500">
+                              Birth date:{" "}
+                              <span className="font-medium text-stone-700">
+                                {new Date(msg.birth_update_suggestion.dob).toLocaleDateString()}
+                              </span>
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleRecordBirth(idx, msg.birth_update_suggestion!)}
+                              disabled={
+                                birthConfirmLoading === idx ||
+                                (msg.birth_update_suggestion.dob === "unknown" && !birthDobOverrides[idx])
+                              }
+                              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#C4956A] to-[#b8845c] px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-[#b8845c] hover:to-[#a87550] transition-all disabled:opacity-50"
+                            >
+                              {birthConfirmLoading === idx ? "Recording..." : "Record birth"}
+                            </button>
+                            <button
+                              onClick={() => setDismissedBirthSuggestions((prev) => new Set(prev).add(idx))}
+                              className="rounded-xl border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-600 hover:bg-white/60 transition-colors"
+                            >
+                              Not now
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Fragment>
             ))}
             {loading && (
               <div className="flex justify-start">
