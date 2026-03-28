@@ -44,7 +44,7 @@ export default async function ChatPage() {
   const subscriptionTier = userData?.subscription_tier || "free";
 
   return (
-    <div className="flex h-screen flex-col bg-[#f0eeec]">
+    <div className="flex h-dvh flex-col pb-20 sm:pb-24 bg-[#f0eeec]">
       <AppNav />
       <ChildHydrator profiles={children} />
       <ChatInterface
