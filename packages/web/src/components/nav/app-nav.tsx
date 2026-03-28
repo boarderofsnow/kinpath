@@ -66,65 +66,57 @@ export function AppNav() {
 
   return (
     <>
-      {/* ── Desktop top nav (hidden on mobile) ────────────────── */}
-      <div className="hidden sm:block">
-        {/* Row 1: Logo + nav links */}
-        <div className="border-b border-stone-200/60 bg-white">
-          <div className="mx-auto flex max-w-5xl items-center px-4 py-3">
-            {/* Logo — left */}
-            <Link href="/dashboard" prefetch={false} className="shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/kinpath-logo.png"
-                alt="Kinpath"
-                width={128}
-                height={32}
-                className="h-8 w-auto"
-              />
-            </Link>
+      {/* ── Desktop nav (hidden on mobile) ────────────────── */}
+      <div className="hidden border-b border-stone-200/60 bg-white sm:block">
+        {/* Row 1: Logo + child pills */}
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+          <Link href="/dashboard" prefetch={false} className="shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/kinpath-logo.png"
+              alt="Kinpath"
+              width={128}
+              height={32}
+              className="h-8 w-auto"
+            />
+          </Link>
 
-            {/* Nav links — center */}
-            <nav className="flex flex-1 items-center justify-center gap-6">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    prefetch={false}
-                    className={`relative flex items-center gap-2 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "font-semibold text-brand-600"
-                        : "text-stone-600 hover:text-brand-600"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    {item.label}
-                    {isActive && (
-                      <span className="absolute -bottom-3 left-0 right-0 h-0.5 rounded-full bg-brand-500" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+          {showPillStrip && (
+            <ChildPillSelector
+              childProfiles={contextChildren}
+              selectedChildId={selectedChildId}
+              onSelect={handleSelectChild}
+              showAll={showAll}
+            />
+          )}
         </div>
 
-        {/* Row 2: Child pill strip */}
-        {showPillStrip && (
-          <div className="border-b border-stone-200/40 bg-stone-50/60">
-            <div className="mx-auto flex max-w-5xl justify-center px-4 py-1.5">
-              <ChildPillSelector
-                childProfiles={contextChildren}
-                selectedChildId={selectedChildId}
-                onSelect={handleSelectChild}
-                showAll={showAll}
-              />
-            </div>
-          </div>
-        )}
+        {/* Row 2: Nav links */}
+        <nav className="mx-auto flex max-w-5xl items-center justify-center gap-6 px-4 pb-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch={false}
+                className={`relative flex items-center gap-2 pb-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "font-semibold text-brand-600"
+                    : "text-stone-600 hover:text-brand-600"
+                }`}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                {item.label}
+                {isActive && (
+                  <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full bg-brand-500" />
+                )}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
       {/* ── Mobile bottom tab bar (shown on mobile only) ──────── */}
@@ -156,24 +148,21 @@ export function AppNav() {
         </nav>
       </div>
 
-      {/* ── Mobile top bar with logo + child pills (shown on mobile) ──── */}
-      <div className="sm:hidden">
-        <div className="border-b border-stone-200/60 bg-white px-4 py-3">
-          <Link href="/dashboard" prefetch={false}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/kinpath-logo.png"
-              alt="Kinpath"
-              width={112}
-              height={28}
-              className="h-7 w-auto"
-            />
-          </Link>
-        </div>
+      {/* ── Mobile top bar: logo + child pills in one row (shown on mobile) ──── */}
+      <div className="flex items-center justify-between border-b border-stone-200/60 bg-white px-4 py-2.5 sm:hidden">
+        <Link href="/dashboard" prefetch={false} className="shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/kinpath-logo.png"
+            alt="Kinpath"
+            width={112}
+            height={28}
+            className="h-7 w-auto"
+          />
+        </Link>
 
-        {/* Child pill strip — below logo bar */}
         {showPillStrip && (
-          <div className="border-b border-stone-200/40 bg-stone-50/60 px-3 py-1.5">
+          <div className="scrollbar-hide ml-3 min-w-0 flex-1 overflow-x-auto">
             <ChildPillSelector
               childProfiles={contextChildren}
               selectedChildId={selectedChildId}
