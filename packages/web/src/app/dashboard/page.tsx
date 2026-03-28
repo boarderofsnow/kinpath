@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
 import type { ChecklistItem } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
+import { ChildHydrator } from "@/components/nav/child-hydrator";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
 import { getHouseholdContext } from "@/lib/household";
 
@@ -59,6 +60,7 @@ export default async function DashboardPage() {
   return (
     <>
       <AppNav />
+      <ChildHydrator children={enrichedChildren} />
       <DashboardClient
         displayName={profile.display_name}
         enrichedChildren={enrichedChildren}

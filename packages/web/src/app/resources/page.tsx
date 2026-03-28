@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge, getDevelopmentStage, TOPICS, TOPIC_KEYS, type TopicKey } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
+import { ChildHydrator } from "@/components/nav/child-hydrator";
 import { searchResources } from "@/lib/search";
 import { getPersonalizedFeed } from "@/lib/resources";
 import { getHouseholdContext } from "@/lib/household";
@@ -100,6 +101,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   return (
     <>
       <AppNav />
+      <ChildHydrator children={enrichedChildren} />
       <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <div>

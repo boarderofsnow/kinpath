@@ -16,6 +16,12 @@ interface AuthContextType {
   /** The user_id to use for shared data queries (children, checklist). For partners, this is the owner's ID. */
   effectiveOwnerId: string | null;
   isPartner: boolean;
+  /** Whether the user has completed the post-auth flow (paywall + partner invite). null while loading. */
+  onboardingComplete: boolean | null;
+  /** ISO date string of when the user account was created. null while loading. */
+  userCreatedAt: string | null;
+  /** Marks onboarding as complete in Supabase and updates local state. */
+  completeOnboarding: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
   signUp: (email: string, password: string, displayName: string) => Promise<AuthResult>;
   signOut: () => Promise<AuthResult>;
@@ -31,6 +37,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [effectiveOwnerId, setEffectiveOwnerId] = useState<string | null>(null);
   const [isPartner, setIsPartner] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
+  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
   const checkedPendingInvite = useRef(false);
   const identifiedRcUser = useRef<string | null>(null);
   const signingOutRef = useRef(false);
@@ -89,6 +97,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session);
           setUser(session?.user || null);
           identifyIfNeeded(session?.user?.id);
+
+          // Fetch onboarding state for the post-auth flow guard
+          if (session?.user?.id) {
+            const { data: profile } = await supabase
+              .from("users")
+              .select("onboarding_complete, created_at")
+              .eq("id", session.user.id)
+              .single();
+            setOnboardingComplete(profile?.onboarding_complete ?? true);
+            setUserCreatedAt(profile?.created_at ?? null);
+          } else {
+            setOnboardingComplete(null);
+            setUserCreatedAt(null);
+          }
         }
       } catch (err) {
         // Network errors during cold start are non-fatal;
@@ -102,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     getSession();
 
     // Listen for auth changes
-    const subscription = authHelpers.onAuthStateChange((session) => {
+    const subscription = authHelpers.onAuthStateChange(async (session) => {
       // During sign-out, ignore auth events (e.g. TOKEN_REFRESHED) that would
       // re-set session/user and cause a double mount/unmount cycle crash.
       if (signingOutRef.current) return;
@@ -110,6 +132,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user || null);
       identifyIfNeeded(session?.user?.id);
+
+      // Fetch onboarding state for newly authenticated users
+      if (session?.user?.id) {
+        const { data: profile } = await supabase
+          .from("users")
+          .select("onboarding_complete, created_at")
+          .eq("id", session.user.id)
+          .single();
+        if (!signingOutRef.current) {
+          setOnboardingComplete(profile?.onboarding_complete ?? true);
+          setUserCreatedAt(profile?.created_at ?? null);
+        }
+      }
     });
 
     return () => {
@@ -125,6 +160,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return authHelpers.signUp(email, password, displayName);
   };
 
+  const completeOnboarding = async () => {
+    if (!user?.id) return;
+    await supabase
+      .from("users")
+      .update({ onboarding_complete: true })
+      .eq("id", user.id);
+    setOnboardingComplete(true);
+  };
+
   const signOut = async () => {
     // Suppress the auth state listener so token-refresh events cannot
     // re-set session/user while async cleanup is in progress.
@@ -135,6 +179,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setEffectiveOwnerId(null);
     setIsPartner(false);
+    setOnboardingComplete(null);
+    setUserCreatedAt(null);
     queryCache.clear();
     identifiedRcUser.current = null;
     try {
@@ -154,7 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, effectiveOwnerId, isPartner, signIn, signUp, signOut, signInWithApple, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, session, isLoading, effectiveOwnerId, isPartner, onboardingComplete, userCreatedAt, completeOnboarding, signIn, signUp, signOut, signInWithApple, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );

@@ -16,31 +16,48 @@ import { configureRevenueCat } from "../lib/purchases";
 
 let rcConfigured = false;
 
+// Users created before this date skip the post-auth flow (paywall + partner invite).
+// Adjust to match the actual deploy date of this feature.
+const POST_AUTH_LAUNCH = new Date("2026-04-15");
+
 function RootLayoutContent() {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, onboardingComplete, userCreatedAt } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
-    if (isLoading) return;
+    // Wait for both session and profile to load
+    if (isLoading || (session && onboardingComplete === null)) return;
 
     const seg = segments as string[];
     const inAuthGroup = seg[0] === "(auth)";
     const inProtectedGroup = seg[0] === "(tabs)";
+    const inPostAuthGroup = seg[0] === "(post-auth)";
     const onWelcomeScreen =
       seg.length === 0 || seg[0] === "index" || seg[0] === undefined;
 
-    if (session && (inAuthGroup || onWelcomeScreen)) {
-      // Logged-in user on auth or welcome screen → send to dashboard
-      router.replace("/(tabs)");
-    } else if (!session && inProtectedGroup) {
+    if (!session && (inProtectedGroup || inPostAuthGroup)) {
       // Unauthenticated user on protected screen → send to login.
       // Cannot use "/" because both app/index.tsx and app/(tabs)/index.tsx
       // map to that path — Expo Router resolves it to the tabs index.
       router.replace("/(auth)/login");
+    } else if (session && (inAuthGroup || onWelcomeScreen)) {
+      // Logged-in user on auth or welcome screen → check onboarding state
+      const isNewUser = userCreatedAt
+        ? new Date(userCreatedAt) > POST_AUTH_LAUNCH
+        : false;
+
+      if (!onboardingComplete && isNewUser) {
+        router.replace("/(post-auth)/paywall");
+      } else {
+        router.replace("/(tabs)");
+      }
+    } else if (session && inPostAuthGroup && onboardingComplete) {
+      // User completed the post-auth flow — prevent going back
+      router.replace("/(tabs)");
     }
     // Otherwise: let the user stay where they are
-  }, [session, isLoading, segments]);
+  }, [session, isLoading, onboardingComplete, segments]);
 
   if (isLoading) {
     return (
@@ -54,6 +71,7 @@ function RootLayoutContent() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(post-auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="resource/[slug]" options={{ headerShown: false }} />
     </Stack>

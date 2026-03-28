@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
 import type { HouseholdMember } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
+import { ChildHydrator } from "@/components/nav/child-hydrator";
 import { SettingsForm } from "@/components/settings/settings-form";
 import { getHouseholdContext } from "@/lib/household";
 
@@ -89,6 +90,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   return (
     <>
       <AppNav />
+      <ChildHydrator children={enrichedChildren} />
       <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <SettingsForm
           user={userProfile}

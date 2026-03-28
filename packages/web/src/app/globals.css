@@ -113,6 +113,15 @@ button:not(:disabled):active {
   animation: step-enter 0.25s ease-out;
 }
 
+/* Hide scrollbar for pill strip horizontal scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,

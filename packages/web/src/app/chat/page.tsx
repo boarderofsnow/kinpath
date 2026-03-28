@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
+import { ChildHydrator } from "@/components/nav/child-hydrator";
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { getHouseholdContext } from "@/lib/household";
 
@@ -45,6 +46,7 @@ export default async function ChatPage() {
   return (
     <div className="flex h-screen flex-col bg-[#f0eeec]">
       <AppNav />
+      <ChildHydrator children={children} />
       <ChatInterface
         childProfiles={children}
         userId={user.id}
