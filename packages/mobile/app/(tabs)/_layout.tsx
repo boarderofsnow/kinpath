@@ -1,21 +1,13 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Platform, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors, fonts, radii } from "../../lib/theme";
+import { FloatingTabBar } from "../../components/FloatingTabBar";
 
 export default function TabLayout() {
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: colors.brand[500],
-        tabBarInactiveTintColor: colors.stone[400],
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
-        tabBarItemStyle: styles.tabBarItem,
-        tabBarBackground: () => <View style={styles.tabBarBg} />,
-        headerShown: false,
-      }}
+      tabBar={(props) => <FloatingTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen
         name="index"
@@ -70,40 +62,3 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  tabBar: {
-    position: "absolute",
-    bottom: Platform.OS === "ios" ? 28 : 16,
-    left: 52,
-    right: 52,
-    height: 64,
-    borderRadius: radii.full,
-    backgroundColor: colors.white,
-    borderTopWidth: 0,
-    paddingBottom: 0,
-    ...(Platform.OS === "ios"
-      ? {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 16,
-        }
-      : { elevation: 12 }),
-  },
-  tabBarBg: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.white,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: `${colors.stone[200]}40`,
-  },
-  tabBarItem: {
-    paddingTop: 6,
-    paddingBottom: 6,
-  },
-  tabBarLabel: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 10,
-    marginTop: 2,
-  },
-});

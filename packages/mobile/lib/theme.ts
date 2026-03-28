@@ -224,6 +224,16 @@ export const shadows: Record<string, ViewStyle> = {
     },
     android: { elevation: 4 },
   }) as ViewStyle,
+
+  navBar: Platform.select({
+    ios: {
+      shadowColor: colors.stone[300],
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.4,
+      shadowRadius: 20,
+    },
+    android: { elevation: 16 },
+  }) as ViewStyle,
 };
 
 // ── Common Style Fragments ──────────────────────────────────
