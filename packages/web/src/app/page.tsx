@@ -354,9 +354,9 @@ export default function LandingPage() {
               </h3>
               <ul className="mt-6 space-y-4 text-sm">
                 <li>
-                  <a href="mailto:support@kinpath.family" className="text-[#6B6B68] hover:text-[#5B8A72] transition-colors">
-                    Contact
-                  </a>
+                  <Link href="/support" className="text-[#6B6B68] hover:text-[#5B8A72] transition-colors">
+                    Help & FAQ
+                  </Link>
                 </li>
                 <li>
                   <Link href="/privacy" className="text-[#6B6B68] hover:text-[#5B8A72] transition-colors">
