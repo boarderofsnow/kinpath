@@ -92,7 +92,7 @@ export function AppNav() {
 
       {/* ── Floating bottom nav bar ──────────────────────────── */}
       <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 sm:bottom-6">
-        <nav className="flex items-center gap-1 rounded-2xl border border-stone-300 bg-stone-100 px-2 py-2 shadow-lg shadow-stone-300/40 sm:gap-2 sm:px-3">
+        <nav className="flex items-center gap-1 rounded-2xl border border-brand-300/60 bg-stone-100 px-2 py-2 shadow-lg shadow-stone-300/40 sm:gap-2 sm:px-3">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
