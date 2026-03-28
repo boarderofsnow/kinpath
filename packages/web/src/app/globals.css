@@ -56,10 +56,13 @@ button:not(:disabled):active {
   background-size: 256px;
 }
 
-/* Mobile bottom nav spacing */
-@media (max-width: 639px) {
+/* Floating bottom nav spacing */
+body {
+  padding-bottom: 5.5rem;
+}
+@media (min-width: 640px) {
   body {
-    padding-bottom: 4.5rem;
+    padding-bottom: 6rem;
   }
 }
 
