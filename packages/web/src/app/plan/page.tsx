@@ -123,7 +123,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
   return (
     <>
       <AppNav />
-      <ChildHydrator children={enrichedChildren} />
+      <ChildHydrator profiles={enrichedChildren} />
       <div className="mx-auto max-w-4xl px-4 py-8">
         <PlanClient
           userId={user.id}

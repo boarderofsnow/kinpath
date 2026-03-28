@@ -46,7 +46,7 @@ export default async function ChatPage() {
   return (
     <div className="flex h-screen flex-col bg-[#f0eeec]">
       <AppNav />
-      <ChildHydrator children={children} />
+      <ChildHydrator profiles={children} />
       <ChatInterface
         childProfiles={children}
         userId={user.id}

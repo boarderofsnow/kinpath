@@ -101,7 +101,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   return (
     <>
       <AppNav />
-      <ChildHydrator children={enrichedChildren} />
+      <ChildHydrator profiles={enrichedChildren} />
       <div className="mx-auto max-w-5xl px-4 py-8">
         {/* Header */}
         <div>

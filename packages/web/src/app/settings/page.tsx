@@ -90,7 +90,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
   return (
     <>
       <AppNav />
-      <ChildHydrator children={enrichedChildren} />
+      <ChildHydrator profiles={enrichedChildren} />
       <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
         <SettingsForm
           user={userProfile}

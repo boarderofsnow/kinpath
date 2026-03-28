@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   return (
     <>
       <AppNav />
-      <ChildHydrator children={enrichedChildren} />
+      <ChildHydrator profiles={enrichedChildren} />
       <DashboardClient
         displayName={profile.display_name}
         enrichedChildren={enrichedChildren}
