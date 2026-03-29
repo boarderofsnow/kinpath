@@ -258,17 +258,18 @@ function PostBirthDashboard({
   // Achieved milestones section toggle
   const [showAchieved, setShowAchieved] = useState(false);
 
-  // Enrich current milestones with achievement data
-  const enrichedCurrent = useMemo(
-    () => enrichMilestonesWithAchievements(currentMilestones, achievements),
-    [currentMilestones, achievements]
-  );
+  // Enrich current milestones — filter OUT achieved ones from active display
+  const enrichedCurrent = useMemo(() => {
+    const enriched = enrichMilestonesWithAchievements(currentMilestones, achievements);
+    return enriched.filter((m) => m.achievement === null);
+  }, [currentMilestones, achievements]);
 
-  // Past milestones that have been achieved
-  const achievedPastMilestones = useMemo(() => {
-    const enriched = enrichMilestonesWithAchievements(pastMilestones, achievements);
+  // ALL achieved milestones (current + past age ranges)
+  const allAchievedMilestones = useMemo(() => {
+    const allMilestones = [...currentMilestones, ...pastMilestones];
+    const enriched = enrichMilestonesWithAchievements(allMilestones, achievements);
     return enriched.filter((m) => m.achievement !== null);
-  }, [pastMilestones, achievements]);
+  }, [currentMilestones, pastMilestones, achievements]);
 
   // Group milestones by domain
   const milestonesByDomain = useMemo(() => {
@@ -279,11 +280,11 @@ function PostBirthDashboard({
   }, [enrichedCurrent]);
 
   const achievedByDomain = useMemo(() => {
-    return achievedPastMilestones.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
+    return allAchievedMilestones.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
       (acc[m.domain] ??= []).push(m);
       return acc;
     }, {});
-  }, [achievedPastMilestones]);
+  }, [allAchievedMilestones]);
 
   const openModal = useCallback((milestone: DevelopmentalMilestone, existingAchievement?: MilestoneAchievement | null) => {
     setModalMilestone(milestone);
@@ -508,9 +509,50 @@ function PostBirthDashboard({
         </FadeInUp>
       )}
 
-      {/* ── Achieved Milestones (past ages) ────────── */}
-      {achievedPastMilestones.length > 0 && (
+      {/* ── Coming Up (Checklist) ──────────────────── */}
+      {checklistItems.length > 0 && (
         <FadeInUp delay={250}>
+          <View style={s.sectionCard}>
+            <View style={s.sectionHeaderBetween}>
+              <Text style={s.sectionTitle}>Coming Up</Text>
+              <PressableScale
+                onPress={() => router.push("/(tabs)/plan")}
+                style={s.viewAllLink}
+              >
+                <Text style={s.viewAllText}>View all</Text>
+                <Ionicons name="arrow-forward" size={14} color={colors.brand[600]} />
+              </PressableScale>
+            </View>
+            <View style={s.checklistList}>
+              {checklistItems.map((item) => {
+                const displayDate = item.due_date ?? item.suggested_date;
+                return (
+                  <View key={item.id} style={s.checklistRow}>
+                    <View style={s.checklistIcon}>
+                      <Ionicons name="calendar-outline" size={14} color={colors.brand[600]} />
+                    </View>
+                    <View style={s.checklistInfo}>
+                      <Text style={s.checklistTitle}>{item.title}</Text>
+                      {displayDate && (
+                        <Text style={s.checklistDate}>
+                          {new Date(displayDate + "T00:00:00").toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </FadeInUp>
+      )}
+
+      {/* ── Achieved Milestones ────────────────────── */}
+      {allAchievedMilestones.length > 0 && (
+        <FadeInUp delay={300}>
           <View style={s.sectionCard}>
             <PressableScale
               onPress={() => setShowAchieved((prev) => !prev)}
@@ -520,7 +562,7 @@ function PostBirthDashboard({
                 <Ionicons name="checkmark-circle" size={18} color={colors.sage[500]} />
                 <Text style={s.sectionTitle}>Achieved Milestones</Text>
                 <View style={s.achievedCountBadge}>
-                  <Text style={s.achievedCountText}>{achievedPastMilestones.length}</Text>
+                  <Text style={s.achievedCountText}>{allAchievedMilestones.length}</Text>
                 </View>
               </View>
               <Ionicons
@@ -570,47 +612,6 @@ function PostBirthDashboard({
                 })}
               </View>
             )}
-          </View>
-        </FadeInUp>
-      )}
-
-      {/* ── Coming Up (Checklist) ──────────────────── */}
-      {checklistItems.length > 0 && (
-        <FadeInUp delay={300}>
-          <View style={s.sectionCard}>
-            <View style={s.sectionHeaderBetween}>
-              <Text style={s.sectionTitle}>Coming Up</Text>
-              <PressableScale
-                onPress={() => router.push("/(tabs)/checklist")}
-                style={s.viewAllLink}
-              >
-                <Text style={s.viewAllText}>View all</Text>
-                <Ionicons name="arrow-forward" size={14} color={colors.brand[600]} />
-              </PressableScale>
-            </View>
-            <View style={s.checklistList}>
-              {checklistItems.map((item) => {
-                const displayDate = item.due_date ?? item.suggested_date;
-                return (
-                  <View key={item.id} style={s.checklistRow}>
-                    <View style={s.checklistIcon}>
-                      <Ionicons name="calendar-outline" size={14} color={colors.brand[600]} />
-                    </View>
-                    <View style={s.checklistInfo}>
-                      <Text style={s.checklistTitle}>{item.title}</Text>
-                      {displayDate && (
-                        <Text style={s.checklistDate}>
-                          {new Date(displayDate + "T00:00:00").toLocaleDateString(undefined, {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
           </View>
         </FadeInUp>
       )}

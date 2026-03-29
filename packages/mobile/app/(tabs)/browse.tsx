@@ -287,7 +287,7 @@ export default function BrowseScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.headerArea}>
-          <Text style={styles.headerTitle}>Browse Resources</Text>
+          <Text style={styles.headerTitle}>Resources</Text>
         </View>
         <View style={{ paddingHorizontal: spacing.lg, gap: spacing.md, paddingTop: spacing.md }}>
           <ResourceCardSkeleton />
@@ -304,7 +304,7 @@ export default function BrowseScreen() {
         {/* Header */}
         <FadeIn>
           <View style={styles.headerArea}>
-            <Text style={styles.headerTitle}>Browse Resources</Text>
+            <Text style={styles.headerTitle}>Resources</Text>
             {activeChild && (
               <Text style={styles.headerSubtitle}>
                 Personalized for {activeChild.name} — {activeChild.age_label}

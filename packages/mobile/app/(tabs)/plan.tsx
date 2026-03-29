@@ -691,7 +691,7 @@ export default function ChecklistScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Checklist</Text>
+        <Text style={styles.headerTitle}>Plan</Text>
       </View>
 
       {/* Child Pills */}

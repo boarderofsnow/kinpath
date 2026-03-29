@@ -20,21 +20,21 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="browse"
+        name="plan"
         options={{
-          title: "Browse",
+          title: "Plan",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book-outline" size={size} color={color} />
+            <Ionicons name="clipboard-outline" size={size} color={color} />
           ),
         }}
       />
 
       <Tabs.Screen
-        name="checklist"
+        name="browse"
         options={{
-          title: "Checklist",
+          title: "Browse",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="checkbox-outline" size={size} color={color} />
+            <Ionicons name="book-outline" size={size} color={color} />
           ),
         }}
       />

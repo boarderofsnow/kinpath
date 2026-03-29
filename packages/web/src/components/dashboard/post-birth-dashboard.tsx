@@ -100,17 +100,18 @@ export function PostBirthDashboard({ child, checklistItems, achievements, userId
     })
     .slice(0, 5);
 
-  // Enrich current milestones with achievement data
-  const enrichedCurrent = useMemo(
-    () => enrichMilestonesWithAchievements(currentMilestones, localAchievements),
-    [currentMilestones, localAchievements]
-  );
+  // Enrich current milestones — filter OUT achieved ones from active display
+  const enrichedCurrent = useMemo(() => {
+    const enriched = enrichMilestonesWithAchievements(currentMilestones, localAchievements);
+    return enriched.filter((m) => m.achievement === null);
+  }, [currentMilestones, localAchievements]);
 
-  // Past milestones that have been achieved
-  const achievedPastMilestones = useMemo(() => {
-    const enriched = enrichMilestonesWithAchievements(pastMilestones, localAchievements);
+  // ALL achieved milestones (current + past age ranges)
+  const allAchievedMilestones = useMemo(() => {
+    const allMilestones = [...currentMilestones, ...pastMilestones];
+    const enriched = enrichMilestonesWithAchievements(allMilestones, localAchievements);
     return enriched.filter((m) => m.achievement !== null);
-  }, [pastMilestones, localAchievements]);
+  }, [currentMilestones, pastMilestones, localAchievements]);
 
   // Group milestones by domain
   const milestonesByDomain = useMemo(() => {
@@ -121,11 +122,11 @@ export function PostBirthDashboard({ child, checklistItems, achievements, userId
   }, [enrichedCurrent]);
 
   const achievedByDomain = useMemo(() => {
-    return achievedPastMilestones.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
+    return allAchievedMilestones.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
       (acc[m.domain] ??= []).push(m);
       return acc;
     }, {});
-  }, [achievedPastMilestones]);
+  }, [allAchievedMilestones]);
 
   const openEditor = useCallback((milestoneId: string, existingAchievement?: MilestoneAchievement | null) => {
     setEditingMilestoneId(milestoneId);
@@ -312,8 +313,47 @@ export function PostBirthDashboard({ child, checklistItems, achievements, userId
         </div>
       )}
 
-      {/* Achieved Milestones (past age ranges) */}
-      {achievedPastMilestones.length > 0 && (
+      {/* Coming Up — next checklist items */}
+      {upcomingChecklist.length > 0 && (
+        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
+            <Link
+              href="/plan"
+              prefetch={false}
+              className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
+            >
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <div className="mt-3 space-y-3">
+            {upcomingChecklist.map((item) => {
+              const displayDate = item.due_date ?? item.suggested_date;
+              return (
+                <div key={item.id} className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                    <Calendar className="h-3.5 w-3.5" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-stone-800">{item.title}</p>
+                    {displayDate && (
+                      <p className="mt-0.5 text-xs text-stone-400">
+                        {new Date(displayDate + "T00:00:00").toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Achieved Milestones */}
+      {allAchievedMilestones.length > 0 && (
         <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
           <button
             type="button"
@@ -326,7 +366,7 @@ export function PostBirthDashboard({ child, checklistItems, achievements, userId
                 Achieved Milestones
               </h3>
               <span className="rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
-                {achievedPastMilestones.length}
+                {allAchievedMilestones.length}
               </span>
             </div>
             {showAchieved ? (
@@ -375,45 +415,6 @@ export function PostBirthDashboard({ child, checklistItems, achievements, userId
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Coming Up — next checklist items */}
-      {upcomingChecklist.length > 0 && (
-        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
-            <Link
-              href="/plan"
-              prefetch={false}
-              className="flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700"
-            >
-              View all <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
-          <div className="mt-3 space-y-3">
-            {upcomingChecklist.map((item) => {
-              const displayDate = item.due_date ?? item.suggested_date;
-              return (
-                <div key={item.id} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
-                    <Calendar className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-stone-800">{item.title}</p>
-                    {displayDate && (
-                      <p className="mt-0.5 text-xs text-stone-400">
-                        {new Date(displayDate + "T00:00:00").toLocaleDateString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
     </div>

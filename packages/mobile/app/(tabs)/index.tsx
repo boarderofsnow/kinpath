@@ -285,7 +285,7 @@ export default function HomeScreen() {
 
                       {upcomingForChild.length > 0 && (
                         <View style={styles.upcomingSection}>
-                          <Text style={styles.upcomingTitle}>Upcoming checklist</Text>
+                          <Text style={styles.upcomingTitle}>Coming Up</Text>
                           {upcomingForChild.map((item, idx) => (
                             <PressableScale
                               key={item.id}
@@ -293,7 +293,7 @@ export default function HomeScreen() {
                                 styles.checklistItem,
                                 idx === lastIndex && styles.checklistItemLast,
                               ]}
-                              onPress={() => router.push("/(tabs)/checklist")}
+                              onPress={() => router.push("/(tabs)/plan")}
                             >
                               <View
                                 style={[
