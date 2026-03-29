@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { enrichChildWithAge } from "@kinpath/shared";
-import type { ChecklistItem } from "@kinpath/shared";
+import type { ChecklistItem, MilestoneAchievement } from "@kinpath/shared";
 import { AppNav } from "@/components/nav/app-nav";
 import { ChildHydrator } from "@/components/nav/child-hydrator";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
@@ -43,12 +43,18 @@ export default async function DashboardPage() {
     enrichChildWithAge(child)
   );
 
-  // Step C: Fetch all checklist items (client will filter by selected child)
-  const { data: rawItems } = await supabase
-    .from("checklist_items")
-    .select("*, checklist_item_children(child_id)")
-    .eq("user_id", effectiveOwnerId)
-    .order("sort_order", { ascending: true });
+  // Step C: Fetch all checklist items + milestone achievements in parallel
+  const [{ data: rawItems }, { data: rawAchievements }] = await Promise.all([
+    supabase
+      .from("checklist_items")
+      .select("*, checklist_item_children(child_id)")
+      .eq("user_id", effectiveOwnerId)
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("milestone_achievements")
+      .select("*")
+      .eq("user_id", effectiveOwnerId),
+  ]);
 
   const allChecklistItems: ChecklistItem[] = (rawItems ?? []).map((row: any) => {
     const junctionRows = row.checklist_item_children ?? [];
@@ -56,6 +62,8 @@ export default async function DashboardPage() {
     const { checklist_item_children: _, ...item } = row;
     return { ...item, child_ids: childIds } as ChecklistItem;
   });
+
+  const allAchievements: MilestoneAchievement[] = (rawAchievements ?? []) as MilestoneAchievement[];
 
   return (
     <>
@@ -65,6 +73,8 @@ export default async function DashboardPage() {
         displayName={profile.display_name}
         enrichedChildren={enrichedChildren}
         allChecklistItems={allChecklistItems}
+        allAchievements={allAchievements}
+        userId={user.id}
       />
     </>
   );

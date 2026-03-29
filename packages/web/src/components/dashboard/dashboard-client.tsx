@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ChildWithAge, ChecklistItem } from "@kinpath/shared";
+import type { ChildWithAge, ChecklistItem, MilestoneAchievement } from "@kinpath/shared";
 import { getDevelopmentStage } from "@kinpath/shared";
 import { PregnancyDashboard } from "@/components/onboarding/pregnancy-dashboard";
 import { PostBirthDashboard } from "@/components/dashboard/post-birth-dashboard";
@@ -15,12 +15,16 @@ interface DashboardClientProps {
   displayName: string | null;
   enrichedChildren: ChildWithAge[];
   allChecklistItems: ChecklistItem[];
+  allAchievements: MilestoneAchievement[];
+  userId: string;
 }
 
 export function DashboardClient({
   displayName,
   enrichedChildren,
   allChecklistItems,
+  allAchievements,
+  userId,
 }: DashboardClientProps) {
   const { selectedChildId } = useChild();
 
@@ -40,6 +44,11 @@ export function DashboardClient({
       return item.child_id === activeChild.id;
     });
   }, [activeChild, allChecklistItems]);
+
+  const activeChildAchievements = useMemo(() => {
+    if (!activeChild?.is_born) return [];
+    return allAchievements.filter((a) => a.child_id === activeChild.id);
+  }, [activeChild, allAchievements]);
 
   const stage = activeChild ? getDevelopmentStage(activeChild.age_in_weeks) : null;
 
@@ -86,7 +95,7 @@ export function DashboardClient({
       {/* Post-Birth Dashboard */}
       {activeChild?.is_born && (
         <section className="mt-8">
-          <PostBirthDashboard child={activeChild} checklistItems={activeChildChecklist} />
+          <PostBirthDashboard child={activeChild} checklistItems={activeChildChecklist} achievements={activeChildAchievements} userId={userId} />
         </section>
       )}
 

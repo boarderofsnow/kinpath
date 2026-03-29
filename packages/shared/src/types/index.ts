@@ -7,3 +7,4 @@ export * from "./checklist";
 export * from "./conversation";
 export * from "./doctor";
 export * from "./household";
+export * from "./milestone-achievement";

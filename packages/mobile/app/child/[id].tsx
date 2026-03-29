@@ -1,10 +1,14 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   StyleSheet,
   View,
   Text,
   ScrollView,
   SafeAreaView,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -17,6 +21,8 @@ import {
   getDevelopmentStage,
   getMilestonesForAge,
   getUpcomingMilestones,
+  getPastMilestones,
+  enrichMilestonesWithAchievements,
   getPostnatalTip,
   getDueDateCountdown,
   getBabySizeComparison,
@@ -29,7 +35,9 @@ import type {
   ChildWithAge,
   ChecklistItem,
   DevelopmentalMilestone,
+  MilestoneAchievement,
 } from "@kinpath/shared";
+import type { EnrichedMilestone } from "@kinpath/shared";
 import {
   colors,
   fonts,
@@ -41,6 +49,7 @@ import {
 } from "../../lib/theme";
 import { FadeIn, FadeInUp, PressableScale } from "../../components/motion";
 import { DashboardSkeleton } from "../../components/skeleton";
+import { DatePickerInput } from "../../components/settings/DatePickerInput";
 
 // ── Fun facts (matching web) ───────────────────────────────
 function getAgeFunFact(ageInWeeks: number): string {
@@ -56,6 +65,10 @@ function getAgeFunFact(ageInWeeks: number): string {
   return "Your child is building the foundation for lifelong learning. Every conversation matters.";
 }
 
+function toISODate(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
+
 // ── Domain colors ──────────────────────────────────────────
 const DOMAIN_COLORS: Record<string, { bg: string; text: string; iconName: keyof typeof Ionicons.glyphMap }> = {
   motor: { bg: "#dbeafe", text: "#2563eb", iconName: "hand-left-outline" },
@@ -64,7 +77,7 @@ const DOMAIN_COLORS: Record<string, { bg: string; text: string; iconName: keyof 
   social: { bg: "#ffe4e6", text: "#e11d48", iconName: "people-outline" },
 };
 
-// ── Planning tip category colors ───────────────────────────
+// ── Planning tip category colors ───────────��───────────────
 const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
   health: { bg: colors.brand[50], text: colors.brand[600] },
   preparation: { bg: colors.accent[50], text: colors.accent[700] },
@@ -109,6 +122,7 @@ export default function ChildDashboardScreen() {
 
   const [child, setChild] = useState<EnrichedChild | null>(null);
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [achievements, setAchievements] = useState<MilestoneAchievement[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -134,17 +148,24 @@ export default function ChildDashboardScreen() {
       };
       setChild(enriched);
 
-      // Fetch checklist items for post-birth children
+      // Fetch checklist items + milestone achievements for post-birth children
       if (data.is_born) {
-        const { data: items } = await supabase
-          .from("checklist_items")
-          .select("*")
-          .eq("child_id", id)
-          .eq("is_completed", false)
-          .order("due_date", { ascending: true })
-          .limit(5);
+        const [{ data: items }, { data: achData }] = await Promise.all([
+          supabase
+            .from("checklist_items")
+            .select("*")
+            .eq("child_id", id)
+            .eq("is_completed", false)
+            .order("due_date", { ascending: true })
+            .limit(5),
+          supabase
+            .from("milestone_achievements")
+            .select("*")
+            .eq("child_id", id),
+        ]);
 
         if (items) setChecklistItems(items as ChecklistItem[]);
+        if (achData) setAchievements(achData as MilestoneAchievement[]);
       }
     } catch (err) {
       console.error("Error:", err);
@@ -189,7 +210,12 @@ export default function ChildDashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         {child.is_born ? (
-          <PostBirthDashboard child={child} checklistItems={checklistItems} />
+          <PostBirthDashboard
+            child={child}
+            checklistItems={checklistItems}
+            achievements={achievements}
+            onAchievementsChange={setAchievements}
+          />
         ) : (
           <PregnancyDashboard child={child} />
         )}
@@ -198,16 +224,20 @@ export default function ChildDashboardScreen() {
   );
 }
 
-// ════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════��════════════
 // POST-BIRTH DASHBOARD
 // ════════════════════════════════════════════════════════════
 
 function PostBirthDashboard({
   child,
   checklistItems,
+  achievements,
+  onAchievementsChange,
 }: {
   child: EnrichedChild;
   checklistItems: ChecklistItem[];
+  achievements: MilestoneAchievement[];
+  onAchievementsChange: (achievements: MilestoneAchievement[]) => void;
 }) {
   const router = useRouter();
   const { user } = useAuth();
@@ -215,48 +245,107 @@ function PostBirthDashboard({
   const stage = getDevelopmentStage(ageWeeks);
   const currentMilestones = getMilestonesForAge(ageWeeks);
   const upcomingMilestones = getUpcomingMilestones(ageWeeks, 3);
+  const pastMilestones = getPastMilestones(ageWeeks);
   const tip = getPostnatalTip(ageWeeks);
   const childInitial = child.name.charAt(0).toUpperCase();
 
-  // Track milestones added to checklist
-  const [addedMilestones, setAddedMilestones] = useState<Set<string>>(new Set());
-  const [addingMilestone, setAddingMilestone] = useState<string | null>(null);
+  // Achievement recording modal state
+  const [modalMilestone, setModalMilestone] = useState<DevelopmentalMilestone | null>(null);
+  const [modalDate, setModalDate] = useState<Date>(new Date());
+  const [modalNotes, setModalNotes] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const addMilestoneToChecklist = async (
-    milestoneId: string,
-    title: string,
-    description: string
-  ) => {
-    if (!user?.id || addedMilestones.has(milestoneId)) return;
-    setAddingMilestone(milestoneId);
-    try {
-      const { error } = await supabase.from("checklist_items").insert({
-        user_id: user.id,
-        child_id: child.id,
-        title,
-        description,
-        item_type: "milestone",
-        milestone_key: milestoneId,
-        is_completed: false,
-        sort_order: 0,
-      });
-      if (!error) {
-        setAddedMilestones((prev) => new Set(prev).add(milestoneId));
-      }
-    } catch {
-      // silent
-    } finally {
-      setAddingMilestone(null);
-    }
-  };
+  // Achieved milestones section toggle
+  const [showAchieved, setShowAchieved] = useState(false);
+
+  // Enrich current milestones with achievement data
+  const enrichedCurrent = useMemo(
+    () => enrichMilestonesWithAchievements(currentMilestones, achievements),
+    [currentMilestones, achievements]
+  );
+
+  // Past milestones that have been achieved
+  const achievedPastMilestones = useMemo(() => {
+    const enriched = enrichMilestonesWithAchievements(pastMilestones, achievements);
+    return enriched.filter((m) => m.achievement !== null);
+  }, [pastMilestones, achievements]);
 
   // Group milestones by domain
-  const milestonesByDomain = currentMilestones.reduce<
-    Record<string, DevelopmentalMilestone[]>
-  >((acc, m) => {
-    (acc[m.domain] ??= []).push(m);
-    return acc;
-  }, {});
+  const milestonesByDomain = useMemo(() => {
+    return enrichedCurrent.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
+      (acc[m.domain] ??= []).push(m);
+      return acc;
+    }, {});
+  }, [enrichedCurrent]);
+
+  const achievedByDomain = useMemo(() => {
+    return achievedPastMilestones.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
+      (acc[m.domain] ??= []).push(m);
+      return acc;
+    }, {});
+  }, [achievedPastMilestones]);
+
+  const openModal = useCallback((milestone: DevelopmentalMilestone, existingAchievement?: MilestoneAchievement | null) => {
+    setModalMilestone(milestone);
+    setModalDate(
+      existingAchievement
+        ? new Date(existingAchievement.achieved_date + "T00:00:00")
+        : new Date()
+    );
+    setModalNotes(existingAchievement?.notes ?? "");
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setModalMilestone(null);
+    setModalNotes("");
+  }, []);
+
+  const saveAchievement = useCallback(async () => {
+    if (!modalMilestone || !user?.id) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from("milestone_achievements")
+        .upsert(
+          {
+            child_id: child.id,
+            user_id: user.id,
+            milestone_id: modalMilestone.id,
+            achieved_date: toISODate(modalDate),
+            notes: modalNotes || null,
+          },
+          { onConflict: "child_id,milestone_id" }
+        )
+        .select()
+        .single();
+
+      if (!error && data) {
+        const updated = achievements.filter((a) => a.milestone_id !== modalMilestone.id);
+        onAchievementsChange([...updated, data as MilestoneAchievement]);
+      }
+    } finally {
+      setSaving(false);
+      closeModal();
+    }
+  }, [modalMilestone, user?.id, child.id, modalDate, modalNotes, achievements, onAchievementsChange, closeModal]);
+
+  const removeAchievement = useCallback(async (milestoneId: string) => {
+    const existing = achievements.find((a) => a.milestone_id === milestoneId);
+    if (!existing) return;
+
+    // Optimistic removal
+    onAchievementsChange(achievements.filter((a) => a.milestone_id !== milestoneId));
+
+    const { error } = await supabase
+      .from("milestone_achievements")
+      .delete()
+      .eq("id", existing.id);
+
+    if (error) {
+      // Revert on failure
+      onAchievementsChange([...achievements]);
+    }
+  }, [achievements, onAchievementsChange]);
 
   return (
     <View style={s.dashboardContent}>
@@ -350,27 +439,49 @@ function PostBirthDashboard({
                     </View>
                     <View style={s.milestoneList}>
                       {milestones.map((m) => {
-                        const isAdded = addedMilestones.has(m.id);
-                        const isAdding = addingMilestone === m.id;
+                        const isAchieved = m.achievement !== null;
                         return (
                           <View key={m.id} style={s.milestoneItem}>
-                            <View style={s.milestoneDot} />
-                            <View style={s.milestoneTextGroup}>
-                              <Text style={s.milestoneTitle}>{m.title}</Text>
-                              <Text style={s.milestoneDesc}>{m.description}</Text>
-                            </View>
+                            {/* Achievement toggle button */}
                             <PressableScale
-                              style={[s.addToChecklistBtn, isAdded && s.addToChecklistBtnAdded]}
-                              onPress={() => addMilestoneToChecklist(m.id, m.title, m.description)}
-                              disabled={isAdded || isAdding}
+                              style={[
+                                s.milestoneToggle,
+                                isAchieved && s.milestoneToggleAchieved,
+                              ]}
+                              onPress={() => openModal(m, m.achievement)}
                               scaleTo={0.9}
                             >
-                              <Ionicons
-                                name={isAdded ? "checkmark" : "add"}
-                                size={14}
-                                color={isAdded ? colors.sage[700] : colors.brand[600]}
-                              />
+                              {isAchieved && (
+                                <Ionicons name="checkmark" size={12} color={colors.sage[600]} />
+                              )}
                             </PressableScale>
+
+                            <View style={s.milestoneTextGroup}>
+                              <Text style={[s.milestoneTitle, isAchieved && s.milestoneTitleAchieved]}>
+                                {m.title}
+                              </Text>
+                              {isAchieved ? (
+                                <View style={s.achievedRow}>
+                                  <Text style={s.achievedDateText}>
+                                    Achieved{" "}
+                                    {new Date(m.achievement!.achieved_date + "T00:00:00").toLocaleDateString(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                    {m.achievement!.notes ? ` \u2014 ${m.achievement!.notes}` : ""}
+                                  </Text>
+                                  <PressableScale
+                                    onPress={() => removeAchievement(m.id)}
+                                    scaleTo={0.9}
+                                    style={s.removeBtn}
+                                  >
+                                    <Ionicons name="close" size={12} color={colors.stone[400]} />
+                                  </PressableScale>
+                                </View>
+                              ) : (
+                                <Text style={s.milestoneDesc}>{m.description}</Text>
+                              )}
+                            </View>
                           </View>
                         );
                       })}
@@ -391,6 +502,72 @@ function PostBirthDashboard({
                     </View>
                   ))}
                 </View>
+              </View>
+            )}
+          </View>
+        </FadeInUp>
+      )}
+
+      {/* ── Achieved Milestones (past ages) ────────── */}
+      {achievedPastMilestones.length > 0 && (
+        <FadeInUp delay={250}>
+          <View style={s.sectionCard}>
+            <PressableScale
+              onPress={() => setShowAchieved((prev) => !prev)}
+              style={s.achievedToggleRow}
+            >
+              <View style={s.achievedToggleLeft}>
+                <Ionicons name="checkmark-circle" size={18} color={colors.sage[500]} />
+                <Text style={s.sectionTitle}>Achieved Milestones</Text>
+                <View style={s.achievedCountBadge}>
+                  <Text style={s.achievedCountText}>{achievedPastMilestones.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={showAchieved ? "chevron-down" : "chevron-forward"}
+                size={18}
+                color={colors.stone[400]}
+              />
+            </PressableScale>
+
+            {showAchieved && (
+              <View style={[s.domainList, { marginTop: spacing.md }]}>
+                {Object.entries(achievedByDomain).map(([domain, milestones]) => {
+                  const dc = DOMAIN_COLORS[domain] || DOMAIN_COLORS.cognitive;
+                  return (
+                    <View key={domain} style={s.domainGroup}>
+                      <View style={s.domainHeader}>
+                        <View style={[s.domainIcon, { backgroundColor: dc.bg }]}>
+                          <Ionicons name={dc.iconName} size={14} color={dc.text} />
+                        </View>
+                        <Text style={s.domainLabel}>
+                          {DOMAIN_LABELS[domain as keyof typeof DOMAIN_LABELS]}
+                        </Text>
+                      </View>
+                      <View style={s.milestoneList}>
+                        {milestones.map((m) => (
+                          <View key={m.id} style={s.milestoneItem}>
+                            <View style={[s.milestoneToggle, s.milestoneToggleAchieved]}>
+                              <Ionicons name="checkmark" size={12} color={colors.sage[600]} />
+                            </View>
+                            <View style={s.milestoneTextGroup}>
+                              <Text style={s.milestoneTitle}>{m.title}</Text>
+                              <Text style={s.achievedDateText}>
+                                Achieved{" "}
+                                {new Date(m.achievement!.achieved_date + "T00:00:00").toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                                {m.achievement!.notes ? ` \u2014 ${m.achievement!.notes}` : ""}
+                              </Text>
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                })}
               </View>
             )}
           </View>
@@ -437,6 +614,74 @@ function PostBirthDashboard({
           </View>
         </FadeInUp>
       )}
+
+      {/* ── Achievement Recording Modal ──────────── */}
+      <Modal
+        visible={modalMilestone !== null}
+        animationType="slide"
+        transparent
+        onRequestClose={closeModal}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={s.modalOverlay}
+        >
+          <PressableScale style={s.modalBackdrop} onPress={closeModal}>
+            <View />
+          </PressableScale>
+          <View style={s.modalContent}>
+            <View style={s.modalHandle} />
+
+            <Text style={s.modalTitle}>
+              {modalMilestone?.title ?? "Record Milestone"}
+            </Text>
+            {modalMilestone?.description && (
+              <Text style={s.modalDesc}>{modalMilestone.description}</Text>
+            )}
+
+            <DatePickerInput
+              label="Date achieved"
+              value={modalDate}
+              onChange={setModalDate}
+              maximumDate={new Date()}
+            />
+
+            <View style={s.modalNotesContainer}>
+              <Text style={s.modalNotesLabel}>
+                Note <Text style={s.modalNotesOptional}>(optional)</Text>
+              </Text>
+              <TextInput
+                style={s.modalNotesInput}
+                value={modalNotes}
+                onChangeText={setModalNotes}
+                placeholder="e.g. First time at the park!"
+                placeholderTextColor={colors.stone[400]}
+                multiline
+              />
+            </View>
+
+            <View style={s.modalActions}>
+              <PressableScale
+                style={s.modalSaveBtn}
+                onPress={saveAchievement}
+                disabled={saving}
+                scaleTo={0.97}
+              >
+                <Text style={s.modalSaveBtnText}>
+                  {saving ? "Saving..." : "Save"}
+                </Text>
+              </PressableScale>
+              <PressableScale
+                style={s.modalCancelBtn}
+                onPress={closeModal}
+                scaleTo={0.97}
+              >
+                <Text style={s.modalCancelBtnText}>Cancel</Text>
+              </PressableScale>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -822,12 +1067,19 @@ const s = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.sm,
   },
-  milestoneDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.stone[300],
-    marginTop: 6,
+  milestoneToggle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.stone[300],
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  milestoneToggleAchieved: {
+    borderColor: colors.sage[400],
+    backgroundColor: colors.sage[100],
   },
   milestoneTextGroup: {
     flex: 1,
@@ -838,11 +1090,29 @@ const s = StyleSheet.create({
     lineHeight: 20,
     color: colors.stone[800],
   },
+  milestoneTitleAchieved: {
+    color: colors.stone[600],
+  },
   milestoneDesc: {
     fontFamily: fonts.sans,
     fontSize: 11,
     lineHeight: 16,
     color: colors.stone[500],
+  },
+  achievedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  achievedDateText: {
+    fontFamily: fonts.sans,
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.sage[600],
+    flex: 1,
+  },
+  removeBtn: {
+    padding: 2,
   },
   comingNextSection: {
     borderTopWidth: 1,
@@ -871,6 +1141,29 @@ const s = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 11,
     color: colors.stone[600],
+  },
+
+  // ── Achieved Milestones Toggle ──────────────
+  achievedToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  achievedToggleLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  achievedCountBadge: {
+    backgroundColor: colors.sage[100],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radii.full,
+  },
+  achievedCountText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 11,
+    color: colors.sage[700],
   },
 
   // ── Checklist (Coming Up) ───────────────────
@@ -1036,17 +1329,91 @@ const s = StyleSheet.create({
     color: colors.stone[300],
   },
 
-  // ── Add to Checklist Button ─────────────────
-  addToChecklistBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.brand[50],
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: spacing.sm,
+  // ── Achievement Modal ───────────────────────
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
-  addToChecklistBtnAdded: {
-    backgroundColor: colors.sage[100],
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    padding: spacing.xl,
+    paddingBottom: 40,
+    ...shadows.card,
+  },
+  modalHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.stone[300],
+    alignSelf: "center",
+    marginBottom: spacing.lg,
+  },
+  modalTitle: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 18,
+    color: colors.foreground,
+    marginBottom: 4,
+  },
+  modalDesc: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    lineHeight: 20,
+    color: colors.stone[500],
+    marginBottom: spacing.lg,
+  },
+  modalNotesContainer: {
+    marginBottom: spacing.lg,
+  },
+  modalNotesLabel: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 14,
+    color: colors.foreground,
+    marginBottom: spacing.sm,
+  },
+  modalNotesOptional: {
+    fontFamily: fonts.sans,
+    color: colors.stone[400],
+  },
+  modalNotesInput: {
+    borderWidth: 1,
+    borderColor: colors.stone[200],
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.foreground,
+    backgroundColor: colors.white,
+    minHeight: 44,
+  },
+  modalActions: {
+    gap: spacing.sm,
+  },
+  modalSaveBtn: {
+    backgroundColor: colors.brand[500],
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+  },
+  modalSaveBtnText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 15,
+    color: colors.white,
+  },
+  modalCancelBtn: {
+    borderRadius: radii.md,
+    paddingVertical: spacing.md,
+    alignItems: "center",
+  },
+  modalCancelBtnText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 15,
+    color: colors.stone[600],
   },
 });

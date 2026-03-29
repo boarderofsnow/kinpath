@@ -1,15 +1,19 @@
 "use client";
 
+import { useState, useCallback, useMemo } from "react";
 import Link from "next/link";
-import type { ChildWithAge, ChecklistItem } from "@kinpath/shared";
+import type { ChildWithAge, ChecklistItem, MilestoneAchievement } from "@kinpath/shared";
 import {
   getDevelopmentStage,
   getMilestonesForAge,
   getUpcomingMilestones,
+  getPastMilestones,
+  enrichMilestonesWithAchievements,
   getPostnatalTip,
   DOMAIN_LABELS,
 } from "@kinpath/shared";
 import type { DevelopmentalMilestone } from "@kinpath/shared";
+import type { EnrichedMilestone } from "@kinpath/shared";
 import {
   Sparkles,
   Heart,
@@ -20,11 +24,18 @@ import {
   MessageCircle,
   Hand,
   Users,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  X,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 
 interface PostBirthDashboardProps {
   child: ChildWithAge;
   checklistItems: ChecklistItem[];
+  achievements: MilestoneAchievement[];
+  userId: string;
 }
 
 const DOMAIN_ICONS: Record<string, React.ReactNode> = {
@@ -54,12 +65,30 @@ function getAgeFunFact(ageInWeeks: number): string {
   return "Your child is building the foundation for lifelong learning. Every conversation matters.";
 }
 
-export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboardProps) {
+function toISODate(date: Date): string {
+  return date.toISOString().split("T")[0];
+}
+
+export function PostBirthDashboard({ child, checklistItems, achievements, userId }: PostBirthDashboardProps) {
+  const supabase = createClient();
   const ageWeeks = child.age_in_weeks;
   const stage = getDevelopmentStage(ageWeeks);
   const currentMilestones = getMilestonesForAge(ageWeeks);
   const upcomingMilestones = getUpcomingMilestones(ageWeeks, 3);
+  const pastMilestones = getPastMilestones(ageWeeks);
   const tip = getPostnatalTip(ageWeeks);
+
+  // Local achievements state for optimistic updates
+  const [localAchievements, setLocalAchievements] = useState<MilestoneAchievement[]>(achievements);
+
+  // Which milestone has the date picker open
+  const [editingMilestoneId, setEditingMilestoneId] = useState<string | null>(null);
+  const [editDate, setEditDate] = useState(toISODate(new Date()));
+  const [editNotes, setEditNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Achieved milestones section toggle
+  const [showAchieved, setShowAchieved] = useState(false);
 
   // Upcoming checklist items (not completed, sorted by date)
   const upcomingChecklist = checklistItems
@@ -71,13 +100,92 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
     })
     .slice(0, 5);
 
+  // Enrich current milestones with achievement data
+  const enrichedCurrent = useMemo(
+    () => enrichMilestonesWithAchievements(currentMilestones, localAchievements),
+    [currentMilestones, localAchievements]
+  );
+
+  // Past milestones that have been achieved
+  const achievedPastMilestones = useMemo(() => {
+    const enriched = enrichMilestonesWithAchievements(pastMilestones, localAchievements);
+    return enriched.filter((m) => m.achievement !== null);
+  }, [pastMilestones, localAchievements]);
+
   // Group milestones by domain
-  const milestonesByDomain = currentMilestones.reduce<
-    Record<string, DevelopmentalMilestone[]>
-  >((acc, m) => {
-    (acc[m.domain] ??= []).push(m);
-    return acc;
-  }, {});
+  const milestonesByDomain = useMemo(() => {
+    return enrichedCurrent.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
+      (acc[m.domain] ??= []).push(m);
+      return acc;
+    }, {});
+  }, [enrichedCurrent]);
+
+  const achievedByDomain = useMemo(() => {
+    return achievedPastMilestones.reduce<Record<string, EnrichedMilestone[]>>((acc, m) => {
+      (acc[m.domain] ??= []).push(m);
+      return acc;
+    }, {});
+  }, [achievedPastMilestones]);
+
+  const openEditor = useCallback((milestoneId: string, existingAchievement?: MilestoneAchievement | null) => {
+    setEditingMilestoneId(milestoneId);
+    setEditDate(existingAchievement?.achieved_date ?? toISODate(new Date()));
+    setEditNotes(existingAchievement?.notes ?? "");
+  }, []);
+
+  const closeEditor = useCallback(() => {
+    setEditingMilestoneId(null);
+    setEditDate(toISODate(new Date()));
+    setEditNotes("");
+  }, []);
+
+  const saveAchievement = useCallback(async (milestoneId: string) => {
+    setSaving(true);
+    try {
+      const { data, error } = await supabase
+        .from("milestone_achievements")
+        .upsert(
+          {
+            child_id: child.id,
+            user_id: userId,
+            milestone_id: milestoneId,
+            achieved_date: editDate,
+            notes: editNotes || null,
+          },
+          { onConflict: "child_id,milestone_id" }
+        )
+        .select()
+        .single();
+
+      if (!error && data) {
+        setLocalAchievements((prev) => {
+          const filtered = prev.filter((a) => a.milestone_id !== milestoneId);
+          return [...filtered, data as MilestoneAchievement];
+        });
+      }
+    } finally {
+      setSaving(false);
+      closeEditor();
+    }
+  }, [supabase, child.id, userId, editDate, editNotes, closeEditor]);
+
+  const removeAchievement = useCallback(async (milestoneId: string) => {
+    const existing = localAchievements.find((a) => a.milestone_id === milestoneId);
+    if (!existing) return;
+
+    // Optimistic removal
+    setLocalAchievements((prev) => prev.filter((a) => a.milestone_id !== milestoneId));
+
+    const { error } = await supabase
+      .from("milestone_achievements")
+      .delete()
+      .eq("id", existing.id);
+
+    if (error) {
+      // Revert on failure
+      setLocalAchievements((prev) => [...prev, existing]);
+    }
+  }, [supabase, localAchievements]);
 
   return (
     <div className="space-y-6">
@@ -165,13 +273,20 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
                 </div>
                 <div className="mt-2 ml-8 space-y-2">
                   {milestones.map((m) => (
-                    <div key={m.id} className="flex items-start gap-2">
-                      <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-stone-300" />
-                      <div>
-                        <p className="text-sm text-stone-800">{m.title}</p>
-                        <p className="text-xs text-stone-500">{m.description}</p>
-                      </div>
-                    </div>
+                    <MilestoneRow
+                      key={m.id}
+                      milestone={m}
+                      isEditing={editingMilestoneId === m.id}
+                      editDate={editDate}
+                      editNotes={editNotes}
+                      saving={saving}
+                      onEditDateChange={setEditDate}
+                      onEditNotesChange={setEditNotes}
+                      onOpen={() => openEditor(m.id, m.achievement)}
+                      onClose={closeEditor}
+                      onSave={() => saveAchievement(m.id)}
+                      onRemove={() => removeAchievement(m.id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -192,6 +307,72 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Achieved Milestones (past age ranges) */}
+      {achievedPastMilestones.length > 0 && (
+        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
+          <button
+            type="button"
+            onClick={() => setShowAchieved((prev) => !prev)}
+            className="flex w-full items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Check className="h-4 w-4 text-sage-500" />
+              <h3 className="text-sm font-semibold text-stone-900">
+                Achieved Milestones
+              </h3>
+              <span className="rounded-full bg-sage-100 px-2 py-0.5 text-xs font-medium text-sage-700">
+                {achievedPastMilestones.length}
+              </span>
+            </div>
+            {showAchieved ? (
+              <ChevronDown className="h-4 w-4 text-stone-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-stone-400" />
+            )}
+          </button>
+
+          {showAchieved && (
+            <div className="mt-4 space-y-4">
+              {Object.entries(achievedByDomain).map(([domain, milestones]) => (
+                <div key={domain}>
+                  <div className="flex items-center gap-2">
+                    <div className={`flex h-6 w-6 items-center justify-center rounded-full ${DOMAIN_COLORS[domain]}`}>
+                      {DOMAIN_ICONS[domain]}
+                    </div>
+                    <span className="text-xs font-semibold text-stone-700">
+                      {DOMAIN_LABELS[domain as keyof typeof DOMAIN_LABELS]}
+                    </span>
+                  </div>
+                  <div className="mt-2 ml-8 space-y-2">
+                    {milestones.map((m) => (
+                      <div key={m.id} className="flex items-start gap-2">
+                        <div className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-sage-100">
+                          <Check className="h-2.5 w-2.5 text-sage-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-stone-800">{m.title}</p>
+                          <p className="text-xs text-sage-600">
+                            Achieved{" "}
+                            {new Date(m.achievement!.achieved_date + "T00:00:00").toLocaleDateString(undefined, {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                            {m.achievement!.notes && (
+                              <span className="ml-1 text-stone-400"> &mdash; {m.achievement!.notes}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -232,6 +413,143 @@ export function PostBirthDashboard({ child, checklistItems }: PostBirthDashboard
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Milestone Row ──────────────────────────────────────── */
+
+interface MilestoneRowProps {
+  milestone: EnrichedMilestone;
+  isEditing: boolean;
+  editDate: string;
+  editNotes: string;
+  saving: boolean;
+  onEditDateChange: (date: string) => void;
+  onEditNotesChange: (notes: string) => void;
+  onOpen: () => void;
+  onClose: () => void;
+  onSave: () => void;
+  onRemove: () => void;
+}
+
+function MilestoneRow({
+  milestone,
+  isEditing,
+  editDate,
+  editNotes,
+  saving,
+  onEditDateChange,
+  onEditNotesChange,
+  onOpen,
+  onClose,
+  onSave,
+  onRemove,
+}: MilestoneRowProps) {
+  const achieved = milestone.achievement;
+
+  return (
+    <div className="group">
+      <div className="flex items-start gap-2">
+        {/* Achievement toggle button */}
+        {achieved ? (
+          <button
+            type="button"
+            onClick={onOpen}
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sage-100 transition-colors hover:bg-sage-200"
+            title="Edit achievement date"
+          >
+            <Check className="h-3 w-3 text-sage-600" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpen}
+            className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-stone-300 transition-colors hover:border-brand-400 hover:bg-brand-50"
+            title="Record this milestone"
+          >
+            <span className="sr-only">Record milestone</span>
+          </button>
+        )}
+
+        <div className="flex-1">
+          <p className={`text-sm ${achieved ? "text-stone-600" : "text-stone-800"}`}>
+            {milestone.title}
+          </p>
+          {achieved ? (
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-sage-600">
+                Achieved{" "}
+                {new Date(achieved.achieved_date + "T00:00:00").toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                })}
+                {achieved.notes && (
+                  <span className="ml-1 text-stone-400">&mdash; {achieved.notes}</span>
+                )}
+              </p>
+              <button
+                type="button"
+                onClick={onRemove}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Remove achievement"
+              >
+                <X className="h-3 w-3 text-stone-400 hover:text-stone-600" />
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-stone-500">{milestone.description}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Inline editor */}
+      {isEditing && (
+        <div className="mt-2 ml-7 rounded-lg border border-stone-200 bg-stone-50 p-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-stone-600">
+                Date achieved
+              </label>
+              <input
+                type="date"
+                value={editDate}
+                onChange={(e) => onEditDateChange(e.target.value)}
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-800 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-stone-600">
+                Note <span className="text-stone-400">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={editNotes}
+                onChange={(e) => onEditNotesChange(e.target.value)}
+                placeholder="e.g. First time at the park!"
+                className="mt-1 w-full rounded-md border border-stone-300 bg-white px-2.5 py-1.5 text-sm text-stone-800 placeholder:text-stone-400 focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-400"
+              />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="rounded-lg bg-brand-500 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-3 py-1.5 text-xs font-medium text-stone-600 transition-colors hover:bg-stone-100"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}

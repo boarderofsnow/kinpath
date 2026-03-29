@@ -6,6 +6,11 @@ import {
   POSTNATAL_WEEKLY_TIPS,
   type PostnatalTip,
 } from "../constants/postnatal-tips";
+import type { MilestoneAchievement } from "../types/milestone-achievement";
+
+export interface EnrichedMilestone extends DevelopmentalMilestone {
+  achievement: MilestoneAchievement | null;
+}
 
 export function getMilestonesForAge(
   ageInWeeks: number
@@ -30,6 +35,25 @@ export function getPostnatalTip(ageInWeeks: number): PostnatalTip | null {
       (t) => ageInWeeks >= t.min_weeks && ageInWeeks <= t.max_weeks
     ) ?? null
   );
+}
+
+export function getPastMilestones(
+  ageInWeeks: number
+): DevelopmentalMilestone[] {
+  return DEVELOPMENTAL_MILESTONES.filter((m) => m.max_weeks < ageInWeeks);
+}
+
+export function enrichMilestonesWithAchievements(
+  milestones: DevelopmentalMilestone[],
+  achievements: MilestoneAchievement[]
+): EnrichedMilestone[] {
+  const achievementMap = new Map(
+    achievements.map((a) => [a.milestone_id, a])
+  );
+  return milestones.map((m) => ({
+    ...m,
+    achievement: achievementMap.get(m.id) ?? null,
+  }));
 }
 
 export function getDevelopmentSummary(ageInWeeks: number): {
