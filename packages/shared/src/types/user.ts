@@ -1,4 +1,5 @@
 import type { SubscriptionTier } from "./subscription";
+import type { OnboardingStep } from "./onboarding";
 
 export type BirthPreference = "home" | "hospital" | "birth_center" | "undecided";
 export type FeedingPreference = "breastfeeding" | "formula" | "combination" | "undecided";
@@ -11,6 +12,7 @@ export interface User {
   email: string;
   display_name: string | null;
   onboarding_complete: boolean;
+  onboarding_step: OnboardingStep;
   subscription_tier: SubscriptionTier;
   stripe_customer_id: string | null;
   rc_customer_id: string | null;

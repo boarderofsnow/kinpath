@@ -18,12 +18,16 @@ import { configureRevenueCat } from "../lib/purchases";
 
 let rcConfigured = false;
 
-// Users created before this date skip the post-auth flow (paywall + partner invite).
-// Adjust to match the actual deploy date of this feature.
-const POST_AUTH_LAUNCH = new Date("2026-04-15");
+/** Map DB onboarding_step to the correct post-auth screen */
+const STEP_SCREEN_MAP: Record<string, string> = {
+  child: "/(post-auth)/child-profile",
+  preferences: "/(post-auth)/birth-preference",
+  paywall: "/(post-auth)/paywall",
+  partner_invite: "/(post-auth)/partner-invite",
+};
 
 function RootLayoutContent() {
-  const { session, isLoading, onboardingComplete, userCreatedAt } = useAuth();
+  const { session, isLoading, onboardingComplete, onboardingStep } = useAuth();
   const router = useRouter();
   const segments = useSegments();
 
@@ -59,7 +63,7 @@ function RootLayoutContent() {
 
   useEffect(() => {
     // Wait for both session and profile to load
-    if (isLoading || (session && onboardingComplete === null)) return;
+    if (isLoading || (session && onboardingStep === null)) return;
 
     const seg = segments as string[];
     const inAuthGroup = seg[0] === "(auth)";
@@ -75,12 +79,10 @@ function RootLayoutContent() {
       router.replace("/(auth)/login");
     } else if (session && (inAuthGroup || onWelcomeScreen)) {
       // Logged-in user on auth or welcome screen → check onboarding state
-      const isNewUser = userCreatedAt
-        ? new Date(userCreatedAt) > POST_AUTH_LAUNCH
-        : false;
-
-      if (!onboardingComplete && isNewUser) {
-        router.replace("/(post-auth)/paywall");
+      if (onboardingStep && onboardingStep !== "complete") {
+        // Resume onboarding from wherever the user left off
+        const screen = STEP_SCREEN_MAP[onboardingStep] || "/(post-auth)/child-profile";
+        router.replace(screen as any);
       } else {
         router.replace("/(tabs)");
       }
@@ -89,7 +91,7 @@ function RootLayoutContent() {
       router.replace("/(tabs)");
     }
     // Otherwise: let the user stay where they are
-  }, [session, isLoading, onboardingComplete, segments]);
+  }, [session, isLoading, onboardingComplete, onboardingStep, segments]);
 
   if (isLoading) {
     return (

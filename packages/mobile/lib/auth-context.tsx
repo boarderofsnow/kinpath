@@ -6,6 +6,7 @@ import { queryCache } from "./cache";
 import { identifyUser, resetUser } from "./purchases";
 import { getHouseholdContext } from "./household";
 import type { User } from "@supabase/supabase-js";
+import type { OnboardingStep } from "@kinpath/shared";
 
 type AuthResult = { data?: any; error?: authHelpers.AuthError };
 
@@ -18,8 +19,8 @@ interface AuthContextType {
   isPartner: boolean;
   /** Whether the user has completed the post-auth flow (paywall + partner invite). null while loading. */
   onboardingComplete: boolean | null;
-  /** ISO date string of when the user account was created. null while loading. */
-  userCreatedAt: string | null;
+  /** The current onboarding step from the DB. null while loading. */
+  onboardingStep: OnboardingStep | null;
   /** Marks onboarding as complete in Supabase and updates local state. */
   completeOnboarding: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<AuthResult>;
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [effectiveOwnerId, setEffectiveOwnerId] = useState<string | null>(null);
   const [isPartner, setIsPartner] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
-  const [userCreatedAt, setUserCreatedAt] = useState<string | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep | null>(null);
   const checkedPendingInvite = useRef(false);
   const identifiedRcUser = useRef<string | null>(null);
   const signingOutRef = useRef(false);
@@ -102,14 +103,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (session?.user?.id) {
             const { data: profile } = await supabase
               .from("users")
-              .select("onboarding_complete, created_at")
+              .select("onboarding_complete, onboarding_step")
               .eq("id", session.user.id)
               .single();
-            setOnboardingComplete(profile?.onboarding_complete ?? true);
-            setUserCreatedAt(profile?.created_at ?? null);
+            setOnboardingComplete(profile?.onboarding_complete ?? false);
+            setOnboardingStep((profile?.onboarding_step as OnboardingStep) ?? "child");
           } else {
             setOnboardingComplete(null);
-            setUserCreatedAt(null);
+            setOnboardingStep(null);
           }
         }
       } catch (err) {
@@ -137,12 +138,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user?.id) {
         const { data: profile } = await supabase
           .from("users")
-          .select("onboarding_complete, created_at")
+          .select("onboarding_complete, onboarding_step")
           .eq("id", session.user.id)
           .single();
         if (!signingOutRef.current) {
-          setOnboardingComplete(profile?.onboarding_complete ?? true);
-          setUserCreatedAt(profile?.created_at ?? null);
+          setOnboardingComplete(profile?.onboarding_complete ?? false);
+          setOnboardingStep((profile?.onboarding_step as OnboardingStep) ?? "child");
         }
       }
     });
@@ -164,9 +165,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user?.id) return;
     await supabase
       .from("users")
-      .update({ onboarding_complete: true })
+      .update({ onboarding_complete: true, onboarding_step: "complete" })
       .eq("id", user.id);
     setOnboardingComplete(true);
+    setOnboardingStep("complete");
   };
 
   const signOut = async () => {
@@ -180,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setEffectiveOwnerId(null);
     setIsPartner(false);
     setOnboardingComplete(null);
-    setUserCreatedAt(null);
+    setOnboardingStep(null);
     queryCache.clear();
     identifiedRcUser.current = null;
     try {
@@ -200,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, isLoading, effectiveOwnerId, isPartner, onboardingComplete, userCreatedAt, completeOnboarding, signIn, signUp, signOut, signInWithApple, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, session, isLoading, effectiveOwnerId, isPartner, onboardingComplete, onboardingStep, completeOnboarding, signIn, signUp, signOut, signInWithApple, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );

@@ -108,12 +108,19 @@ export default function PaywallScreen() {
   const handleSkip = async () => {
     setLoading(true);
     try {
-      await completeOnboarding();
+      // Update DB step, then navigate to partner invite (don't complete onboarding here)
+      const { data: { user } } = await (await import("../../lib/supabase")).supabase.auth.getUser();
+      if (user) {
+        await (await import("../../lib/supabase")).supabase
+          .from("users")
+          .update({ onboarding_step: "partner_invite" })
+          .eq("id", user.id);
+      }
     } catch {
-      // completeOnboarding updates local state even if DB call fails,
-      // so the guard will redirect to /(tabs) either way.
+      // Non-critical — still navigate forward
     } finally {
       setLoading(false);
+      router.replace("/(post-auth)/partner-invite");
     }
   };
 

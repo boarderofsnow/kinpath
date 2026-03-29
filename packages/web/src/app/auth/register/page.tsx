@@ -14,6 +14,16 @@ export default function RegisterPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  async function handleOAuthLogin(provider: "google" | "apple") {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/api/auth/callback`,
+      },
+    });
+    if (error) setError(error.message);
+  }
+
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -122,6 +132,30 @@ export default function RegisterPage() {
             {loading ? "Creating account..." : "Create account"}
           </button>
         </form>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-stone-200" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white/80 px-2 text-stone-500">or continue with</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => handleOAuthLogin("google")}
+            className="flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+          >
+            Google
+          </button>
+          <button
+            onClick={() => handleOAuthLogin("apple")}
+            className="flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white py-2.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+          >
+            Apple
+          </button>
+        </div>
 
         <p className="text-center text-xs text-stone-500">
           By creating an account, you agree to our{" "}

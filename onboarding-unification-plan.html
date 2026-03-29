@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kinpath — Onboarding Unification Implementation Plan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafaf9; color: #1c1917; line-height: 1.65; }
+  .container { max-width: 960px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  h1 { font-size: 26px; font-weight: 800; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .doc-subtitle { font-size: 14px; color: #78716c; margin-bottom: 32px; }
+
+  h2 { font-size: 20px; font-weight: 700; margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e7e5e4; letter-spacing: -0.01em; }
+  h3 { font-size: 16px; font-weight: 700; margin: 24px 0 10px; color: #1c1917; }
+  h4 { font-size: 14px; font-weight: 700; margin: 16px 0 6px; color: #44403c; }
+
+  p { font-size: 14px; margin-bottom: 12px; color: #292524; }
+  p.muted { color: #78716c; font-size: 13px; }
+
+  code { font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 12px; background: #f5f5f4; padding: 2px 6px; border-radius: 4px; color: #44403c; }
+  pre { background: #1c1917; color: #e7e5e4; padding: 16px 20px; border-radius: 10px; overflow-x: auto; margin: 12px 0 16px; font-size: 13px; line-height: 1.5; }
+  pre code { background: none; padding: 0; color: inherit; }
+  .comment { color: #6b8f7b; }
+  .keyword { color: #c4956a; }
+  .string { color: #87ceeb; }
+
+  /* Flow diagram */
+  .unified-flow { display: flex; align-items: stretch; gap: 0; overflow-x: auto; padding: 20px 0; margin-bottom: 20px; }
+  .uf-node { min-width: 130px; max-width: 160px; flex-shrink: 0; }
+  .uf-card { background: white; border: 1.5px solid #d6d3d1; border-radius: 10px; padding: 12px 14px; height: 100%; }
+  .uf-card h4 { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: #1c1917; }
+  .uf-card p { font-size: 11px; color: #78716c; margin: 0; line-height: 1.4; }
+  .uf-card.new { border-color: #6B8F7B; background: #f0fdf4; }
+  .uf-card.new::after { content: 'NEW'; display: inline-block; font-size: 9px; font-weight: 700; background: #6B8F7B; color: white; padding: 1px 5px; border-radius: 3px; margin-top: 6px; letter-spacing: 0.03em; }
+  .uf-card.changed { border-color: #C4956A; background: #fffbeb; }
+  .uf-card.changed::after { content: 'CHANGED'; display: inline-block; font-size: 9px; font-weight: 700; background: #C4956A; color: white; padding: 1px 5px; border-radius: 3px; margin-top: 6px; letter-spacing: 0.03em; }
+  .uf-arrow { display: flex; align-items: center; justify-content: center; min-width: 32px; color: #a8a29e; font-size: 18px; flex-shrink: 0; }
+
+  /* Phase cards */
+  .phase { background: white; border: 1px solid #e7e5e4; border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+  .phase-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .phase-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: white; flex-shrink: 0; }
+  .phase-num.p1 { background: #6B8F7B; }
+  .phase-num.p2 { background: #C4956A; }
+  .phase-num.p3 { background: #57534e; }
+  .phase-num.p4 { background: #3b82f6; }
+  .phase-num.p5 { background: #8b5cf6; }
+  .phase-title { font-size: 16px; font-weight: 700; }
+  .phase-est { font-size: 12px; color: #78716c; margin-left: auto; white-space: nowrap; }
+
+  /* Task list */
+  .task-list { list-style: none; }
+  .task-list li { padding: 8px 0; border-bottom: 1px solid #f5f5f4; font-size: 13px; display: flex; gap: 8px; }
+  .task-list li:last-child { border-bottom: none; }
+  .task-icon { flex-shrink: 0; width: 20px; text-align: center; }
+  .task-body { flex: 1; }
+  .task-body strong { font-weight: 600; }
+  .file-ref { display: inline-block; font-size: 11px; color: #78716c; font-family: 'SF Mono', monospace; background: #f5f5f4; padding: 1px 5px; border-radius: 3px; margin-top: 2px; }
+
+  /* Badge */
+  .badge { display: inline-flex; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-web { background: #dbeafe; color: #1d4ed8; }
+  .badge-mobile { background: #fce7f3; color: #be185d; }
+  .badge-shared { background: #d1fae5; color: #065f46; }
+  .badge-api { background: #fef3c7; color: #92400e; }
+
+  /* Warning box */
+  .callout { padding: 14px 18px; border-radius: 10px; margin: 16px 0; font-size: 13px; }
+  .callout-warn { background: #fffbeb; border: 1px solid #fde68a; }
+  .callout-info { background: #eff6ff; border: 1px solid #bfdbfe; }
+  .callout-success { background: #f0fdf4; border: 1px solid #bbf7d0; }
+  .callout strong { font-weight: 600; }
+
+  /* Deps table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 16px; }
+  th { text-align: left; padding: 8px 12px; font-weight: 600; background: #f5f5f4; border-bottom: 2px solid #e7e5e4; }
+  td { padding: 8px 12px; border-bottom: 1px solid #f5f5f4; vertical-align: top; }
+  td code { font-size: 11px; }
+
+  .scroll-hint { font-size: 11px; color: #a8a29e; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Onboarding Unification — Implementation Plan</h1>
+<p class="doc-subtitle">Kinpath Family &middot; March 29, 2026 &middot; Consolidating web &amp; mobile into one consistent onboarding flow</p>
+
+<!-- ============================================================ -->
+<h2>1. Target Unified Flow</h2>
+<!-- ============================================================ -->
+
+<p>After this work, every new user — regardless of platform (web or mobile) or auth method (email, Google, Apple) — will follow the same logical sequence:</p>
+
+<p class="scroll-hint">Scroll horizontally if needed →</p>
+<div class="unified-flow">
+  <div class="uf-node"><div class="uf-card"><h4>1. Register</h4><p>Email + password, Google, or Apple. OAuth available on both login and register pages.</p></div></div>
+  <div class="uf-arrow">→</div>
+  <div class="uf-node"><div class="uf-card"><h4>2. Email Confirm</h4><p>If required by Supabase (email signups). OAuth skips this.</p></div></div>
+  <div class="uf-arrow">→</div>
+  <div class="uf-node"><div class="uf-card"><h4>3. Child Profile</h4><p>Name, born/expecting, DOB or due date. <strong>Required.</strong></p></div></div>
+  <div class="uf-arrow">→</div>
+  <div class="uf-node"><div class="uf-card"><h4>4. Preferences</h4><p>Birth, feeding, vaccines, lifestyle, topics. Skippable steps.</p></div></div>
+  <div class="uf-arrow">→</div>
+  <div class="uf-node"><div class="uf-card new"><h4>5. Paywall</h4><p>Stripe (web) or RevenueCat (mobile). Soft prompt — skippable.</p></div></div>
+  <div class="uf-arrow">→</div>
+  <div class="uf-node"><div class="uf-card new"><h4>6. Partner Invite</h4><p>Optional invite. Skip always available.</p></div></div>
+  <div class="uf-arrow">→</div>
+  <div class="uf-node"><div class="uf-card changed"><h4>7. Complete</h4><p>Set <code>onboarding_complete=true</code> only here. Redirect to dashboard/tabs.</p></div></div>
+</div>
+
+<div class="callout callout-info">
+  <strong>Key principle:</strong> <code>onboarding_complete</code> is only set to <code>true</code> at the very end of the flow — after child profile, preferences, paywall, and partner invite have all been presented. No step sets it early.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Implementation Phases</h2>
+<!-- ============================================================ -->
+
+<!-- ── PHASE 1 ── -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-num p1">1</div>
+    <div class="phase-title">Add onboarding step tracking to the database</div>
+    <div class="phase-est"><span class="badge badge-shared">SHARED</span> &nbsp; ~0.5 day</div>
+  </div>
+
+  <p>Replace the boolean <code>onboarding_complete</code> with a step tracker so the user can resume mid-flow if they close the app or browser. The boolean stays as a computed convenience, but the step field becomes the source of truth for routing.</p>
+
+  <h4>Migration</h4>
+  <pre><code><span class="comment">-- New migration: add onboarding_step column</span>
+<span class="keyword">ALTER TABLE</span> public.users
+  <span class="keyword">ADD COLUMN</span> onboarding_step text <span class="keyword">NOT NULL DEFAULT</span> <span class="string">'child'</span>
+  <span class="keyword">CHECK</span> (onboarding_step <span class="keyword">IN</span> (
+    <span class="string">'child'</span>, <span class="string">'preferences'</span>, <span class="string">'paywall'</span>, <span class="string">'partner_invite'</span>, <span class="string">'complete'</span>
+  ));
+
+<span class="comment">-- Backfill: users who already finished stay finished</span>
+<span class="keyword">UPDATE</span> public.users
+  <span class="keyword">SET</span> onboarding_step = <span class="string">'complete'</span>
+  <span class="keyword">WHERE</span> onboarding_complete = <span class="keyword">true</span>;
+
+<span class="comment">-- Users who never completed start from the beginning</span>
+<span class="keyword">UPDATE</span> public.users
+  <span class="keyword">SET</span> onboarding_step = <span class="string">'child'</span>
+  <span class="keyword">WHERE</span> onboarding_complete = <span class="keyword">false</span>;</code></pre>
+
+  <ul class="task-list">
+    <li><div class="task-icon">📄</div><div class="task-body"><strong>Create new SQL migration file</strong> in <code>packages/supabase/migrations/</code></div></li>
+    <li><div class="task-icon">📄</div><div class="task-body"><strong>Update the <code>User</code> type</strong> in <code>packages/shared/src/types/user.ts</code> to include <code>onboarding_step</code></div></li>
+    <li><div class="task-icon">📄</div><div class="task-body"><strong>Add <code>OnboardingStep</code> type</strong> to <code>packages/shared</code>: <code>"child" | "preferences" | "paywall" | "partner_invite" | "complete"</code></div></li>
+    <li><div class="task-icon">📄</div><div class="task-body"><strong>Keep <code>onboarding_complete</code> as a computed check</strong> — <code>onboarding_step = 'complete'</code> means <code>onboarding_complete = true</code>. Update the <code>handle_new_user()</code> trigger to set <code>onboarding_step = 'child'</code> for new users.</div></li>
+  </ul>
+
+  <div class="callout callout-warn">
+    <strong>Important:</strong> Keep the existing <code>onboarding_complete</code> column in sync via a DB trigger or by updating both fields together. This avoids breaking any existing queries that check the boolean.
+  </div>
+</div>
+
+<!-- ── PHASE 2 ── -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-num p2">2</div>
+    <div class="phase-title">Add paywall &amp; partner invite steps to web onboarding</div>
+    <div class="phase-est"><span class="badge badge-web">WEB</span> &nbsp; ~2 days</div>
+  </div>
+
+  <p>Extend the existing 6-step onboarding wizard at <code>/onboarding</code> to include paywall and partner invite steps, and add OAuth buttons to the register page.</p>
+
+  <h3>2a. Add OAuth buttons to the register page</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Copy the OAuth section from <code>login/page.tsx</code></strong> into <code>register/page.tsx</code> — add the "or continue with" divider + Google/Apple buttons below the form, using the same <code>handleOAuthLogin</code> pattern.
+    <br><span class="file-ref">packages/web/src/app/auth/register/page.tsx</span></div></li>
+  </ul>
+
+  <h3>2b. Extend the onboarding step array</h3>
+  <pre><code><span class="comment">// packages/web/src/app/onboarding/page.tsx</span>
+<span class="keyword">type</span> Step = <span class="string">"child"</span> | <span class="string">"birth"</span> | <span class="string">"feeding"</span> | <span class="string">"vaccines"</span> | <span class="string">"lifestyle"</span> | <span class="string">"topics"</span> | <span class="string">"paywall"</span> | <span class="string">"partner_invite"</span>;
+
+<span class="keyword">const</span> STEPS: Step[] = [
+  <span class="string">"child"</span>, <span class="string">"birth"</span>, <span class="string">"feeding"</span>, <span class="string">"vaccines"</span>,
+  <span class="string">"lifestyle"</span>, <span class="string">"topics"</span>,
+  <span class="string">"paywall"</span>,         <span class="comment">// NEW — Stripe soft paywall</span>
+  <span class="string">"partner_invite"</span>,  <span class="comment">// NEW — optional partner invite</span>
+];</code></pre>
+
+  <h3>2c. Build the web paywall step</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create an inline paywall component</strong> rendered when <code>step === "paywall"</code>. This should mirror the style of the existing pricing page but simplified — show Premium and Family cards with the key feature bullets, a "Start Free Trial" button that opens Stripe Checkout, and a "Continue with Free Plan" skip button.
+    <br><span class="file-ref">packages/web/src/app/onboarding/page.tsx (new step block)</span></div></li>
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>On "Start Free Trial" click:</strong> call <code>api.stripe.checkout({ plan, interval })</code> which redirects to Stripe. The Stripe <code>success_url</code> should point back to <code>/onboarding?step=partner_invite</code> (not <code>/settings</code>). Update the Stripe checkout route to accept a <code>return_url</code> param.
+    <br><span class="file-ref">packages/api/src/routes/stripe.ts</span></div></li>
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>On "Continue with Free Plan" click:</strong> advance to the next step (partner invite) — do NOT call <code>completeOnboarding()</code>. The flow continues normally.</div></li>
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Save progress after preferences:</strong> Before showing the paywall, persist the child profile and preferences to the DB (move the existing insert/upsert logic from <code>handleComplete()</code> to run at the end of the "topics" step). Update <code>onboarding_step</code> to <code>'paywall'</code>. This way, data is saved even if the user abandons at the paywall.
+    <br><span class="file-ref">packages/web/src/app/onboarding/page.tsx → handleComplete() refactor</span></div></li>
+  </ul>
+
+  <h3>2d. Build the web partner invite step</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create an inline partner invite component</strong> rendered when <code>step === "partner_invite"</code>. Show a simple form with email + optional name fields (matching the mobile design), a "Send Invite" button calling <code>api.household.invite()</code>, and an "I'll do this later" skip button.</div></li>
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>On send or skip:</strong> Update <code>onboarding_step</code> to <code>'complete'</code> and set <code>onboarding_complete = true</code>, then <code>window.location.href = "/dashboard"</code>.</div></li>
+  </ul>
+
+  <h3>2e. Add error handling to DB writes</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🔧</div><div class="task-body"><strong>Check return values</strong> from the child insert and preference upsert. If either fails, show an error toast and do NOT advance the step. This fixes the existing bug where <code>onboarding_complete</code> could be set to <code>true</code> even when data wasn't saved.
+    <br><span class="file-ref">packages/web/src/app/onboarding/page.tsx → handleComplete()</span></div></li>
+  </ul>
+
+  <h3>2f. Stripe success URL update</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Add <code>return_url</code> parameter to <code>POST /stripe/checkout</code></strong> so the web onboarding can tell Stripe to redirect back to <code>/onboarding?step=partner_invite</code> instead of <code>/settings</code>. Fall back to the existing <code>/settings?success=true</code> for upgrades outside onboarding.
+    <br><span class="file-ref">packages/api/src/routes/stripe.ts</span></div></li>
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Update <code>api.stripe.checkout()</code></strong> in the web API client to pass the <code>return_url</code> parameter.
+    <br><span class="file-ref">packages/web/src/lib/api.ts</span></div></li>
+  </ul>
+
+  <h3>2g. Resume support on page load</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>On <code>/onboarding</code> mount</strong>, read the user's current <code>onboarding_step</code> from the DB and jump to that step index. Also check for a <code>?step=</code> query param (used by Stripe return). This lets users resume where they left off if they close the browser or return from Stripe.
+    <br><span class="file-ref">packages/web/src/app/onboarding/page.tsx → useEffect</span></div></li>
+  </ul>
+</div>
+
+<!-- ── PHASE 3 ── -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-num p3">3</div>
+    <div class="phase-title">Add preference collection to mobile onboarding</div>
+    <div class="phase-est"><span class="badge badge-mobile">MOBILE</span> &nbsp; ~2–3 days</div>
+  </div>
+
+  <p>Add the same 6-step child profile and preference wizard to the mobile post-auth flow, before the paywall.</p>
+
+  <h3>3a. Create mobile onboarding screens</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>/(post-auth)/child-profile.tsx</code></strong> — Name, born/expecting toggle, date picker. Required step (Continue button disabled until filled). Style using the existing mobile theme (<code>colors</code>, <code>typography</code>, <code>spacing</code>, <code>PressableScale</code>).
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/child-profile.tsx</span></div></li>
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>/(post-auth)/birth-preference.tsx</code></strong> — Grid of options matching web. Skip button available.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/birth-preference.tsx</span></div></li>
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>/(post-auth)/feeding.tsx</code></strong> — Grid of options. Skip button.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/feeding.tsx</span></div></li>
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>/(post-auth)/vaccines.tsx</code></strong> — List of options with descriptions. Skip button.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/vaccines.tsx</span></div></li>
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>/(post-auth)/lifestyle.tsx</code></strong> — Picker/dropdown selects for religion, diet, parenting style. Skip button.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/lifestyle.tsx</span></div></li>
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>/(post-auth)/topics.tsx</code></strong> — Multi-select grid of 13 topics with descriptions. Skip button.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/topics.tsx</span></div></li>
+  </ul>
+
+  <div class="callout callout-info">
+    <strong>State management approach:</strong> Use a shared <code>OnboardingContext</code> provider wrapping the <code>(post-auth)</code> layout. Store child profile data, preferences, and current step in context. Persist to DB after the topics step (before paywall), same as web.
+  </div>
+
+  <h3>3b. Create OnboardingContext</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Create <code>lib/onboarding-context.tsx</code></strong> — React context that holds:
+      <br>• <code>childName</code>, <code>isBorn</code>, <code>childDate</code>
+      <br>• <code>preferences</code> (birth, feeding, vaccines, lifestyle, topics)
+      <br>• <code>saveToDatabase()</code> — inserts child record + upserts preferences + updates <code>onboarding_step</code>
+    <br><span class="file-ref">packages/mobile/lib/onboarding-context.tsx</span></div></li>
+  </ul>
+
+  <h3>3c. Update the post-auth layout and navigation</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Update <code>/(post-auth)/_layout.tsx</code></strong> — Add the 6 new screens to the Stack, wrap with <code>OnboardingProvider</code>. Screen order:
+      <br><code>child-profile → birth-preference → feeding → vaccines → lifestyle → topics → paywall → partner-invite</code>
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/_layout.tsx</span></div></li>
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Each screen navigates with <code>router.replace()</code></strong> to the next screen (prevents back-stack accumulation). The topics screen calls <code>saveToDatabase()</code> before navigating to paywall.</div></li>
+  </ul>
+
+  <h3>3d. Fix the paywall skip bug</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🔧</div><div class="task-body"><strong>Change <code>handleSkip</code> in <code>paywall.tsx</code></strong> — Instead of calling <code>completeOnboarding()</code>, navigate to <code>/(post-auth)/partner-invite</code>. This ensures the partner invite screen is always shown regardless of whether the user subscribes or skips.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/paywall.tsx (line 108)</span></div></li>
+  </ul>
+
+  <pre><code><span class="comment">// BEFORE (buggy):</span>
+<span class="keyword">const</span> handleSkip = <span class="keyword">async</span> () => {
+  <span class="keyword">await</span> completeOnboarding();  <span class="comment">// ← skips partner-invite!</span>
+};
+
+<span class="comment">// AFTER (fixed):</span>
+<span class="keyword">const</span> handleSkip = () => {
+  router.replace(<span class="string">"/(post-auth)/partner-invite"</span>);  <span class="comment">// ← always show invite</span>
+};</code></pre>
+
+  <h3>3e. Move <code>completeOnboarding()</code> to partner-invite only</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>The partner-invite screen remains the final step.</strong> Both "Send Invite" and "I'll do this later" call <code>completeOnboarding()</code>, which updates <code>onboarding_step = 'complete'</code> and <code>onboarding_complete = true</code>. This is the ONLY place onboarding is marked complete on mobile.
+    <br><span class="file-ref">packages/mobile/app/(post-auth)/partner-invite.tsx</span></div></li>
+  </ul>
+
+  <h3>3f. Add a progress indicator</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🆕</div><div class="task-body"><strong>Add a shared progress bar component</strong> to the post-auth layout header, showing step X of 8. This gives users a sense of how far through the flow they are and matches the web experience.
+    <br><span class="file-ref">packages/mobile/components/onboarding-progress.tsx</span></div></li>
+  </ul>
+</div>
+
+<!-- ── PHASE 4 ── -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-num p4">4</div>
+    <div class="phase-title">Fix routing guards and edge cases</div>
+    <div class="phase-est"><span class="badge badge-web">WEB</span> <span class="badge badge-mobile">MOBILE</span> &nbsp; ~1 day</div>
+  </div>
+
+  <h3>4a. Remove the POST_AUTH_LAUNCH date gate</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🔧</div><div class="task-body"><strong>Remove the <code>POST_AUTH_LAUNCH</code> constant and <code>isNewUser</code> check</strong> from <code>_layout.tsx</code>. Replace with a simple check on <code>onboarding_step</code>:
+      <br>• If <code>onboarding_step !== 'complete'</code> → route to <code>/(post-auth)/{onboarding_step}</code>
+      <br>• If <code>onboarding_step === 'complete'</code> → route to <code>/(tabs)</code>
+    <br><span class="file-ref">packages/mobile/app/_layout.tsx (lines 23, 78-86)</span></div></li>
+  </ul>
+
+  <pre><code><span class="comment">// BEFORE:</span>
+<span class="keyword">const</span> isNewUser = userCreatedAt
+  ? <span class="keyword">new</span> Date(userCreatedAt) > POST_AUTH_LAUNCH
+  : <span class="keyword">false</span>;
+<span class="keyword">if</span> (!onboardingComplete && isNewUser) {
+  router.replace(<span class="string">"/(post-auth)/paywall"</span>);
+}
+
+<span class="comment">// AFTER:</span>
+<span class="keyword">if</span> (onboardingStep && onboardingStep !== <span class="string">'complete'</span>) {
+  <span class="comment">// Resume from wherever the user left off</span>
+  <span class="keyword">const</span> screenMap = {
+    child: <span class="string">'child-profile'</span>,
+    preferences: <span class="string">'birth-preference'</span>,
+    paywall: <span class="string">'paywall'</span>,
+    partner_invite: <span class="string">'partner-invite'</span>,
+  };
+  router.replace(<span class="string">`/(post-auth)/${screenMap[onboardingStep]}`</span>);
+}</code></pre>
+
+  <h3>4b. Fix the <code>onboardingComplete</code> default in AuthContext</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">🔧</div><div class="task-body"><strong>Change the fallback from <code>true</code> to <code>false</code></strong> when the profile query fails or returns null. This prevents DB errors from silently skipping onboarding.
+    <br><span class="file-ref">packages/mobile/lib/auth-context.tsx (lines 108, 143)</span></div></li>
+  </ul>
+
+  <pre><code><span class="comment">// BEFORE:</span>
+setOnboardingComplete(profile?.onboarding_complete ?? <span class="keyword">true</span>);
+
+<span class="comment">// AFTER:</span>
+setOnboardingComplete(profile?.onboarding_complete ?? <span class="keyword">false</span>);</code></pre>
+
+  <h3>4c. Add <code>onboardingStep</code> to AuthContext</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Fetch <code>onboarding_step</code></strong> alongside <code>onboarding_complete</code> in the AuthContext's profile query. Expose it on the context so the root layout can route to the correct post-auth screen.
+    <br><span class="file-ref">packages/mobile/lib/auth-context.tsx</span></div></li>
+  </ul>
+
+  <h3>4d. Enforce onboarding in web middleware</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>Add an <code>onboarding_complete</code> check to the web middleware.</strong> For authenticated users on any protected route (not <code>/onboarding</code>, not public), query <code>users.onboarding_complete</code> and redirect to <code>/onboarding</code> if false. This prevents users from bypassing onboarding by navigating directly to <code>/settings</code>, <code>/child/[id]</code>, etc.
+    <br><span class="file-ref">packages/web/src/lib/supabase/middleware.ts</span></div></li>
+  </ul>
+
+  <div class="callout callout-warn">
+    <strong>Performance note:</strong> This adds a DB query to every middleware invocation. To mitigate, cache the <code>onboarding_complete</code> value in a cookie or session token claim after it's first set to <code>true</code>. Alternatively, only check on non-API, non-static routes where the cost is acceptable.
+  </div>
+
+  <h3>4e. Fix OAuth callback redirect for new users</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">✏️</div><div class="task-body"><strong>In <code>/api/auth/callback/route.ts</code></strong>, after exchanging the code, check if the user's <code>onboarding_complete</code> is false. If so, redirect to <code>/onboarding</code> directly instead of <code>/dashboard</code>. This eliminates the unnecessary redirect hop (callback → dashboard → onboarding).
+    <br><span class="file-ref">packages/web/src/app/api/auth/callback/route.ts (line 134)</span></div></li>
+  </ul>
+</div>
+
+<!-- ── PHASE 5 ── -->
+<div class="phase">
+  <div class="phase-header">
+    <div class="phase-num p5">5</div>
+    <div class="phase-title">Testing &amp; verification</div>
+    <div class="phase-est"><span class="badge badge-shared">ALL</span> &nbsp; ~1–2 days</div>
+  </div>
+
+  <h3>Test matrix — every cell must pass</h3>
+  <table>
+    <thead>
+      <tr><th>Scenario</th><th>Web</th><th>Mobile (iOS)</th><th>Mobile (Android)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Email signup → full onboarding → free</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Email signup → full onboarding → subscribe</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Google signup → full onboarding → free</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Apple signup → full onboarding → free</td><td>☐</td><td>☐ (iOS only)</td><td>N/A</td></tr>
+      <tr><td>Close app mid-onboarding → resume at correct step</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Subscribe on paywall → return to partner invite</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Skip paywall → partner invite still shown</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Send partner invite → onboarding completes</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Skip partner invite → onboarding completes</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Existing user (pre-migration) with <code>complete=true</code></td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Existing user with <code>complete=false</code> → routes to onboarding</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Navigate to <code>/settings</code> before onboarding → redirect</td><td>☐</td><td>N/A</td><td>N/A</td></tr>
+      <tr><td>Partner invite flow → <code>complete-profile</code> → dashboard</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Child record exists after onboarding</td><td>☐</td><td>☐</td><td>☐</td></tr>
+      <tr><td>Preferences saved after onboarding</td><td>☐</td><td>☐</td><td>☐</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Edge cases to verify</h3>
+  <ul class="task-list">
+    <li><div class="task-icon">⚠️</div><div class="task-body"><strong>Stripe checkout cancellation:</strong> User clicks "Start Free Trial" on web → goes to Stripe → clicks browser back. Should return to onboarding at the paywall step, not a broken state.</div></li>
+    <li><div class="task-icon">⚠️</div><div class="task-body"><strong>RevenueCat timeout:</strong> <code>waitForIdentification()</code> has a 5-second timeout. If it expires, the paywall should still be skippable.</div></li>
+    <li><div class="task-icon">⚠️</div><div class="task-body"><strong>Network failure during DB save:</strong> If child insert or preference upsert fails, user should see an error and be able to retry — not advance silently.</div></li>
+    <li><div class="task-icon">⚠️</div><div class="task-body"><strong>Dual-platform user:</strong> User starts onboarding on mobile, abandons at "topics" step, then logs in on web. Web should read <code>onboarding_step</code> from DB and resume at the correct point.</div></li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Files Changed — Summary</h2>
+<!-- ============================================================ -->
+
+<table>
+  <thead><tr><th>File</th><th>Action</th><th>Phase</th></tr></thead>
+  <tbody>
+    <tr><td><code>packages/supabase/migrations/0XX_onboarding_step.sql</code></td><td>🆕 Create</td><td>1</td></tr>
+    <tr><td><code>packages/shared/src/types/user.ts</code></td><td>✏️ Add <code>onboarding_step</code> field</td><td>1</td></tr>
+    <tr><td><code>packages/shared/src/types/onboarding.ts</code></td><td>🆕 <code>OnboardingStep</code> type</td><td>1</td></tr>
+    <tr><td><code>packages/web/src/app/auth/register/page.tsx</code></td><td>✏️ Add OAuth buttons</td><td>2</td></tr>
+    <tr><td><code>packages/web/src/app/onboarding/page.tsx</code></td><td>✏️ Add paywall + invite steps, error handling, resume</td><td>2</td></tr>
+    <tr><td><code>packages/api/src/routes/stripe.ts</code></td><td>✏️ Accept <code>return_url</code> param</td><td>2</td></tr>
+    <tr><td><code>packages/web/src/lib/api.ts</code></td><td>✏️ Pass <code>return_url</code> to checkout</td><td>2</td></tr>
+    <tr><td><code>packages/mobile/lib/onboarding-context.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/child-profile.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/birth-preference.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/feeding.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/vaccines.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/lifestyle.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/topics.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/components/onboarding-progress.tsx</code></td><td>🆕 Create</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/_layout.tsx</code></td><td>✏️ Add screens, wrap with provider</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/paywall.tsx</code></td><td>✏️ Fix skip → navigate to invite</td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/(post-auth)/partner-invite.tsx</code></td><td>✏️ Sole owner of <code>completeOnboarding()</code></td><td>3</td></tr>
+    <tr><td><code>packages/mobile/app/_layout.tsx</code></td><td>✏️ Remove date gate, use <code>onboarding_step</code></td><td>4</td></tr>
+    <tr><td><code>packages/mobile/lib/auth-context.tsx</code></td><td>✏️ Fix fallback, add <code>onboardingStep</code></td><td>4</td></tr>
+    <tr><td><code>packages/web/src/lib/supabase/middleware.ts</code></td><td>✏️ Add onboarding guard</td><td>4</td></tr>
+    <tr><td><code>packages/web/src/app/api/auth/callback/route.ts</code></td><td>✏️ Redirect new users to /onboarding</td><td>4</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================================================ -->
+<h2>4. Dependency Order</h2>
+<!-- ============================================================ -->
+
+<p>Phases must be executed in order because of data dependencies:</p>
+
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0 24px;font-size:14px;font-weight:600;">
+  <span style="background:#6B8F7B;color:white;padding:4px 12px;border-radius:6px;">Phase 1: DB migration</span>
+  <span style="color:#a8a29e;">→</span>
+  <span style="display:flex;gap:6px;align-items:center;">
+    <span style="background:#C4956A;color:white;padding:4px 12px;border-radius:6px;">Phase 2: Web</span>
+    <span style="color:#a8a29e;font-weight:400;font-size:12px;">and</span>
+    <span style="background:#57534e;color:white;padding:4px 12px;border-radius:6px;">Phase 3: Mobile</span>
+    <span style="color:#a8a29e;font-weight:400;font-size:12px;">(parallel)</span>
+  </span>
+  <span style="color:#a8a29e;">→</span>
+  <span style="background:#3b82f6;color:white;padding:4px 12px;border-radius:6px;">Phase 4: Guards</span>
+  <span style="color:#a8a29e;">→</span>
+  <span style="background:#8b5cf6;color:white;padding:4px 12px;border-radius:6px;">Phase 5: Testing</span>
+</div>
+
+<div class="callout callout-success">
+  <strong>Total estimated effort: 7–8.5 days.</strong> Phase 1 unblocks everything. Phases 2 and 3 can be developed in parallel by separate developers (or sequentially by one). Phase 4 is quick cleanup. Phase 5 covers the full test matrix.
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Risks &amp; Mitigations</h2>
+<!-- ============================================================ -->
+
+<table>
+  <thead><tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Middleware DB query on every request slows page loads</td>
+      <td>Latency on all authenticated web pages</td>
+      <td>Cache <code>onboarding_complete</code> in a session cookie after it becomes <code>true</code>. Only query the DB when the cookie is missing or <code>false</code>.</td>
+    </tr>
+    <tr>
+      <td>Stripe redirect loses onboarding context</td>
+      <td>User ends up on wrong page after payment</td>
+      <td>Use <code>return_url</code> param on checkout + <code>?step=partner_invite</code> query string. Read <code>onboarding_step</code> from DB on mount as backup.</td>
+    </tr>
+    <tr>
+      <td>Existing users with <code>onboarding_complete=false</code> forced through full flow</td>
+      <td>Friction for long-time users who never hit the old onboarding</td>
+      <td>The migration backfills <code>onboarding_step='child'</code> for these users, which is correct — they genuinely have no child profile. A banner could explain why they're seeing onboarding.</td>
+    </tr>
+    <tr>
+      <td>RevenueCat and Stripe paywall screens look/feel different</td>
+      <td>Inconsistent brand experience</td>
+      <td>The web paywall is custom-built (Stripe redirect), so match Kinpath branding. RevenueCat allows paywall template customization in their dashboard.</td>
+    </tr>
+    <tr>
+      <td>Cross-platform resume (start on mobile, finish on web)</td>
+      <td>Could show duplicate steps or skip steps</td>
+      <td><code>onboarding_step</code> is the single source of truth in the DB. Both platforms read it on mount and jump to the right step.</td>
+    </tr>
+  </tbody>
+</table>
+
+</div>
+</body>
+</html>

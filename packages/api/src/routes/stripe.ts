@@ -11,9 +11,10 @@ stripeRouter.post("/checkout", requireAuth, async (req, res: Response) => {
   const { userId, accessToken } = req as AuthenticatedRequest;
   const supabase = createUserSupabaseClient(accessToken);
 
-  const { plan, interval = "monthly" } = req.body as {
+  const { plan, interval = "monthly", return_url } = req.body as {
     plan?: string;
     interval?: string;
+    return_url?: string;
   };
 
   if (plan !== "premium" && plan !== "family") {
@@ -49,8 +50,12 @@ stripeRouter.post("/checkout", requireAuth, async (req, res: Response) => {
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/settings?session_id={CHECKOUT_SESSION_ID}&success=true`,
-      cancel_url: `${appUrl}/pricing`,
+      success_url: return_url && return_url.startsWith("/")
+        ? `${appUrl}${return_url}${return_url.includes("?") ? "&" : "?"}session_id={CHECKOUT_SESSION_ID}&success=true`
+        : `${appUrl}/settings?session_id={CHECKOUT_SESSION_ID}&success=true`,
+      cancel_url: return_url && return_url.startsWith("/")
+        ? `${appUrl}${return_url}`
+        : `${appUrl}/pricing`,
       subscription_data: { metadata: { userId, plan } },
       allow_promotion_codes: true,
     };

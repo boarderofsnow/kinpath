@@ -78,7 +78,7 @@ authRouter.get("/callback", async (req: Request, res: Response) => {
 
         await serviceClient
           .from("users")
-          .update({ onboarding_complete: true, subscription_tier: ownerTier })
+          .update({ onboarding_complete: true, onboarding_step: "complete", subscription_tier: ownerTier })
           .eq("id", user.id);
       } catch (linkError) {
         console.error(

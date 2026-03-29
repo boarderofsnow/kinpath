@@ -106,7 +106,7 @@ export async function GET(request: Request) {
 
           await serviceClient
             .from("users")
-            .update({ onboarding_complete: true, subscription_tier: ownerTier })
+            .update({ onboarding_complete: true, onboarding_step: "complete", subscription_tier: ownerTier })
             .eq("id", user.id);
         } catch (linkError) {
           // Non-fatal — log and continue.
@@ -129,6 +129,17 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         `${origin}/auth/mobile-redirect#access_token=${session.access_token}&refresh_token=${session.refresh_token}`
       );
+    }
+
+    // Check if user needs onboarding (e.g. new OAuth signup)
+    const { data: userProfile } = await serviceClient
+      .from("users")
+      .select("onboarding_step")
+      .eq("id", user.id)
+      .single();
+
+    if (userProfile?.onboarding_step && userProfile.onboarding_step !== "complete") {
+      return NextResponse.redirect(`${origin}/onboarding`);
     }
 
     return NextResponse.redirect(`${origin}${next}`);

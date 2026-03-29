@@ -8,3 +8,4 @@ export * from "./conversation";
 export * from "./doctor";
 export * from "./household";
 export * from "./milestone-achievement";
+export * from "./onboarding";

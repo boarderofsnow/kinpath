@@ -149,8 +149,8 @@ export const api = {
 
   // Stripe / Payments
   stripe: {
-    checkout: (body: { plan: string; interval: string }) =>
-      request("/stripe/checkout", {
+    checkout: (body: { plan: string; interval: string; return_url?: string }) =>
+      request<{ url: string }>("/stripe/checkout", {
         method: "POST",
         body: JSON.stringify(body),
       }),

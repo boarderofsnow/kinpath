@@ -13,9 +13,10 @@ import { colors, fonts, typography, spacing, radii, shadows } from "../../lib/th
 import { PressableScale } from "../../components/motion";
 import { useAuth } from "../../lib/auth-context";
 import { api } from "../../lib/api";
+import { supabase } from "../../lib/supabase";
 
 export default function PartnerInviteScreen() {
-  const { completeOnboarding } = useAuth();
+  const { completeOnboarding, user } = useAuth();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [sending, setSending] = useState(false);
@@ -42,7 +43,13 @@ export default function PartnerInviteScreen() {
         return;
       }
 
-      // Invite sent — complete onboarding and proceed to app
+      // Set onboarding_step in DB, then complete onboarding locally
+      if (user?.id) {
+        await supabase
+          .from("users")
+          .update({ onboarding_step: "complete" })
+          .eq("id", user.id);
+      }
       await completeOnboarding();
     } catch {
       setError("Network error. Please try again.");
@@ -53,6 +60,12 @@ export default function PartnerInviteScreen() {
   const handleSkip = async () => {
     setSending(true);
     try {
+      if (user?.id) {
+        await supabase
+          .from("users")
+          .update({ onboarding_step: "complete" })
+          .eq("id", user.id);
+      }
       await completeOnboarding();
     } catch {
       // Local state update will still trigger nav guard redirect
