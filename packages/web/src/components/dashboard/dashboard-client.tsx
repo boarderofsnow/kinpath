@@ -36,7 +36,7 @@ export function DashboardClient({
   }, [selectedChildId, enrichedChildren]);
 
   const activeChildChecklist = useMemo(() => {
-    if (!activeChild?.is_born) return [];
+    if (!activeChild) return [];
     return allChecklistItems.filter((item) => {
       if (item.child_ids && item.child_ids.length > 0) {
         return item.child_ids.includes(activeChild.id);
@@ -88,7 +88,7 @@ export function DashboardClient({
       {/* Pregnancy Dashboard */}
       {activeChild && !activeChild.is_born && (
         <section className="mt-8">
-          <PregnancyDashboard child={activeChild} />
+          <PregnancyDashboard child={activeChild} checklistItems={activeChildChecklist} />
         </section>
       )}
 

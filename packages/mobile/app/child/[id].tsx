@@ -26,7 +26,7 @@ import {
   getPostnatalTip,
   getDueDateCountdown,
   getBabySizeComparison,
-  getPlanningTips,
+
   getMaternalChanges,
   DOMAIN_LABELS,
 } from "@kinpath/shared";
@@ -78,38 +78,7 @@ const DOMAIN_COLORS: Record<string, { bg: string; text: string; iconName: keyof 
 };
 
 // ── Planning tip category colors ───────────��───────────────
-const CATEGORY_COLORS: Record<string, { bg: string; text: string }> = {
-  health: { bg: colors.brand[50], text: colors.brand[600] },
-  preparation: { bg: colors.accent[50], text: colors.accent[700] },
-  shopping: { bg: "#ede9fe", text: "#7c3aed" },
-  social: { bg: "#e0f2fe", text: "#0284c7" },
-  self_care: { bg: "#ffe4e6", text: "#e11d48" },
-};
-
-// ── Planning tip icon mapping ──────────────────────────────
-const TIP_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  calendar: "calendar-outline",
-  pill: "medkit-outline",
-  heart: "heart-outline",
-  moon: "moon-outline",
-  users: "people-outline",
-  clipboard: "clipboard-outline",
-  megaphone: "megaphone-outline",
-  "shopping-bag": "bag-outline",
-  activity: "pulse-outline",
-  search: "search-outline",
-  scan: "scan-outline",
-  gift: "gift-outline",
-  book: "book-outline",
-  "file-text": "document-text-outline",
-  home: "home-outline",
-  car: "car-outline",
-  "check-circle": "checkmark-circle-outline",
-  briefcase: "briefcase-outline",
-  utensils: "restaurant-outline",
-  sun: "sunny-outline",
-  clock: "time-outline",
-};
+// (Planning tip maps removed — now using checklist items)
 
 interface EnrichedChild extends ChildWithAge {
   age_in_weeks: number;
@@ -148,23 +117,22 @@ export default function ChildDashboardScreen() {
       };
       setChild(enriched);
 
-      // Fetch checklist items + milestone achievements for post-birth children
-      if (data.is_born) {
-        const [{ data: items }, { data: achData }] = await Promise.all([
-          supabase
-            .from("checklist_items")
-            .select("*")
-            .eq("child_id", id)
-            .eq("is_completed", false)
-            .order("due_date", { ascending: true })
-            .limit(5),
-          supabase
-            .from("milestone_achievements")
-            .select("*")
-            .eq("child_id", id),
-        ]);
+      // Fetch checklist items for all children
+      const { data: items } = await supabase
+        .from("checklist_items")
+        .select("*")
+        .eq("child_id", id)
+        .eq("is_completed", false)
+        .order("due_date", { ascending: true })
+        .limit(5);
+      if (items) setChecklistItems(items as ChecklistItem[]);
 
-        if (items) setChecklistItems(items as ChecklistItem[]);
+      // Fetch milestone achievements for post-birth children
+      if (data.is_born) {
+        const { data: achData } = await supabase
+          .from("milestone_achievements")
+          .select("*")
+          .eq("child_id", id);
         if (achData) setAchievements(achData as MilestoneAchievement[]);
       }
     } catch (err) {
@@ -217,7 +185,7 @@ export default function ChildDashboardScreen() {
             onAchievementsChange={setAchievements}
           />
         ) : (
-          <PregnancyDashboard child={child} />
+          <PregnancyDashboard child={child} checklistItems={checklistItems} />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -691,13 +659,18 @@ function PostBirthDashboard({
 // PREGNANCY DASHBOARD
 // ════════════════════════════════════════════════════════════
 
-function PregnancyDashboard({ child }: { child: EnrichedChild }) {
+function PregnancyDashboard({ child, checklistItems }: { child: EnrichedChild; checklistItems: ChecklistItem[] }) {
+  const router = useRouter();
   const countdown = getDueDateCountdown(child);
   if (!countdown) return null;
 
   const sizeComparison = getBabySizeComparison(countdown.gestationalWeek);
-  const planningTips = getPlanningTips(countdown.gestationalWeek, 3);
   const maternalChanges = getMaternalChanges(countdown.gestationalWeek);
+
+  const upcomingItems = checklistItems
+    .filter((item) => !item.is_completed && item.due_date)
+    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+    .slice(0, 5);
 
   const trimesterLabel =
     countdown.trimester === 1
@@ -812,52 +785,57 @@ function PregnancyDashboard({ child }: { child: EnrichedChild }) {
         </FadeInUp>
       )}
 
-      {/* ── Planning Tips ──────────────────────────── */}
-      {planningTips.length > 0 && (
-        <FadeInUp delay={200}>
-          <View style={s.sectionCard}>
+      {/* ── Coming Up (Checklist) ─────────────────── */}
+      <FadeInUp delay={200}>
+        <View style={s.sectionCard}>
+          <View style={s.sectionHeaderBetween}>
             <Text style={s.sectionTitle}>Coming Up</Text>
-            <View style={s.planningTipsList}>
-              {planningTips.map((tip, i) => {
-                const iconName = TIP_ICONS[tip.icon] || "calendar-outline";
-                const catColor = CATEGORY_COLORS[tip.category] || CATEGORY_COLORS.health;
-                const isCurrentWeek = tip.week === countdown.gestationalWeek;
-
+            {upcomingItems.length > 0 && (
+              <PressableScale
+                onPress={() => router.push("/(tabs)/plan")}
+                style={s.viewAllLink}
+              >
+                <Text style={s.viewAllText}>View all</Text>
+                <Ionicons name="arrow-forward" size={14} color={colors.brand[600]} />
+              </PressableScale>
+            )}
+          </View>
+          {upcomingItems.length > 0 ? (
+            <View style={s.checklistList}>
+              {upcomingItems.map((item) => {
+                const displayDate = item.due_date ?? item.suggested_date;
                 return (
-                  <View key={`${tip.week}-${i}`} style={s.planningTipRow}>
-                    <View
-                      style={[
-                        s.planningTipIcon,
-                        {
-                          backgroundColor: isCurrentWeek
-                            ? colors.brand[100]
-                            : catColor.bg,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={iconName}
-                        size={14}
-                        color={isCurrentWeek ? colors.brand[600] : catColor.text}
-                      />
+                  <View key={item.id} style={s.checklistRow}>
+                    <View style={s.checklistIcon}>
+                      <Ionicons name="calendar-outline" size={14} color={colors.brand[600]} />
                     </View>
-                    <View style={s.planningTipInfo}>
-                      <Text style={s.planningTipText}>{tip.tip}</Text>
-                      <View style={s.planningTipMeta}>
-                        <Text style={s.planningTipMetaText}>Week {tip.week}</Text>
-                        <Text style={s.planningTipMetaDot}>·</Text>
-                        <Text style={s.planningTipMetaText}>
-                          {tip.category.replace("_", " ")}
+                    <View style={s.checklistInfo}>
+                      <Text style={s.checklistTitle}>{item.title}</Text>
+                      {displayDate && (
+                        <Text style={s.checklistDate}>
+                          {new Date(displayDate + "T00:00:00").toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </Text>
-                      </View>
+                      )}
                     </View>
                   </View>
                 );
               })}
             </View>
-          </View>
-        </FadeInUp>
-      )}
+          ) : (
+            <PressableScale
+              onPress={() => router.push("/(tabs)/plan")}
+              style={s.emptyComingUp}
+            >
+              <Text style={s.emptyComingUpText}>
+                Add items from your Plan to see them here.
+              </Text>
+            </PressableScale>
+          )}
+        </View>
+      </FadeInUp>
     </View>
   );
 }
@@ -1211,6 +1189,17 @@ const s = StyleSheet.create({
     marginTop: 2,
   },
 
+  emptyComingUp: {
+    paddingVertical: spacing.lg,
+    alignItems: "center",
+  },
+  emptyComingUpText: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    color: colors.stone[500],
+    textAlign: "center",
+  },
+
   // ── Pregnancy-specific ──────────────────────
   pregnancySizeSection: {
     alignItems: "center",
@@ -1285,50 +1274,6 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
-  // ── Planning Tips ───────────────────────────
-  planningTipsList: {
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  planningTipRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
-  },
-  planningTipIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-  },
-  planningTipInfo: {
-    flex: 1,
-  },
-  planningTipText: {
-    fontFamily: fonts.sans,
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.stone[800],
-  },
-  planningTipMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 3,
-  },
-  planningTipMetaText: {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    color: colors.stone[400],
-    textTransform: "capitalize",
-  },
-  planningTipMetaDot: {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    color: colors.stone[300],
-  },
 
   // ── Achievement Modal ───────────────────────
   modalOverlay: {

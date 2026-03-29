@@ -18,6 +18,7 @@ export async function signUp(email: string, password: string, displayName: strin
       options: {
         data: {
           display_name: displayName,
+          signup_source: 'mobile',
         },
       },
     });

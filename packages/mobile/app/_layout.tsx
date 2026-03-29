@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from "../lib/auth-context";
 import { ActivityIndicator, View, StyleSheet } from "react-native";
 import { useEffect } from "react";
 import { useRouter, useSegments } from "expo-router";
+import * as Linking from "expo-linking";
+import { supabase } from "../lib/supabase";
 import { useFonts } from "expo-font";
 import {
   Inter_400Regular,
@@ -24,6 +26,36 @@ function RootLayoutContent() {
   const { session, isLoading, onboardingComplete, userCreatedAt } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+
+  // Listen for deep links returning from email confirmation
+  useEffect(() => {
+    function handleDeepLink(event: { url: string }) {
+      try {
+        const hashIndex = event.url.indexOf("#");
+        if (hashIndex === -1) return;
+        const params = new URLSearchParams(event.url.substring(hashIndex + 1));
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+        if (accessToken && refreshToken) {
+          supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+      } catch {
+        // Silently ignore malformed deep links
+      }
+    }
+
+    // App opened from killed state by deep link
+    Linking.getInitialURL().then((url) => {
+      if (url && url.includes("auth-callback")) handleDeepLink({ url });
+    });
+
+    // App was in background when deep link arrived
+    const subscription = Linking.addEventListener("url", handleDeepLink);
+    return () => subscription.remove();
+  }, []);
 
   useEffect(() => {
     // Wait for both session and profile to load

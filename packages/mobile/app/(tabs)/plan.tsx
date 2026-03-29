@@ -16,7 +16,16 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../lib/auth-context";
 import { supabase } from "../../lib/supabase";
-import { ChecklistItem, DoctorDiscussionItem, Child } from "@kinpath/shared";
+import {
+  ChecklistItem,
+  DoctorDiscussionItem,
+  Child,
+  MilestoneTemplate,
+  MILESTONE_TEMPLATES,
+  calculateMilestoneDate,
+  getRelevantMilestones,
+  toISODateString,
+} from "@kinpath/shared";
 import {
   colors,
   fonts,
@@ -68,6 +77,10 @@ export default function ChecklistScreen() {
   const [generalCollapsed, setGeneralCollapsed] = useState(false);
   const [providerCollapsed, setProviderCollapsed] = useState(false);
   const [completedCollapsed, setCompletedCollapsed] = useState(true);
+
+  // Suggested milestones
+  const [suggestionsCollapsed, setSuggestionsCollapsed] = useState(true);
+  const [addingMilestone, setAddingMilestone] = useState<string | null>(null);
 
   // Item detail modal (works for both checklist and doctor items)
   const [selectedItem, setSelectedItem] = useState<UnifiedItem | null>(null);
@@ -176,6 +189,59 @@ export default function ChecklistScreen() {
     await fetchAllData();
     setRefreshing(false);
   }, [user, selectedChildId]);
+
+  // ── Suggested Milestones ────────────────────────────────
+
+  const existingKeys = new Set(
+    checklist.filter((i) => i.milestone_key).map((i) => i.milestone_key!)
+  );
+
+  const suggestChild =
+    selectedChildId && selectedChildId !== "all"
+      ? children.find((c) => c.id === selectedChildId) ?? children[0]
+      : children[0];
+
+  const suggestions =
+    suggestChild
+      ? getRelevantMilestones(suggestChild, MILESTONE_TEMPLATES, existingKeys)
+      : [];
+
+  const handleAddMilestone = async (template: MilestoneTemplate) => {
+    if (!user || !suggestChild) return;
+    setAddingMilestone(template.key);
+
+    const date = calculateMilestoneDate(suggestChild, template);
+    const dateStr = date ? toISODateString(date) : null;
+    const ownerId = effectiveOwnerId || user.id;
+
+    try {
+      const { data, error } = await supabase
+        .from("checklist_items")
+        .insert({
+          child_id: suggestChild.id,
+          user_id: ownerId,
+          title: template.title,
+          description: template.description,
+          item_type: "milestone" as const,
+          milestone_key: template.key,
+          suggested_date: dateStr,
+          due_date: dateStr,
+          is_completed: false,
+          sort_order: checklist.length,
+        })
+        .select()
+        .single();
+
+      if (data && !error) {
+        setChecklist((prev) => [...prev, data]);
+      }
+    } catch (error) {
+      console.error("Error adding milestone:", error);
+      Alert.alert("Error", "Failed to add item");
+    } finally {
+      setAddingMilestone(null);
+    }
+  };
 
   // ── Add Item ───────────────────────────────────────────
 
@@ -685,6 +751,79 @@ export default function ChecklistScreen() {
     );
   };
 
+  // ── Suggested Section ──────────────────────────────────
+
+  const renderSuggestedSection = () => {
+    if (suggestions.length === 0) return null;
+
+    return (
+      <View style={styles.suggestedContainer}>
+        <PressableScale
+          style={styles.suggestedHeader}
+          onPress={() => setSuggestionsCollapsed((v) => !v)}
+          scaleTo={0.98}
+        >
+          <View style={styles.suggestedHeaderLeft}>
+            <Ionicons name="sparkles" size={16} color={colors.sage[600]} />
+            <Text style={styles.suggestedHeaderText}>
+              Suggested ({suggestions.length})
+            </Text>
+          </View>
+          <Ionicons
+            name={suggestionsCollapsed ? "chevron-down" : "chevron-up"}
+            size={18}
+            color={colors.sage[600]}
+          />
+        </PressableScale>
+
+        {!suggestionsCollapsed && (
+          <View style={styles.suggestedList}>
+            {suggestions.map((t) => {
+              const date = suggestChild
+                ? calculateMilestoneDate(suggestChild, t)
+                : null;
+              const isAdding = addingMilestone === t.key;
+
+              return (
+                <View key={t.key} style={styles.suggestedItem}>
+                  <View style={styles.suggestedItemContent}>
+                    <Text style={styles.suggestedItemTitle}>{t.title}</Text>
+                    <Text style={styles.suggestedItemMeta} numberOfLines={1}>
+                      {t.description}
+                      {date && (
+                        <>
+                          {"  ·  ~"}
+                          {date.toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </>
+                      )}
+                    </Text>
+                  </View>
+                  <PressableScale
+                    style={[
+                      styles.suggestedAddBtn,
+                      isAdding && styles.suggestedAddBtnDisabled,
+                    ]}
+                    onPress={() => handleAddMilestone(t)}
+                    disabled={isAdding}
+                    scaleTo={0.92}
+                  >
+                    <Text style={styles.suggestedAddText}>
+                      {isAdding ? "..." : "Add"}
+                    </Text>
+                  </PressableScale>
+                </View>
+              );
+            })}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   // ── Main Render ────────────────────────────────────────
 
   return (
@@ -929,7 +1068,19 @@ export default function ChecklistScreen() {
 
       {/* Checklist */}
       {totalItems === 0 ? (
-        renderEmptyState()
+        <ScrollView
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.brand[500]}
+            />
+          }
+        >
+          {renderEmptyState()}
+          {renderSuggestedSection()}
+        </ScrollView>
       ) : (
         <SectionList
           sections={sections}
@@ -937,6 +1088,7 @@ export default function ChecklistScreen() {
           renderItem={renderUnifiedItem}
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={false}
+          ListFooterComponent={renderSuggestedSection}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -1602,5 +1754,76 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansMedium,
     fontSize: 14,
     color: colors.error,
+  },
+
+  // ── Suggested Section ─────────────────────
+  suggestedContainer: {
+    marginTop: spacing.lg,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  suggestedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.sage[50],
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    borderRadius: radii.lg,
+  },
+  suggestedHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  suggestedHeaderText: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.sage[800],
+  },
+  suggestedList: {
+    marginTop: spacing.sm,
+    gap: spacing.sm,
+  },
+  suggestedItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: `${colors.stone[200]}99`,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    ...shadows.sm,
+  },
+  suggestedItemContent: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  suggestedItemTitle: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.stone[800],
+  },
+  suggestedItemMeta: {
+    fontFamily: fonts.sans,
+    fontSize: 12,
+    color: colors.stone[500],
+    marginTop: 2,
+  },
+  suggestedAddBtn: {
+    backgroundColor: colors.brand[500],
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.md,
+  },
+  suggestedAddBtnDisabled: {
+    opacity: 0.5,
+  },
+  suggestedAddText: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 12,
+    color: colors.white,
   },
 });

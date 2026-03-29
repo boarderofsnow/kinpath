@@ -446,7 +446,7 @@ export function PlanClient({
               >
                 <span className="flex items-center gap-2">
                   <Sparkles className="h-4 w-4 text-sage-600" />
-                  Suggested milestones ({suggestions.length})
+                  Suggested ({suggestions.length})
                 </span>
                 {showSuggestions ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>

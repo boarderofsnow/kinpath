@@ -1,88 +1,40 @@
 "use client";
 
-import type { ChildWithAge } from "@kinpath/shared";
+import Link from "next/link";
+import type { ChildWithAge, ChecklistItem } from "@kinpath/shared";
 import {
   getDueDateCountdown,
   getBabySizeComparison,
-  getPlanningTips,
   getMaternalChanges,
   getAllMilestones,
 } from "@kinpath/shared";
 import {
-  Calendar,
   Heart,
-  Moon,
-  Users,
   ClipboardList,
-  ShoppingBag,
-  Activity,
-  Search,
-  Gift,
-  BookOpen,
-  CheckCircle,
-  Briefcase,
-  UtensilsCrossed,
-  Sun,
-  Clock,
-  Home,
-  Car,
-  FileText,
-  Megaphone,
-  Pill,
-  Scan,
   Sparkles,
-  type LucideIcon,
 } from "lucide-react";
 import { MilestoneTimeline } from "./milestone-timeline";
 
 interface PregnancyDashboardProps {
   child: ChildWithAge;
+  checklistItems: ChecklistItem[];
 }
-
-/** Map planning tip icon names → Lucide components */
-const ICON_MAP: Record<string, LucideIcon> = {
-  calendar: Calendar,
-  pill: Pill,
-  heart: Heart,
-  moon: Moon,
-  users: Users,
-  clipboard: ClipboardList,
-  megaphone: Megaphone,
-  "shopping-bag": ShoppingBag,
-  activity: Activity,
-  search: Search,
-  scan: Scan,
-  gift: Gift,
-  book: BookOpen,
-  "file-text": FileText,
-  home: Home,
-  car: Car,
-  "check-circle": CheckCircle,
-  briefcase: Briefcase,
-  utensils: UtensilsCrossed,
-  sun: Sun,
-  clock: Clock,
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  health: "bg-brand-100 text-brand-600",
-  preparation: "bg-amber-100 text-amber-700",
-  shopping: "bg-violet-100 text-violet-600",
-  social: "bg-sky-100 text-sky-600",
-  self_care: "bg-rose-100 text-rose-600",
-};
 
 /**
  * A rich, engaging dashboard for expecting parents.
  * Shows baby size, countdown, body changes, milestone timeline, and planning tips.
  */
-export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
+export function PregnancyDashboard({ child, checklistItems }: PregnancyDashboardProps) {
   const countdown = getDueDateCountdown(child);
   if (!countdown) return null;
 
   const sizeComparison = getBabySizeComparison(countdown.gestationalWeek);
-  const planningTips = getPlanningTips(countdown.gestationalWeek, 3);
   const maternalChanges = getMaternalChanges(countdown.gestationalWeek);
+
+  const upcomingItems = checklistItems
+    .filter((item) => !item.is_completed && item.due_date)
+    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
+    .slice(0, 5);
   const allMilestones = getAllMilestones();
 
   const trimesterLabel =
@@ -199,47 +151,48 @@ export function PregnancyDashboard({ child }: PregnancyDashboardProps) {
         currentWeek={countdown.gestationalWeek}
       />
 
-      {/* Planning Tips */}
-      {planningTips.length > 0 && (
-        <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
-          <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
+      {/* Coming Up — from user's checklist items */}
+      <div className="rounded-2xl border border-stone-200/60 bg-white p-5 shadow-card">
+        <h3 className="text-sm font-semibold text-stone-900">Coming Up</h3>
+        {upcomingItems.length > 0 ? (
           <div className="mt-3 space-y-3">
-            {planningTips.map((tip, i) => {
-              const IconComponent = ICON_MAP[tip.icon] ?? Calendar;
-              const colorClasses =
-                CATEGORY_COLORS[tip.category] ?? "bg-stone-100 text-stone-500";
-              const isCurrentWeek = tip.week === countdown.gestationalWeek;
-
-              return (
-                <div
-                  key={`${tip.week}-${i}`}
-                  className="flex items-start gap-3"
-                >
-                  <div
-                    className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
-                      isCurrentWeek ? "bg-brand-100 text-brand-600" : colorClasses
-                    }`}
-                  >
-                    <IconComponent className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-stone-800">{tip.tip}</p>
-                    <div className="mt-0.5 flex items-center gap-2">
-                      <span className="text-xs text-stone-400">
-                        Week {tip.week}
-                      </span>
-                      <span className="text-stone-300">&middot;</span>
-                      <span className="text-xs capitalize text-stone-400">
-                        {tip.category.replace("_", " ")}
-                      </span>
-                    </div>
-                  </div>
+            {upcomingItems.map((item) => (
+              <div key={item.id} className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600">
+                  <ClipboardList className="h-3.5 w-3.5" />
                 </div>
-              );
-            })}
+                <div className="flex-1">
+                  <p className="text-sm text-stone-800">{item.title}</p>
+                  {item.due_date && (
+                    <p className="mt-0.5 text-xs text-stone-400">
+                      {new Date(item.due_date + "T00:00:00").toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+            <Link
+              href="/plan"
+              className="mt-2 inline-block text-xs font-medium text-brand-500 hover:text-brand-600"
+            >
+              View all in Plan &rarr;
+            </Link>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="mt-3 text-center">
+            <p className="text-sm text-stone-500">
+              Add items from your{" "}
+              <Link href="/plan" className="font-medium text-brand-500 hover:text-brand-600">
+                Plan
+              </Link>{" "}
+              to see them here.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

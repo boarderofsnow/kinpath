@@ -11,11 +11,15 @@ export async function GET(request: Request) {
 
   const supabase = await createServerSupabaseClient();
   let user;
+  let session: { access_token: string; refresh_token: string } | null = null;
 
   if (code) {
     // PKCE flow — used by signUp, signInWithOtp, resetPasswordForEmail
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error && data.user) user = data.user;
+    if (!error && data.user) {
+      user = data.user;
+      session = data.session;
+    }
   } else if (tokenHash && type) {
     // Email link flow — used by custom invite template that passes
     // token_hash directly as a query param (bypasses Supabase's verify
@@ -24,7 +28,10 @@ export async function GET(request: Request) {
       token_hash: tokenHash,
       type,
     });
-    if (!error && data.user) user = data.user;
+    if (!error && data.user) {
+      user = data.user;
+      session = data.session;
+    }
   }
 
   if (user) {
@@ -109,6 +116,19 @@ export async function GET(request: Request) {
         // Send invited partners to complete their profile (name + password)
         return NextResponse.redirect(`${origin}/auth/complete-profile`);
       }
+    }
+
+    // Mobile signup → redirect back to the app via deep link
+    if (user.user_metadata?.signup_source === 'mobile' && session) {
+      // Clear signup_source so future web logins/resets aren't affected
+      await serviceClient.auth.admin.updateUserById(user.id, {
+        user_metadata: { ...user.user_metadata, signup_source: null },
+      });
+
+      // Redirect to intermediate page with tokens in hash fragment (not sent to server)
+      return NextResponse.redirect(
+        `${origin}/auth/mobile-redirect#access_token=${session.access_token}&refresh_token=${session.refresh_token}`
+      );
     }
 
     return NextResponse.redirect(`${origin}${next}`);

@@ -5,8 +5,9 @@ import type { WeeklyDigestData } from "@/lib/email/templates/weekly-digest";
 import {
   getBabySizeComparison,
   getDueDateCountdown,
-  getPlanningTips,
   getMaternalChanges,
+  MILESTONE_TEMPLATES,
+  getRelevantMilestones,
 } from "@kinpath/shared";
 
 export const dynamic = "force-dynamic";
@@ -129,7 +130,29 @@ export async function POST(request: NextRequest) {
             const { gestationalWeek } = countdown;
             const babySize = getBabySizeComparison(gestationalWeek);
             const maternalChange = getMaternalChanges(gestationalWeek);
-            const planningTips = getPlanningTips(gestationalWeek, 1);
+            // Fetch upcoming checklist items for this prenatal child
+            const { data: checklistData } = await supabase
+              .from("checklist_items")
+              .select("title, milestone_key")
+              .eq("child_id", child.id)
+              .eq("is_completed", false)
+              .order("due_date", { ascending: true })
+              .limit(1);
+
+            let planningTips: { tip: string; category: string }[] = [];
+            if (checklistData && checklistData.length > 0) {
+              planningTips = checklistData.map((item: any) => ({
+                tip: item.title,
+                category: "preparation",
+              }));
+            } else {
+              // Fallback: suggest the top milestone as a nudge
+              const existingKeys = new Set((checklistData || []).map((i: any) => i.milestone_key).filter(Boolean));
+              const suggestions = getRelevantMilestones(child, MILESTONE_TEMPLATES, existingKeys);
+              if (suggestions.length > 0) {
+                planningTips = [{ tip: suggestions[0].title, category: "preparation" }];
+              }
+            }
 
             // Fetch new resources since last email
             const lastEmailDate = pref.last_email_sent_at
@@ -172,10 +195,7 @@ export async function POST(request: NextRequest) {
               weeksRemaining: countdown.weeksRemaining,
               maternalBody: maternalChange?.body ?? null,
               maternalTip: maternalChange?.tip ?? null,
-              planningTips: planningTips.map((tip) => ({
-                tip: tip.tip,
-                category: tip.category,
-              })),
+              planningTips,
               newResources,
               dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}`,
               settingsUrl: `${process.env.NEXT_PUBLIC_APP_URL}/settings/notifications`,

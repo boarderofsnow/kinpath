@@ -177,30 +177,6 @@ export function getDueDateCountdown(child: Child, now: Date = new Date()): DueDa
 }
 
 // =============================================================================
-// Planning Tips
-// =============================================================================
-
-export interface PlanningTip {
-  week: number;
-  category: "health" | "preparation" | "shopping" | "social" | "self_care";
-  tip: string;
-  icon: string;
-}
-
-/**
- * Get planning tips for the current gestational week.
- * Returns tips for the current week plus a few upcoming weeks.
- */
-export function getPlanningTips(
-  gestationalWeek: number,
-  lookAheadWeeks: number = 2
-): PlanningTip[] {
-  const start = Math.max(4, gestationalWeek);
-  const end = Math.min(40, gestationalWeek + lookAheadWeeks);
-
-  return PLANNING_TIPS.filter((tip) => tip.week >= start && tip.week <= end);
-}
-
 // =============================================================================
 // Maternal Body Changes — week-by-week "what's happening with you"
 // =============================================================================
@@ -266,39 +242,3 @@ export function getAllMilestones(): { week: number; label: string }[] {
   return [...MILESTONES];
 }
 
-const PLANNING_TIPS: PlanningTip[] = [
-  // First trimester
-  { week: 5, category: "health", tip: "Schedule your first prenatal appointment", icon: "calendar" },
-  { week: 6, category: "self_care", tip: "Start a daily prenatal vitamin if you haven't already", icon: "pill" },
-  { week: 8, category: "health", tip: "Your first ultrasound may be coming up — exciting!", icon: "heart" },
-  { week: 9, category: "self_care", tip: "Rest is important right now. Listen to your body.", icon: "moon" },
-  { week: 10, category: "social", tip: "Decide when you'd like to share the news with close family", icon: "users" },
-  { week: 11, category: "health", tip: "Genetic screening tests are often offered around now", icon: "clipboard" },
-  { week: 12, category: "social", tip: "Many families start sharing the news after the first trimester", icon: "megaphone" },
-
-  // Second trimester
-  { week: 13, category: "shopping", tip: "Start browsing maternity clothes — comfort matters", icon: "shopping-bag" },
-  { week: 14, category: "health", tip: "Great time to start gentle prenatal exercise if cleared by your provider", icon: "activity" },
-  { week: 16, category: "preparation", tip: "Start thinking about childcare options — waitlists fill up fast", icon: "search" },
-  { week: 18, category: "health", tip: "Anatomy scan usually happens between weeks 18-22", icon: "scan" },
-  { week: 20, category: "preparation", tip: "Start your baby registry — halfway is a great time to begin", icon: "gift" },
-  { week: 22, category: "preparation", tip: "Research pediatricians in your area", icon: "search" },
-  { week: 24, category: "preparation", tip: "Consider signing up for a childbirth class", icon: "book" },
-  { week: 25, category: "health", tip: "Glucose screening test is usually done around weeks 24-28", icon: "clipboard" },
-  { week: 26, category: "preparation", tip: "Start thinking about your birth plan", icon: "file-text" },
-
-  // Third trimester
-  { week: 28, category: "preparation", tip: "Begin setting up the nursery — nesting mode activated!", icon: "home" },
-  { week: 29, category: "health", tip: "Count baby's kicks daily — 10 movements in 2 hours is typical", icon: "activity" },
-  { week: 30, category: "preparation", tip: "Research car seat options and practice installation", icon: "car" },
-  { week: 31, category: "preparation", tip: "Write or finalize your birth plan", icon: "file-text" },
-  { week: 32, category: "shopping", tip: "Stock up on newborn essentials — diapers, onesies, burp cloths", icon: "shopping-bag" },
-  { week: 33, category: "social", tip: "Baby shower time! Enjoy celebrating with loved ones", icon: "gift" },
-  { week: 34, category: "preparation", tip: "Pre-register at your hospital or birth center", icon: "clipboard" },
-  { week: 35, category: "preparation", tip: "Install the car seat and have it inspected", icon: "check-circle" },
-  { week: 36, category: "preparation", tip: "Pack your hospital bag — it's almost go-time!", icon: "briefcase" },
-  { week: 37, category: "preparation", tip: "Prep some freezer meals for postpartum recovery", icon: "utensils" },
-  { week: 38, category: "self_care", tip: "Rest, relax, and soak in these last days. You're ready.", icon: "sun" },
-  { week: 39, category: "health", tip: "Know the signs of labor — timing contractions, water breaking", icon: "clock" },
-  { week: 40, category: "self_care", tip: "Due dates are estimates. Baby will come when ready. You've got this!", icon: "heart" },
-];

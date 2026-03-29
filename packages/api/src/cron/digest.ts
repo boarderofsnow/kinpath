@@ -4,8 +4,9 @@ import { sendWeeklyDigest, WeeklyDigestData } from "../lib/email/dispatch";
 import {
   getBabySizeComparison,
   getDueDateCountdown,
-  getPlanningTips,
   getMaternalChanges,
+  MILESTONE_TEMPLATES,
+  getRelevantMilestones,
 } from "@kinpath/shared";
 
 interface NotificationPreferences {
@@ -122,7 +123,29 @@ export async function runWeeklyDigest(
           const { gestationalWeek } = countdown;
           const babySize = getBabySizeComparison(gestationalWeek);
           const maternalChange = getMaternalChanges(gestationalWeek);
-          const planningTips = getPlanningTips(gestationalWeek, 1);
+          // Fetch upcoming checklist items for this prenatal child
+          const { data: checklistData } = await supabase
+            .from("checklist_items")
+            .select("title, milestone_key")
+            .eq("child_id", child.id)
+            .eq("is_completed", false)
+            .order("due_date", { ascending: true })
+            .limit(1);
+
+          let planningTips: { tip: string; category: string }[] = [];
+          if (checklistData && checklistData.length > 0) {
+            planningTips = checklistData.map((item: any) => ({
+              tip: item.title,
+              category: "preparation",
+            }));
+          } else {
+            // Fallback: suggest the top milestone as a nudge
+            const existingKeys = new Set((checklistData || []).map((i: any) => i.milestone_key).filter(Boolean));
+            const suggestions = getRelevantMilestones(child, MILESTONE_TEMPLATES, existingKeys);
+            if (suggestions.length > 0) {
+              planningTips = [{ tip: suggestions[0].title, category: "preparation" }];
+            }
+          }
 
           const lastEmailDate = pref.last_email_sent_at
             ? new Date(pref.last_email_sent_at)
@@ -158,10 +181,7 @@ export async function runWeeklyDigest(
             weeksRemaining: countdown.weeksRemaining,
             maternalBody: maternalChange?.body ?? null,
             maternalTip: maternalChange?.tip ?? null,
-            planningTips: planningTips.map((tip) => ({
-              tip: tip.tip,
-              category: tip.category,
-            })),
+            planningTips,
             newResources,
             dashboardUrl: appUrl,
             settingsUrl: `${appUrl}/settings/notifications`,
